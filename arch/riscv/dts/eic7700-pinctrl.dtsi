@@ -1071,12 +1071,17 @@
 			// 		function = "gpio83_func";
 			// 	};
 			// };
-            // pinctrl_gpio84_default: gpio84-default{
-			// 	mux {
-			// 		groups = "gpio84_group";
-			// 		function = "gpio84_func";
-			// 	};
-			// };
+            pinctrl_gpio84_default: gpio84-default{
+				mux {
+					groups = "gpio84_group";
+					function = "gpio84_func";
+				};
+				conf {
+					groups = "gpio84_group";
+					input-enable = <1>;
+					bias-pull-down = <1>;
+				};
+			};
             // pinctrl_gpio85_default: gpio85-default{
 			// 	mux {
 			// 		groups = "gpio85_group";

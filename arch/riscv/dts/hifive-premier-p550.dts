@@ -72,6 +72,17 @@
 		compatible = "SiFive,FU800-soc", "fu800-soc", "sifive-soc", "simple-bus";
 		ranges;
 	};
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_gpio84_default>;
+
+		gpio-84 {
+			gpios = <&portc 20 GPIO_ACTIVE_HIGH>;
+			label = "gpio-84";
+			linux,default-trigger = "default-on";
+		};
+	};
 };
 &cpu0 {
 	status = "okay";
