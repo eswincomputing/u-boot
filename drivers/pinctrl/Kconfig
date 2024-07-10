@@ -342,6 +342,15 @@ config PINCTRL_ZYNQMP
 	  Generic Pinctrl framework and is compatible with the Linux driver,
 	  i.e. it uses the same device tree configuration.
 
+config PINCTRL_EIC7700
+	bool "Eswin EIC7700 pin control driver"
+	depends on DM && PINCTRL_GENERIC && EIC7700_RISCV
+	default y
+	help
+	  Support pin multiplexing control on Eswin EIC7700. The driver uses
+	  Generic Pinctrl framework and is compatible with the Linux driver,
+	  i.e. it uses the same device tree configuration.
+
 endif
 
 source "drivers/pinctrl/broadcom/Kconfig"

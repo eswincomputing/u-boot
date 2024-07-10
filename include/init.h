@@ -289,6 +289,8 @@ int set_cpu_clk_info(void);
 int update_flash_size(int flash_size);
 int arch_early_init_r(void);
 int misc_init_r(void);
+int eswin_pmp_init(void);
+int es_bootspi_write_protection_init(void);
 
 /* common/board_info.c */
 int checkboard(void);

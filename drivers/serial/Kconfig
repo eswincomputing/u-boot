@@ -954,6 +954,13 @@ config XILINX_UARTLITE
 	  If you have a Xilinx based board and want to use the uartlite
 	  serial ports, say Y to this option. If unsure, say N.
 
+config ESWIN_UART_SYNOPSYS
+	bool "eswin eic7700 synopsys uart support"
+	depends on DM_SERIAL
+	help
+	  If you have a eswin eic7700 board and want to use the synopsys
+	  serial ports, say Y to this option. If unsure, say N.
+
 config MESON_SERIAL
 	bool "Support for Amlogic Meson UART"
 	depends on DM_SERIAL && ARCH_MESON

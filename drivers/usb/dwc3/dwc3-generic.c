@@ -28,6 +28,7 @@
 #include <clk.h>
 #include <usb/xhci.h>
 #include <asm/gpio.h>
+#include <linux/io.h>
 
 #include "dwc3-generic.h"
 
@@ -49,6 +50,45 @@ struct dwc3_generic_host_priv {
 	struct dwc3_generic_priv gen_priv;
 };
 
+static int dwc_usb_clk_init(void)
+{
+        void __iomem *crg_regs;
+        void __iomem *hsp_regs;
+        u32 val = 0;
+        /*Use clk framework instead*/
+        hsp_regs = ioremap(0x50440000, 0x200);
+        crg_regs = ioremap(0x51828000, 0x1000);
+
+        //reset hsp_por
+        val = readl(crg_regs + 0x41c);
+        val |= 0x00018007;
+        writel(val, crg_regs + 0x41c);
+
+        //enable scu_hsp_pclk
+        writel(0x80000023, crg_regs + 0x148);
+        writel(0xc0000000, crg_regs + 0x14c);
+
+        //usb0 clk init
+        //ref clk is 24M, below need to be set to satisfy usb phy requirement(125M)
+        writel(0x0000002a, hsp_regs + 0x83c);
+        writel(0x00000000, hsp_regs + 0x840);
+
+        //reset usb core and usb phy
+        writel(0x11010201, hsp_regs + 0x800);
+        writel(0x00010001, hsp_regs + 0x808);
+
+        //usb1 clk init
+        //ref clk is 24M, below need to be set to satisfy usb phy requirement(125M)
+        writel(0x0000002a, hsp_regs + 0x93c);
+        writel(0x00000000, hsp_regs + 0x940);
+
+        //reset usb core and usb phy
+        writel(0x11010201, hsp_regs + 0x900);
+        writel(0x00010001, hsp_regs + 0x908);
+
+        return 0;
+}
+
 static int dwc3_generic_probe(struct udevice *dev,
 			      struct dwc3_generic_priv *priv)
 {
@@ -58,6 +98,9 @@ static int dwc3_generic_probe(struct udevice *dev,
 	struct dwc3_glue_data *glue = dev_get_plat(dev->parent);
 	int __maybe_unused index;
 	ofnode __maybe_unused node;
+
+	if (device_is_compatible(dev->parent, "eswin,eic7700-dwc3-dev"))
+		dwc_usb_clk_init();
 
 	dwc3->dev = dev;
 	dwc3->maximum_speed = plat->maximum_speed;
@@ -99,6 +142,11 @@ static int dwc3_generic_probe(struct udevice *dev,
 		udelay(1);
 	}
 
+	if (device_is_compatible(dev->parent, "eswin,eic7700-dwc3-dev")) {
+		reset_assert_bulk(&glue->resets);
+		udelay(1);
+	}
+
 	rc = dwc3_setup_phy(dev, &priv->phys);
 	if (rc && rc != -ENOTSUPP)
 		return rc;
@@ -125,6 +173,9 @@ static int dwc3_generic_probe(struct udevice *dev,
 	}
 
 	if (device_is_compatible(dev->parent, "rockchip,rk3399-dwc3"))
+		reset_deassert_bulk(&glue->resets);
+
+	if (device_is_compatible(dev->parent, "eswin,eic7700-dwc3-dev"))
 		reset_deassert_bulk(&glue->resets);
 
 	priv->base = map_physmem(plat->base, DWC3_OTG_REGS_END, MAP_NOCACHE);
@@ -615,6 +666,7 @@ static const struct udevice_id dwc3_glue_ids[] = {
 	{ .compatible = "fsl,imx8mp-dwc3", .data = (ulong)&imx8mp_ops },
 	{ .compatible = "fsl,imx8mq-dwc3" },
 	{ .compatible = "intel,tangier-dwc3" },
+	{ .compatible = "eswin,eic7700-dwc3-dev" },
 	{ }
 };
 

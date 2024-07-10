@@ -1,0 +1,49 @@
+if TARGET_HIFIVE_PREMIER_P550
+config SYS_BOARD
+	default "hifive_premier_p550"
+
+config SYS_CONFIG_NAME
+	default "hifive_premier_p550"
+
+config SYS_VENDOR
+	default "eswin"
+
+config SYS_CPU
+	default "eic7700"
+
+config TEXT_BASE
+	default 0x80200000 if SPL
+	default 0x80000000 if !RISCV_SMODE
+	default 0x80200000 if RISCV_SMODE
+
+config SPL_TEXT_BASE
+	default 0x08000000
+
+config SPL_OPENSBI_LOAD_ADDR
+	default 0x80000000
+
+config BOARD_SPECIFIC_OPTIONS # dummy
+	def_bool y
+	select EIC7700_RISCV
+	select BOARD_LATE_INIT
+	imply CMD_DHCP
+	imply CMD_EXT2
+	imply CMD_EXT4
+	imply CMD_FAT
+	imply CMD_FS_GENERIC
+	imply CMD_NET
+	imply CMD_PING
+	imply CMD_MMC
+
+config BR2_EXTRA_ENV
+	string "user custom environment setting"
+config BOOT_NFS
+	int "user launch sel"
+	default "0"
+
+config ROOTFS_NFS_PATH
+	string "user custom environment setting : nfs rootfs path"
+config TFTP_SERVERIP
+	string "user custom environment setting : tftp server ip"
+
+endif

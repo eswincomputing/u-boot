@@ -523,7 +523,7 @@ extern char	net_boot_file_name[1024];/* Boot File name */
 /* Indicates whether the file name was specified on the command line */
 extern bool	net_boot_file_name_explicit;
 /* The actual transferred size of the bootfile (in bytes) */
-extern u32	net_boot_file_size;
+extern u64	net_boot_file_size;
 /* Boot file size in blocks as reported by the DHCP server */
 extern u32	net_boot_file_expected_size_in_blocks;
 

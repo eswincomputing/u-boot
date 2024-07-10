@@ -508,6 +508,19 @@ config FIXED_SDHCI_ALIGNED_BUFFER
 	  This specifies the address of a fixed buffer located in SDRAM that
 	  will be used for all SDHCI transfers in the SPL.
 
+config MMC_SDHCI_EMMC_ESWIN
+        bool "ESWIN EMMC controller supportt"
+        default n
+        help
+          This enables support for the Eswin SDHCI emmc controller.
+
+config MMC_SDHCI_SD_ESWIN
+        bool "ESWIN SD controller support"
+        select MMC_SDHCI_EMMC_ESWIN
+        default n
+        help
+          This enables support for the Eswin SDHCI sd controller.
+
 config MMC_SDHCI_ASPEED
 	bool "Aspeed SDHCI controller"
 	depends on ARCH_ASPEED

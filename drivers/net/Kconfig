@@ -264,6 +264,14 @@ config DWC_ETH_QOS_STARFIVE
 	  The Synopsys Designware Ethernet QOS IP block with specific
 	  configuration used in STARFIVE  JH7110 soc.
 
+config DWC_ETH_ESWIN
+	bool "Synopsys DWC ETH QOS device support for ESWIN"
+	depends on DM_ETH
+	select PHYLIB
+	help
+	  The Synopsys Designware Ethernet QOS IP block with specific
+	  configuration used in eswin.
+
 config E1000
 	bool "Intel PRO/1000 Gigabit Ethernet support"
 	depends on PCI

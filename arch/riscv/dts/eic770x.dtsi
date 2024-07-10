@@ -1,0 +1,937 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Device Tree file for Eswin EIC7700 SoC.
+ *
+ * Copyright 2024, Beijing ESWIN Computing Technology Co., Ltd.. All rights reserved.
+ * SPDX-License-Identifier: GPL-2.0
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 2.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+#include <dt-bindings/clock/eic7x-clock.h>
+#include <dt-bindings/reset/eswin,eic7x-syscrg.h>
+
+#define RTCCLK_FREQ             1000000
+
+/dts-v1/;
+#include "eic7700-pinctrl.dtsi"
+#define USB_CLASS_HUB	 9
+/ {
+	#address-cells = <2>;
+	#size-cells = <2>;
+	compatible = "SiFive,FU800-dev", "fu800-dev", "sifive-dev";
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cpu0: cpu@0 {
+			clock-frequency = <0>;
+			compatible = "eic7700", "riscv";
+			d-cache-block-size = <64>;
+			d-cache-sets = <128>;
+			d-cache-size = <32768>;
+			d-tlb-sets = <1>;
+			d-tlb-size = <64>;
+			device_type = "cpu";
+			i-cache-block-size = <64>;
+			i-cache-sets = <128>;
+			i-cache-size = <32768>;
+			i-tlb-sets = <1>;
+			i-tlb-size = <64>;
+			mmu-type = "riscv,sv48";
+			reg = <0>;
+			riscv,isa = "rv64imafdc_zba_zbb";
+			status = "disabled";
+			timebase-frequency = <RTCCLK_FREQ>;
+			tlb-split;
+			cpu0_intc: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+		};
+		cpu1: cpu@1 {
+			clock-frequency = <0>;
+			compatible = "eic7700", "riscv";
+			d-cache-block-size = <64>;
+			d-cache-sets = <128>;
+			d-cache-size = <32768>;
+			d-tlb-sets = <1>;
+			d-tlb-size = <64>;
+			device_type = "cpu";
+			i-cache-block-size = <64>;
+			i-cache-sets = <128>;
+			i-cache-size = <32768>;
+			i-tlb-sets = <1>;
+			i-tlb-size = <64>;
+			mmu-type = "riscv,sv48";
+			reg = <0x1>;
+			riscv,isa = "rv64imafdc_zba_zbb";
+			status = "disabled";
+			timebase-frequency = <RTCCLK_FREQ>;
+			tlb-split;
+			cpu1_intc: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+		};
+		cpu2: cpu@2 {
+			clock-frequency = <0>;
+			compatible = "eic7700", "riscv";
+			d-cache-block-size = <64>;
+			d-cache-sets = <128>;
+			d-cache-size = <32768>;
+			d-tlb-sets = <1>;
+			d-tlb-size = <64>;
+			device_type = "cpu";
+			i-cache-block-size = <64>;
+			i-cache-sets = <128>;
+			i-cache-size = <32768>;
+			i-tlb-sets = <1>;
+			i-tlb-size = <64>;
+			mmu-type = "riscv,sv48";
+			reg = <0x2>;
+			riscv,isa = "rv64imafdc_zba_zbb";
+			status = "disabled";
+			timebase-frequency = <RTCCLK_FREQ>;
+			tlb-split;
+			cpu2_intc: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+		};
+		cpu3: cpu@3 {
+			clock-frequency = <0>;
+			compatible = "eic7700", "riscv";
+			d-cache-block-size = <64>;
+			d-cache-sets = <128>;
+			d-cache-size = <32768>;
+			d-tlb-sets = <1>;
+			d-tlb-size = <64>;
+			device_type = "cpu";
+			i-cache-block-size = <64>;
+			i-cache-sets = <128>;
+			i-cache-size = <32768>;
+			i-tlb-sets = <1>;
+			i-tlb-size = <64>;
+			mmu-type = "riscv,sv48";
+			reg = <0x3>;
+			riscv,isa = "rv64imafdc_zba_zbb";
+			status = "disabled";
+			timebase-frequency = <RTCCLK_FREQ>;
+			tlb-split;
+			cpu3_intc: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+		};
+		cpu4: cpu@4 {
+			clock-frequency = <0>;
+			compatible = "eic7700", "riscv";
+			d-cache-block-size = <64>;
+			d-cache-sets = <128>;
+			d-cache-size = <32768>;
+			d-tlb-sets = <1>;
+			d-tlb-size = <64>;
+			device_type = "cpu";
+			i-cache-block-size = <64>;
+			i-cache-sets = <128>;
+			i-cache-size = <32768>;
+			i-tlb-sets = <1>;
+			i-tlb-size = <64>;
+			mmu-type = "riscv,sv48";
+			reg = <0x4>;
+			riscv,isa = "rv64imafdc_zba_zbb";
+			status = "disabled";
+			timebase-frequency = <RTCCLK_FREQ>;
+			tlb-split;
+			cpu4_intc: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+		};
+		cpu5: cpu@5 {
+			clock-frequency = <0>;
+			compatible = "eic7700", "riscv";
+			d-cache-block-size = <64>;
+			d-cache-sets = <128>;
+			d-cache-size = <32768>;
+			d-tlb-sets = <1>;
+			d-tlb-size = <64>;
+			device_type = "cpu";
+			i-cache-block-size = <64>;
+			i-cache-sets = <128>;
+			i-cache-size = <32768>;
+			i-tlb-sets = <1>;
+			i-tlb-size = <64>;
+			mmu-type = "riscv,sv48";
+			reg = <0x5>;
+			riscv,isa = "rv64imafdc_zba_zbb";
+			status = "disabled";
+			timebase-frequency = <RTCCLK_FREQ>;
+			tlb-split;
+			cpu5_intc: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+		};
+		cpu6: cpu@6 {
+			clock-frequency = <0>;
+			compatible = "eic7700", "riscv";
+			d-cache-block-size = <64>;
+			d-cache-sets = <128>;
+			d-cache-size = <32768>;
+			d-tlb-sets = <1>;
+			d-tlb-size = <64>;
+			device_type = "cpu";
+			i-cache-block-size = <64>;
+			i-cache-sets = <128>;
+			i-cache-size = <32768>;
+			i-tlb-sets = <1>;
+			i-tlb-size = <64>;
+			mmu-type = "riscv,sv48";
+			reg = <0x6>;
+			riscv,isa = "rv64imafdc_zba_zbb";
+			status = "disabled";
+			timebase-frequency = <RTCCLK_FREQ>;
+			tlb-split;
+			cpu6_intc: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+		};
+		cpu7: cpu@7 {
+			clock-frequency = <0>;
+			compatible = "eic7700", "riscv";
+			d-cache-block-size = <64>;
+			d-cache-sets = <128>;
+			d-cache-size = <32768>;
+			d-tlb-sets = <1>;
+			d-tlb-size = <64>;
+			device_type = "cpu";
+			i-cache-block-size = <64>;
+			i-cache-sets = <128>;
+			i-cache-size = <32768>;
+			i-tlb-sets = <1>;
+			i-tlb-size = <64>;
+			mmu-type = "riscv,sv48";
+			reg = <0x7>;
+			riscv,isa = "rv64imafdc_zba_zbb";
+			status = "disabled";
+			timebase-frequency = <RTCCLK_FREQ>;
+			tlb-split;
+			cpu7_intc: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+		};
+	};
+
+	display_subsystem: display-subsystem {
+		u-boot,dm-pre-proper;
+		compatible = "eswin,display-subsystem";
+		ports = <&osd_out>;
+		status = "disabled";
+		route {
+			route_mipi: route-dsi {
+				status = "disabled";
+				logo,uboot = "logo.bmp";
+				logo,kernel = "logo_kernel.bmp";
+				logo,mode = "center";
+				charge_logo,mode = "center";
+				connect = <&osd_out_mipi>;
+			};
+
+			route_hdmi: route-hdmi {
+				status = "disabled";
+				logo,uboot = "logo.bmp";
+				logo,kernel = "logo_kernel.bmp";
+				logo,mode = "center";
+				charge_logo,mode = "center";
+				connect = <&osd_out_hdmi>;
+			};
+		};
+	};
+
+	osd: osd@502c0000 {
+		compatible = "eswin,dc8000-osd";
+		reg = <0x0 0x502c0000 0x0 0x40000>;
+		status = "disabled";
+		osd_out: port {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			osd_out_mipi: endpoint@0 {
+				reg = <0>;
+				remote-endpoint = <&mipi_in_osd>;
+			};
+
+			osd_out_hdmi: endpoint@1 {
+				reg = <1>;
+				remote-endpoint = <&hdmi_in_osd>;
+			};
+		};
+	};
+	soc {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		compatible = "ESWIN,EIC7700-soc", "eic7700-soc", "eswin-soc";
+		ranges;
+		d0_mbox: mbox@0x50a00000 {
+			status = "disabled";
+			compatible = "eswin,mbox";
+			#mbox-cells = <1>;
+			reg = <0 0x50a00000 0 0x10000>,<0 0x50a10000 0 0x10000>;
+			interrupt-parent = <&plic0>;
+			interrupts = <8>;
+		};
+		d0_mbox_srvc: mbox_srvc@d0 {
+			status = "disabled";
+			compatible = "eswin,mbox-srvc";
+			mboxes = <&d0_mbox 0>, <&d0_mbox 1>;
+			mbox-names = "tx", "rx";
+		};
+
+		d0_pmp:pmp@51b48000 {
+			status = "disabled";
+			#address-cells = <2>;
+			#size-cells = <2>;
+			compatible = "eswin,pmp-manager";
+			reg = <0 0x51b48000 0 0x10>;
+			mbox-service = <&d0_mbox_srvc>;
+			ranges;
+			numa-node-id = <0>;
+			master-security =
+				<MASTER_ID_U84		SECURE>,
+				<MASTER_ID_LPCPU	SECURE>,
+				<MASTER_ID_AONDMA	SECURE>,
+				<MASTER_ID_DSP		SECURE>,
+				<MASTER_ID_NPU		SECURE>,
+				<MASTER_ID_GPU		SECURE>,
+				<MASTER_ID_G2D0		SECURE>,
+				<MASTER_ID_G2D1		SECURE>,
+				<MASTER_ID_VD		SECURE>,
+				<MASTER_ID_VC		SECURE>,
+				<MASTER_ID_JE		SECURE>,
+				<MASTER_ID_JD		SECURE>,
+				<MASTER_ID_ISP		SECURE>,
+				<MASTER_ID_ISP1		SECURE>,
+				<MASTER_ID_DVP2AXI	SECURE>,
+				<MASTER_ID_DWE		SECURE>,
+				<MASTER_ID_DC		SECURE>,
+				<MASTER_ID_HDMI		SECURE>,
+				<MASTER_ID_ETH0		SECURE>,
+				<MASTER_ID_ETH1		SECURE>,
+				<MASTER_ID_SATA		SECURE>,
+				<MASTER_ID_DMA		SECURE>,
+				<MASTER_ID_EMMC		SECURE>,
+				<MASTER_ID_SD		SECURE>,
+				<MASTER_ID_SDIO		SECURE>,
+				<MASTER_ID_PCIE		SECURE>,
+				<MASTER_ID_SCPU		SECURE>,
+				<MASTER_ID_USB0		SECURE>,
+				<MASTER_ID_USB1		SECURE>;
+		#ifdef MEMMODE_INTERLEAVE
+			memory-mode = <MEM_MODE_INTERLEAVE>;
+			secure_memory_part_0 {
+				compatible = "pmp-sec-region";
+				reg = <0x40 0xb0000000 MEM_SIZE_256M>;
+			};
+			secure_memory_part_1 {
+				compatible = "pmp-sec-region";
+				reg = <0x40 0xc0000000 MEM_SIZE_256M>;
+			};
+		#else
+			memory-mode = <MEM_MODE_FLAT>;
+			secure_memory_nid_0_part_0 {
+				compatible = "pmp-sec-region";
+				reg = <0x0 0xb0000000 MEM_SIZE_128M>;
+			};
+			secure_memory_nid_0_part_1 {
+				compatible = "pmp-sec-region";
+				reg = <0x0 (0xb0000000 + 0x8000000) MEM_SIZE_128M>;
+			};
+		#endif
+		};
+
+		d1_sharedmemory: reserved@0x270002000 {
+			no-map;
+			reg = <0x2 0x70002000 0x0 0x1000>;
+		};
+		d1_mbox:mbox@0x70a00000 {
+			status = "disabled";
+			compatible = "eswin,mbox";
+			#mbox-cells = <1>;
+			reg = <0 0x70a00000 0 0x10000>,<0 0x70a10000 0 0x10000>;
+			memory-region = <&d1_sharedmemory>;
+			interrupt-parent = <&plic1>;
+			interrupts = <8>;
+		};
+		d1_mbox_srvc:mbox_srvc@d1 {
+			status = "disabled";
+			compatible = "eswin,mbox-srvc";
+			mboxes = <&d1_mbox 0>, <&d1_mbox 1>;
+			mbox-names = "tx", "rx";
+		};
+		d1_pmp:pmp@71b48000 {
+			status = "disabled";
+			#address-cells = <2>;
+			#size-cells = <2>;
+			compatible = "eswin,pmp-manager";
+			reg = <0 0x71b48000 0 0x10>;
+			mbox-service = <&d1_mbox_srvc>;
+			ranges;
+			numa-node-id = <1>;
+			master-security =
+				<MASTER_ID_U84		SECURE>,
+				<MASTER_ID_LPCPU	SECURE>,
+				<MASTER_ID_AONDMA	SECURE>,
+				<MASTER_ID_DSP		SECURE>,
+				<MASTER_ID_NPU		SECURE>,
+				<MASTER_ID_GPU		SECURE>,
+				<MASTER_ID_G2D0		SECURE>,
+				<MASTER_ID_G2D1		SECURE>,
+				<MASTER_ID_VD		SECURE>,
+				<MASTER_ID_VC		SECURE>,
+				<MASTER_ID_JE		SECURE>,
+				<MASTER_ID_JD		SECURE>,
+				<MASTER_ID_ISP		SECURE>,
+				<MASTER_ID_ISP1		SECURE>,
+				<MASTER_ID_DVP2AXI	SECURE>,
+				<MASTER_ID_DWE		SECURE>,
+				<MASTER_ID_DC		SECURE>,
+				<MASTER_ID_HDMI		SECURE>,
+				<MASTER_ID_ETH0		SECURE>,
+				<MASTER_ID_ETH1		SECURE>,
+				<MASTER_ID_SATA		SECURE>,
+				<MASTER_ID_DMA		SECURE>,
+				<MASTER_ID_EMMC		SECURE>,
+				<MASTER_ID_SD		SECURE>,
+				<MASTER_ID_SDIO		SECURE>,
+				<MASTER_ID_PCIE		SECURE>,
+				<MASTER_ID_SCPU		SECURE>,
+				<MASTER_ID_USB0		SECURE>,
+				<MASTER_ID_USB1		SECURE>;
+		#ifdef MEMMODE_INTERLEAVE
+			memory-mode = <MEM_MODE_INTERLEAVE>;
+			secure_memory_part_0 {
+				compatible = "pmp-sec-region";
+				reg = <0x40 0xb0000000 MEM_SIZE_256M>;
+			};
+			secure_memory_part_1 {
+				compatible = "pmp-sec-region";
+				reg = <0x40 0xc0000000 MEM_SIZE_256M>;
+			};
+		#else
+			memory-mode = <MEM_MODE_FLAT>;
+			secure_memory_nid_1_part_0 {
+				compatible = "pmp-sec-region";
+				reg = <0x20 0xd0000000 MEM_SIZE_128M>;
+			};
+			secure_memory_nid_1_part_1 {
+				compatible = "pmp-sec-region";
+				reg = <0x20 (0xd0000000 + 0x8000000) MEM_SIZE_128M>;
+			};
+		#endif
+		};
+		plic0: interrupt-controller@c000000 {
+			status = "disabled";
+			#interrupt-cells = <1>;
+			#address-cells = <0>;
+			reg = <0x0 0xc000000 0x0 0x4000000>;
+			compatible = "sifive,plic-1.0.0", "riscv,plic0";
+			interrupt-controller;
+			interrupts-extended = <
+				&cpu0_intc 0xffffffff &cpu0_intc 9
+				&cpu1_intc 0xffffffff &cpu1_intc 9
+				&cpu2_intc 0xffffffff &cpu2_intc 9
+				&cpu3_intc 0xffffffff &cpu3_intc 9>;
+			reg-names = "control";
+			riscv,max-priority = <7>;
+			riscv,ndev = <511>;
+		};
+		plic1: interrupt-controller@2c000000 {
+			status = "disabled";
+			#interrupt-cells = <1>;
+			#address-cells = <0>;
+			reg = <0x0 0x2c000000 0x0 0x4000000>;
+			compatible = "sifive,plic-1.0.0", "riscv,plic0";
+			interrupt-controller;
+			interrupts-extended = <
+				&cpu4_intc 0xffffffff &cpu4_intc 9
+				&cpu5_intc 0xffffffff &cpu5_intc 9
+				&cpu6_intc 0xffffffff &cpu6_intc 9
+				&cpu7_intc 0xffffffff &cpu7_intc 9
+				>;
+			reg-names = "control";
+			riscv,max-priority = <7>;
+			riscv,ndev = <520>;
+		};
+		cru: clock-controller@51828000 {
+			compatible = "eswin,eic770x-cru";
+			reg = <0x0 0x51828000 0x0 0x1000>;
+			#clock-cells = <1>;
+			#reset-cells = <1>;
+			clocks = <&cru EIC7X_CLK_LSP_I2C0_PCLK>,
+					<&cru EIC7X_CLK_VO_PIXEL_CLK>,
+					<&cru EIC7X_CLK_HSP_MSHC1_CORE_CLK>;
+		};
+		rst: reset-controller@51828000 {
+			compatible = "eswin,eic770x-reset";
+			reg = <0x0 0x51828000 0x0 0x1000>;
+			#reset-cells = <2>;
+		};
+		pcie: pcie@54000000 {
+			status = "disabled";
+			compatible = "eswin,eic770x-pcie", "snps,dw-pcie";
+			clocks = <&cru EIC7X_CLK_PCIET_ACLK>,
+					 <&cru EIC7X_CLK_PCIET_CFG_CLK>,
+					 <&cru EIC7X_CLK_PCIET_CR_CLK>,
+				 	 <&cru EIC7X_CLK_PCIET_AUX_CLK>;
+			clock-names = "pcie_aclk", "pcie_cfg_clk", "pcie_cr_clk", "pcie_aux_clk";
+			reset-names = "pcie_cfg", "pcie_powerup", "pcie_pwren";
+			resets = <&rst PCIE_RST_CTRL SW_PCIE_CFG_RSTN>,
+				 	 <&rst PCIE_RST_CTRL SW_PCIE_POWERUP_RSTN>,
+					 <&rst PCIE_RST_CTRL SW_PCIE_PERST_N>;
+			reg = <0x0 0x54000000 0x0 0x4000000
+				0x0 0x50000000 0x0 0x100000
+				0x0 0x4f000000 0x0 0x800000>;
+			reg-names = "dbi", "cfg", "config";
+			bus-range = <0x0 0xff>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+			device_type = "pci";
+			ranges = <0x81000000 0x0 0x4f800000 0x0 0x4f800000 0x0 0x800000	/* io */
+					0x82000000 0x0 0x40000000 0x0 0x40000000 0x0 0xf000000>; /* mem */
+			num-lanes = <4>;
+		};
+		eswin_sata: sata@0x50420000{
+			compatible = "eswin,eic7700-ahci";
+			reg = <0x0 0x50420000 0x0 0x10000>;
+			interrupt-parent = <&plic0>;
+			clocks = <&cru EIC7X_CLK_HSP_CFG_CLK>;
+			clock-names = "hsp_cfg_clk";
+			reset-names = "hsp_sata_arstn";
+			resets = <&rst HSPDMA_RST_CTRL SW_HSP_SATA_ARSTN>;
+			status = "okay";
+		};
+		uart0: serial@50900000 {
+			status = "disabled";
+			compatible = "synopsys,uart0";
+			clock-frequency = <200000000>;
+			reg = <0x0 0x50900000 0x0 0xffff>;
+			reg-names = "control";
+		};
+		uart1: serial@50910000 {
+			status = "disabled";
+			compatible = "synopsys,uart0";
+			clock-frequency = <200000000>;
+			reg = <0x0 0x50910000 0x0 0xffff>;
+			reg-names = "control";
+		};
+		eth0: ethernet@50400000 {
+			compatible = "eswin,eth-eqos";
+			reg = <0x0 0x50400000 0x0 0x10000>;
+			status = "disabled";
+		};
+		eth1: ethernet@50410000 {
+			compatible = "eswin,eth-eqos";
+			reg = <0x0 0x50410000 0x0 0x10000>;
+			status = "disabled";
+		};
+		sdhci_emmc: sdhci@50450000 {
+			compatible = "eswin,emmc-sdhci-5.1";
+			reg = <0x0 0x50450000 0x0 0x10000>;
+			max-frequency = <200000000>;
+			emmc_phy_reg_base = <0x50450000>;
+			/*sdhci-caps-mask = <0x4 0x200000>;*/
+			disable-cqe-dcmd;
+			bus-width = <8>;
+			non-removeable;
+			index = <0>;
+			status = "disabled";
+		};
+
+		display_logo: display_logo {
+			status = "disabled";
+			compatible = "eswin,display-logo";
+			blk_start_addr = <0x4c000>;
+			blk_cnt = <7200>;
+			blk_size = <512>;
+			width = <1280>;
+			height = <720>;
+			color_format = "ARGB8888";
+		};
+		usb0: usb0@50480000 {
+			#address-cells = <2>;
+			#size-cells = <2>;
+			compatible = "eswin,eic7700-dwc3-dev";
+			ranges;
+			dwc3_typec0: dwc3@50480000 {
+					compatible = "snps,dwc3";
+					reg = <0x0 0x50480000 0x0 0x10000>;
+					status = "disabled";
+					snps,dis-enblslpm-quirk;
+					snps,phyif-utmi-bits = <16>;
+					snps,dis-u2-freeclk-exists-quirk;
+					snps,dis-u2-susphy-quirk;
+					#address-cells = <2>;
+					#size-cells = <2>;
+					hub {
+						  compatible = "usb-hub";
+						  usb,device-class = <USB_CLASS_HUB>;
+					};
+			};
+		};
+		usb1: usb1@50490000 {
+				compatible = "eswin,eic7700-dwc3-host";
+				reg = <0x0 0x50490000 0x0 0x10000>;
+				status = "disabled";
+				snps,dis-enblslpm-quirk;
+				snps,phyif-utmi-bits = <16>;
+				snps,dis-u2-freeclk-exists-quirk;
+				snps,dis-u2-susphy-quirk;
+
+				#address-cells = <2>;
+				#size-cells = <2>;
+				hub {
+					  compatible = "usb-hub";
+					  usb,device-class = <USB_CLASS_HUB>;
+				};
+		};
+		hdmi: hdmi@502a0000 {
+			compatible = "eswin,eswin-dw-hdmi";
+			reg = <0x0 0x502a0000 0x0 0x20000>;
+			reg-io-width = <4>;
+			status = "disabled";
+			ports {
+				hdmi_in: port {
+					#address-cells = <1>;
+					#size-cells = <0>;
+					hdmi_in_osd: endpoint@0 {
+						reg = <0>;
+						remote-endpoint = <&osd_out_hdmi>;
+					};
+				};
+			};
+		};
+		spiclk: cfgclk_200mhz {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <200000000>;
+		};
+		dw_spi0: spi@50810000 {
+			status = "disabled";
+			compatible = "snps,dw-apb-ssi-4.01",
+						"snps,dw-apb-ssi";
+			reg = <0x0 0x50810000 0x0 0x4000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&spiclk>;
+			spi-max-frequency = <4800000>;
+			num-cs = <1>;
+			reg-io-width = <4>;
+		};
+		bootspi: spi@51800000 {
+			status = "disabled";
+			compatible = "eswin,es-apb-spi-1.0";
+			reg = <0x0 0x51800000 0x0 0x8000>;
+			es,sysscr_reg = <0x51828000>;
+			write-status-reg-time = <1>;    // time in ms
+			page-program-time = <1>;
+			sector-erase-time = <45>;
+			small-block-erase-time = <120>;
+			large-block-erase-time = <150>;
+			chip-erase-time = <40>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&cru EIC7X_CLK_CLK_BOOTSPI>;
+			spi-max-frequency = <4800000>;
+			num-cs = <1>;
+			reg-io-width = <4>;
+
+		};
+		sd: sd@50460000 {
+			compatible = "eswin,sd-sdhci";
+			reg = <0x0 0x50460000 0x0 0x10000>;
+			max-frequency = <208000000>;
+			bus-width = <4>;
+			sdhci-caps-mask = <0x4 0x0>;
+			index = <1>;
+			status = "disabled";
+		};
+
+		mipi_dsi: dsi@50270000 {
+			status = "disabled";
+			compatible = "eswin,mipi-dsi";
+			reg = <0x0 0x50270000 0x0 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				mipi_in: port {
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <1>;
+					mipi_in_osd: endpoint@0 {
+						reg = <0>;
+						remote-endpoint = <&osd_out_mipi>;
+					};
+				};
+			};
+		};
+
+		i2c0: i2c@50950000{
+			compatible = "snps,designware-i2c";
+			reg = <0x0 0x50950000 0x0 0x10000>;
+			clock-frequency = <100000>;
+			clocks = <&cru EIC7X_CLK_LSP_I2C0_PCLK>;
+			resets = <&rst I2C_RST_CTRL SW_I2C_RST_N_0>;
+			i2c-scl-rising-time-ns = <300>;
+			i2c-scl-falling-time-ns = <300>;
+			i2c-sda-hold-time-ns = <300>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@50960000{
+			compatible = "snps,designware-i2c";
+			reg = <0x0 0x50960000 0x0 0x10000>;
+			clock-frequency = <100000>;
+			clocks = <&cru EIC7X_CLK_LSP_I2C1_PCLK>;
+			resets = <&rst I2C_RST_CTRL SW_I2C_RST_N_1>;
+			i2c-scl-rising-time-ns = <300>;
+			i2c-scl-falling-time-ns = <300>;
+			i2c-sda-hold-time-ns = <300>;
+			status = "disabled";
+		};
+
+		i2c2: i2c@50970000{
+			compatible = "snps,designware-i2c";
+			reg = <0x0 0x50970000 0x0 0x10000>;
+			clock-frequency = <100000>;
+			clocks = <&cru EIC7X_CLK_LSP_I2C2_PCLK>;
+			resets = <&rst I2C_RST_CTRL SW_I2C_RST_N_2>;
+			i2c-scl-rising-time-ns = <300>;
+			i2c-scl-falling-time-ns = <300>;
+			i2c-sda-hold-time-ns = <300>;
+			status = "disabled";
+		};
+
+		i2c3: i2c@50980000{
+			compatible = "snps,designware-i2c";
+			reg = <0x0 0x50980000 0x0 0x10000>;
+			clock-frequency = <100000>;
+			clocks = <&cru EIC7X_CLK_LSP_I2C3_PCLK>;
+			resets = <&rst I2C_RST_CTRL SW_I2C_RST_N_3>;
+			i2c-scl-rising-time-ns = <300>;
+			i2c-scl-falling-time-ns = <300>;
+			i2c-sda-hold-time-ns = <300>;
+			status = "disabled";
+		};
+
+		i2c4: i2c@50990000{
+			compatible = "snps,designware-i2c";
+			reg = <0x0 0x50990000 0x0 0x10000>;
+			clock-frequency = <100000>;
+			clocks = <&cru EIC7X_CLK_LSP_I2C4_PCLK>;
+			resets = <&rst I2C_RST_CTRL SW_I2C_RST_N_4>;
+			i2c-scl-rising-time-ns = <300>;
+			i2c-scl-falling-time-ns = <300>;
+			i2c-sda-hold-time-ns = <300>;
+			status = "disabled";
+		};
+
+		i2c5: i2c@509a0000{
+			compatible = "snps,designware-i2c";
+			reg = <0x0 0x509a0000 0x0 0x10000>;
+			clock-frequency = <100000>;
+			clocks = <&cru EIC7X_CLK_LSP_I2C5_PCLK>;
+			resets = <&rst I2C_RST_CTRL SW_I2C_RST_N_5>;
+			i2c-scl-rising-time-ns = <300>;
+			i2c-scl-falling-time-ns = <300>;
+			i2c-sda-hold-time-ns = <300>;
+			status = "disabled";
+		};
+
+		i2c6: i2c@509b0000{
+			compatible = "snps,designware-i2c";
+			reg = <0x0 0x509b0000 0x0 0x10000>;
+			clock-frequency = <100000>;
+			clocks = <&cru EIC7X_CLK_LSP_I2C6_PCLK>;
+			resets = <&rst I2C_RST_CTRL SW_I2C_RST_N_6>;
+			i2c-scl-rising-time-ns = <300>;
+			i2c-scl-falling-time-ns = <300>;
+			i2c-sda-hold-time-ns = <300>;
+			status = "disabled";
+		};
+
+		i2c7: i2c@509c0000{
+			compatible = "snps,designware-i2c";
+			reg = <0x0 0x509c0000 0x0 0x10000>;
+			clock-frequency = <100000>;
+			clocks = <&cru EIC7X_CLK_LSP_I2C7_PCLK>;
+			resets = <&rst I2C_RST_CTRL SW_I2C_RST_N_7>;
+			i2c-scl-rising-time-ns = <300>;
+			i2c-scl-falling-time-ns = <300>;
+			i2c-sda-hold-time-ns = <300>;
+			status = "disabled";
+		};
+
+		i2c8: i2c@509d0000{
+			compatible = "snps,designware-i2c";
+			reg = <0x0 0x509d0000 0x0 0x10000>;
+			clock-frequency = <100000>;
+			clocks = <&cru EIC7X_CLK_LSP_I2C8_PCLK>;
+			resets = <&rst I2C_RST_CTRL SW_I2C_RST_N_8>;
+			i2c-scl-rising-time-ns = <300>;
+			i2c-scl-falling-time-ns = <300>;
+			i2c-sda-hold-time-ns = <300>;
+			status = "disabled";
+		};
+
+		i2c9: i2c@509e0000{
+			compatible = "snps,designware-i2c";
+			reg = <0x0 0x509e0000 0x0 0x10000>;
+			clock-frequency = <100000>;
+			clocks = <&cru EIC7X_CLK_LSP_I2C9_PCLK>;
+			resets = <&rst I2C_RST_CTRL SW_I2C_RST_N_9>;
+			i2c-scl-rising-time-ns = <300>;
+			i2c-scl-falling-time-ns = <300>;
+			i2c-sda-hold-time-ns = <300>;
+			status = "disabled";
+		};
+
+		i2c11: i2c@51830000{
+			compatible = "snps,designware-i2c";
+			reg = <0x0 0x51830000 0x0 0x8000>;
+			clock-frequency = <100000>;
+			clocks = <&cru EIC7X_CLK_AON_I2C0_PCLK>;
+			resets = <&rst I2C0_RST_CTRL SW_I2C0_PRSTN>;
+			i2c-scl-rising-time-ns = <300>;
+			i2c-scl-falling-time-ns = <300>;
+			i2c-sda-hold-time-ns = <300>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c12: i2c@51838000{
+			compatible = "snps,designware-i2c";
+			reg = <0x0 0x51838000 0x0 0x8000>;
+			clock-frequency = <100000>;
+			clocks = <&cru EIC7X_CLK_AON_I2C1_PCLK>;
+			resets = <&rst I2C1_RST_CTRL SW_I2C1_PRSTN>;
+			i2c-scl-rising-time-ns = <300>;
+			i2c-scl-falling-time-ns = <300>;
+			i2c-sda-hold-time-ns = <300>;
+			status = "disabled";
+		};
+
+		gpio0: gpio@51600000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "eswin,gpio-bank";
+			reg = <0x0 0x51600000 0x0 0x80>;
+			status = "okay";
+
+			porta: gpio-port@0 {
+				compatible = "eswin,gpio-bank";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				reg = <0>;
+			};
+
+			portb: gpio-port@1 {
+				compatible = "eswin,gpio-bank";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				reg = <1>;
+			};
+
+			portc: gpio-port@2 {
+				compatible = "eswin,gpio-bank";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				reg = <2>;
+			};
+
+			portd: gpio-port@3 {
+				compatible = "eswin,gpio-bank";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				reg = <3>;
+			};
+		};
+
+	};
+
+	pmu {
+		compatible = "riscv,pmu";
+		riscv,event-to-mhpmevent =
+			// SBI_PMU_HW_CACHE_REFERENCES -> Instruction or Data cache/ITIM busy
+			<0x00003 0x00000000 0x1801>,
+			// SBI_PMU_HW_CACHE_MISSES -> Instruction or Data cache miss or MMIO access
+			<0x00004 0x00000000 0x0302>,
+			// SBI_PMU_HW_BRANCH_INSTRUCTIONS -> Conditional branch retired
+			<0x00005 0x00000000 0x4000>,
+			// SBI_PMU_HW_BRANCH_MISSES -> Branch or jump misprediction
+			<0x00006 0x00000000 0x6001>,
+			// L1D_READ_MISS -> Data cache miss or MMIO access
+			<0x10001 0x00000000 0x0202>,
+			// L1D_WRITE_ACCESS -> Data cache write-back
+			<0x10002 0x00000000 0x0402>,
+			// L1I_READ_ACCESS -> Instruction cache miss
+			<0x10009 0x00000000 0x0102>,
+			// LL_READ_MISS -> UTLB miss
+			<0x10011 0x00000000 0x2002>,
+			// DTLB_READ_MISS -> Data TLB miss
+			<0x10019 0x00000000 0x1002>,
+			// ITLB_READ_MISS-> Instruction TLB miss
+			<0x10021 0x00000000 0x0802>;
+		riscv,event-to-mhpmcounters = <0x00003 0x00006 0x78>,
+			<0x10001 0x10002 0x78>,
+			<0x10009 0x10009 0x78>,
+			<0x10011 0x10011 0x78>,
+			<0x10019 0x10019 0x78>,
+			<0x10021 0x10021 0x78>;
+		riscv,raw-event-to-mhpmcounters = <0x0 0x0 0xffffffff 0xfc0000ff 0x78>,
+			<0x0 0x1 0xffffffff 0xfff800ff 0x78>,
+			<0x0 0x2 0xffffffff 0xfffe00ff 0x78>,
+			<0x0 0x3 0xfffffffc 0x000000ff 0x78>,
+			<0x0 0x4 0xffffffc0 0x000000ff 0x78>,
+			<0x0 0x5 0xffffffff 0x00000dff 0x78>,
+			<0x0 0x6 0xfffffe00 0x110204ff 0x78>,
+			<0x0 0x7 0xffffffff 0xf00000ff 0x78>,
+			<0x0 0x8 0xfffffe04 0x000000ff 0x78>,
+			<0x0 0x9 0xffffffff 0xffffc0ff 0x78>,
+			<0x0 0xa 0xffffffff 0xf00000ff 0x78>,
+			<0x0 0xb 0xffffffff 0xfffffcff 0x78>,
+			<0x0 0xc 0xffffffff 0x000000ff 0x78>,
+			<0x0 0xd 0xffffffff 0x800000ff 0x78>,
+			<0x0 0xe 0xffffffff 0xf80000ff 0x78>,
+			<0x0 0xf 0xffffffff 0x000000ff 0x78>;
+	};
+};
+

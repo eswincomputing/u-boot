@@ -135,6 +135,12 @@ config USB_XHCI_BRCM
 	  USB controller based on the Broadcom USB3 IP Core.
 	  Supports USB2/3 functionality.
 
+config USB_XHCI_ESWIN
+	bool "Support for ESWIN on-chip xHCI USB controller"
+	depends on DM_USB
+	help
+	  Enables support for the on-chip xHCI controller on ESWIN SoCs.
+
 endif # USB_XHCI_HCD
 
 config EHCI_DESC_BIG_ENDIAN

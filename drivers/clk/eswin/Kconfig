@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Copyright 2024 Beijing ESWIN Computing Technology Co., Ltd.
+
+config CLK_ESWIN
+	bool "Eswin SoC driver support"
+	depends on CLK
+	help
+	  SoC drivers for Eswin Linux-capable SoCs.
+
+config CLK_ESWIN_EIC770x
+	bool "Clock driver for ESWIN EIC770x SoCs"
+	depends on CLK_ESWIN
+	help
+	  Supports the Clock interface IP block found in
+	  EIC770x SoCs.  If this kernel is meant to run on a Eswin EIC770x SoC,
+	  enable this driver.
+

@@ -1,0 +1,58 @@
+menuconfig DRM_ESWIN
+	bool "Eswin DRM Support"
+	depends on VIDEO && OF_LIVE
+	select VIDEO_BRIDGE
+	select PHY
+	help
+	  Eswin SoCs provide video output capabilities for High-Definition
+	  Multimedia Interface (HDMI) and Display Serial Interface (DSI).
+
+	  This driver supports the on-chip video output device, and targets the
+	  Eswin fu800.
+
+config DRM_ESWIN_WRITEBACK
+    bool "Eswin DC8000 Writeback Support"
+    depends on DRM_ESWIN
+    help
+     This selects support for Eswin SoC specific extensions
+     for the DC8000 writeback. If you want to
+     enable DC8000 writeback, you should selet this option.
+
+config DRM_ESWIN_DW_HDMI
+	bool "Eswin DW HDMI Support"
+	depends on DRM_ESWIN
+	help
+	 This selects support for Eswin SoC specific extensions
+	 for the Synopsys DesignWare HDMI driver. If you want to
+	 enable HDMI on, you should selet this option.
+
+config DRM_ESWIN_DW_MIPI_DSI
+	tristate "Eswin DW MIPI DSI Support"
+	depends on DRM_ESWIN
+	select DRM_MIPI_DSI
+	select DRM_ESWIN_PANEL
+	help
+	 This selects support for Eswin SoC specific extensions
+	 for the Synopsys DesignWare HDMI driver. If you want to
+	 enable MIPI DSI on fu800 based SoC, you should selet this
+	 option.
+
+config DRM_ESWIN_PANEL
+	bool "Eswin 1080x1920 4-lanes Panel Support"
+	depends on DRM_ESWIN_DW_MIPI_DSI
+	select DRM_MIPI_DSI
+
+config DRM_ESWIN_RGB
+	bool "Eswin RGB Support"
+	depends on DRM_ESWIN
+	select DRM_ESWIN_PANEL
+	help
+	  Choose this option to enable support for Eswin RGB driver.
+	  say Y to enable its driver.
+
+config XILINX_ZCU102_PHY
+	bool "Eswin HDMI XILINX_ZCU102_PHY Support"
+	depends on DRM_ESWIN
+	help
+	  Choose this option to enable support for Eswin XILINX_ZCU102_PHY.
+	  say Y to enable it.

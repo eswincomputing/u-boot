@@ -13,6 +13,7 @@ obj-$(CONFIG_$(SPL_TPL_)CLK_COMPOSITE_CCF) += clk-composite.o
 obj-$(CONFIG_$(SPL_TPL_)CLK_GPIO) += clk-gpio.o
 
 obj-y += analogbits/
+obj-y += eswin/
 obj-y += imx/
 obj-$(CONFIG_CLK_JH7110) += starfive/
 obj-y += tegra/

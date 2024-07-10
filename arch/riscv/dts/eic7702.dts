@@ -1,0 +1,225 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Device Tree file for Eswin EIC7700 SoC.
+ *
+ * Copyright 2024, Beijing ESWIN Computing Technology Co., Ltd.. All rights reserved.
+ * SPDX-License-Identifier: GPL-2.0
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 2.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#include <dt-bindings/soc/eswin-pmp.h>
+#include "eic770x.dtsi"
+// #include "dt-bindings/media/eswin_mipi_dsi.h"
+// #include "linux/media-bus-format.h"
+/ {
+	#address-cells = <2>;
+	#size-cells = <2>;
+	model = "eswin eic7700 uboot system";
+
+
+	aliases {
+		serial0 = &uart0;
+		i2c0 = &i2c0;
+		i2c1 = &i2c1;
+		i2c2 = &i2c2;
+		i2c3 = &i2c3;
+		i2c4 = &i2c4;
+		i2c5 = &i2c5;
+		i2c6 = &i2c6;
+		i2c7 = &i2c7;
+		i2c8 = &i2c8;
+		i2c9 = &i2c9;
+		i2c11 = &i2c11;
+		i2c12 = &i2c12;
+		spi0 = &bootspi;
+		spi1 = &dw_spi0;
+	};
+
+	chosen {
+		stdout-path = "serial0";
+	};
+
+	memory@80000000 {
+		device_type = "memory";
+		reg = <0x0 0x80000000 0x0 0x60000000>;
+	};
+	soc {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		compatible = "SiFive,FU800-soc", "fu800-soc", "sifive-soc", "simple-bus";
+		ranges;
+	};
+};
+&cpu0 {
+	status = "okay";
+};
+&cpu1 {
+	status = "okay";
+};
+&cpu2 {
+	status = "okay";
+};
+&cpu3 {
+	status = "okay";
+};
+&cpu4 {
+	status = "okay";
+};
+&cpu5 {
+	status = "okay";
+};
+&cpu6 {
+	status = "okay";
+};
+&cpu7 {
+	status = "okay";
+};
+&plic0{
+	status = "okay";
+};
+&d0_mbox {
+	status = "okay";
+};
+&d0_mbox_srvc {
+	status = "okay";
+};
+&d0_pmp {
+	status = "okay";
+};
+&plic1{
+	status = "okay";
+};
+&d1_mbox {
+	status = "okay";
+};
+&d1_mbox_srvc {
+	status = "okay";
+};
+&d1_pmp {
+	status = "okay";
+};
+&uart0 {
+	status = "okay";
+};
+&bootspi {
+	status = "disabled";
+	spi-flash@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0>;
+		compatible = "winbond,w25q64dw",
+			"jedec,spi-nor";
+		spi-max-frequency = <4800000>;
+	};
+};
+&dw_spi0 {
+	status = "disabled";
+	spi-flash@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0>;
+		compatible = "winbond,w25q64dw",
+			"jedec,spi-nor";
+		spi-max-frequency = <4800000>;
+	};
+};
+&sd {
+	status = "disabled";
+};
+&sdhci_emmc {
+	status = "disabled";
+};
+&eth0 {
+	status = "disabled";
+	phy-mode = "rgmii-id";
+	max-speed = <1000>;
+	phy-handle = <&phy0>;
+	mdio0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		phy0: ethernet-phy@1 {
+			reg = <1>;
+		};
+	};
+};
+&pcie {
+	status = "disabled";
+};
+&display_logo {
+	status = "disabled";
+};
+&mipi_dsi {
+	status = "disabled";
+	panel {
+	  compatible = "simple-panel-dsi";
+	  reg = <0>;
+	  dsi,format = <MIPI_DSI_FMT_RGB888>;
+	  bus-format = <MEDIA_BUS_FMT_RGB888_1X24>;
+	  dsi,lanes = <1>;
+	  status = "disabled";
+	  display-timings {
+		  native-mode = <&timing0>;
+		  timing0: timing0 {
+			/*The fpga platform does not need to set the clock*/
+			clock-frequency = <0>;
+			hactive = <320>;
+			vactive = <480>;
+			hsync-len = <4>;
+			hback-porch = <20>;
+			hfront-porch = <10>;
+			vsync-len = <5>;
+			vback-porch = <20>;
+			vfront-porch = <10>;
+			hsync-active = <0>;
+			vsync-active = <0>;
+			pixelclk-active = <0>;
+			};
+		};
+	};
+};
+&dwc3_typec0 {
+		status = "disabled";
+		dr_mode = "peripheral";
+		maximum-speed = "high-speed";
+};
+&usb0 {
+		status = "disabled";
+};
+&usb1 {
+	status = "disabled";
+};
+&hdmi {
+	status = "disabled";
+};
+&i2c0 {
+	i2c-sda-hold-time-ns = <50>;
+	status = "disabled";
+	i2c_eeprom0: eeprom@50 {
+		compatible = "atmel,24c512";
+		reg = <0x50>;
+	};
+};
+&i2c2 {
+	status = "disabled";
+};
+&i2c3 {
+	status = "disabled";
+};
+&i2c11 {
+	status = "disabled";
+	i2c_eeprom1: eeprom@50 {
+		compatible = "atmel,24c512";
+		reg = <0x50>;
+	};
+};

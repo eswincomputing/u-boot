@@ -52,6 +52,7 @@ obj-$(CONFIG_SH_MMCIF) += sh_mmcif.o
 obj-$(CONFIG_STM32_SDMMC2) += stm32_sdmmc2.o
 obj-$(CONFIG_JZ47XX_MMC) += jz_mmc.o
 obj-$(CONFIG_NEXELL_DWMMC) += nexell_dw_mmc.o
+obj-$(CONFIG_MMC_SDHCI_EMMC_ESWIN)	+= eswin_emmc_sdhci.o
 
 # SDHCI
 obj-$(CONFIG_MMC_SDHCI)			+= sdhci.o
@@ -82,3 +83,4 @@ obj-$(CONFIG_RENESAS_SDHI)		+= tmio-common.o renesas-sdhi.o
 obj-$(CONFIG_MMC_BCM2835)		+= bcm2835_sdhost.o
 obj-$(CONFIG_MMC_MTK)			+= mtk-sd.o
 obj-$(CONFIG_MMC_SDHCI_F_SDH30)		+= f_sdh30.o
+obj-$(CONFIG_MMC_SDHCI_SD_ESWIN)        += eswin_sd_sdhci.o

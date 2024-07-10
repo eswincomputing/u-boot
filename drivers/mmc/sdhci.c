@@ -480,7 +480,7 @@ int sdhci_set_clock(struct mmc *mmc, unsigned int clock)
 		udelay(1000);
 	}
 
-	clk |= SDHCI_CLOCK_CARD_EN;
+	clk |= SDHCI_CLOCK_CARD_EN | SDHCI_CLOCK_PLL_EN;
 	sdhci_writew(host, clk, SDHCI_CLOCK_CONTROL);
 	return 0;
 }
@@ -707,6 +707,11 @@ static int sdhci_set_ios(struct mmc *mmc)
 	}
 
 	sdhci_writeb(host, ctrl, SDHCI_HOST_CONTROL);
+
+	if ((mmc->selected_mode != MMC_LEGACY) && 
+		(mmc->selected_mode != MMC_HS) &&
+		(mmc->selected_mode != SD_HS))
+		sdhci_set_power(host, fls(MMC_VDD_165_195 - 1));
 
 	/* If available, call the driver specific "post" set_ios() function */
 	if (host->ops && host->ops->set_ios_post)

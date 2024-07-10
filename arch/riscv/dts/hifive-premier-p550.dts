@@ -1,0 +1,247 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Device Tree file for Eswin EIC7700 SoC.
+ *
+ * Copyright 2024, Beijing ESWIN Computing Technology Co., Ltd.. All rights reserved.
+ * SPDX-License-Identifier: GPL-2.0
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 2.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/soc/eswin-pmp.h>
+#include "eic770x.dtsi"
+// #include "dt-bindings/media/eswin_mipi_dsi.h"
+// #include "linux/media-bus-format.h"
+/ {
+	#address-cells = <2>;
+	#size-cells = <2>;
+	model = "Eswin HiFive Premier P550";
+
+
+	aliases {
+		serial0 = &uart0;
+		i2c0 = &i2c0;
+		i2c1 = &i2c1;
+		i2c2 = &i2c2;
+		i2c3 = &i2c3;
+		i2c4 = &i2c4;
+		i2c5 = &i2c5;
+		i2c6 = &i2c6;
+		i2c7 = &i2c7;
+		i2c8 = &i2c8;
+		i2c9 = &i2c9;
+		i2c11 = &i2c11;
+		i2c12 = &i2c12;
+		gpio0 = &gpio0;
+		spi0 = &bootspi;
+		spi1 = &dw_spi0;
+	};
+
+	chosen {
+		stdout-path = "serial0";
+	};
+
+	memory@80000000 {
+		device_type = "memory";
+		reg = <0x0 0x80000000 0x4 0x00000000>;
+	};
+	soc {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		compatible = "SiFive,FU800-soc", "fu800-soc", "sifive-soc", "simple-bus";
+		ranges;
+	};
+};
+&cpu0 {
+	status = "okay";
+};
+&cpu1 {
+	status = "okay";
+};
+&cpu2 {
+	status = "okay";
+};
+&cpu3 {
+	status = "okay";
+};
+&plic0{
+	status = "okay";
+};
+&d0_mbox {
+	status = "okay";
+};
+&d0_mbox_srvc {
+	status = "okay";
+};
+&d0_pmp {
+	status = "okay";
+};
+&uart0 {
+	status = "okay";
+};
+
+&bootspi {
+	status = "okay";
+	cs-gpios = <&portd 0 GPIO_ACTIVE_LOW>;
+	wp-gpios = <&portd 4 GPIO_ACTIVE_LOW>;
+	spi-flash@0 {
+		reg = <0>;
+		compatible = "winbond,w25q128fw",
+			"jedec,spi-nor";
+		spi-max-frequency = <4800000>;
+	};
+};
+&dw_spi0 {
+	status = "okay";
+	spi-flash@1 {
+		reg = <1>;
+		compatible = "winbond,w25q128fw",
+			"jedec,spi-nor";
+		spi-max-frequency = <4800000>;
+	};
+};
+&sd {
+	status = "okay";
+	delay_code = <0x34>;
+	drive-impedance-ohm = <33>;
+	enable-cmd-pullup;
+	enable-data-pullup;
+};
+
+&sdhci_emmc {
+	status = "okay";
+	delay_code = <0x17>;
+	drive-impedance-ohm = <50>;
+	enable-cmd-pullup;
+	enable-data-pullup;
+};
+
+&eswin_sata {
+	status = "okay";
+};
+
+&eth0 {
+	status = "okay";
+	phy-mode = "rgmii-id";
+	max-speed = <1000>;
+	phy-handle = <&phy0>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_gpio106_default>;
+	rst-gpios = <&portd 10 GPIO_ACTIVE_LOW>;
+
+	mdio0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		phy0: ethernet-phy@1 {
+			reg = <0>;
+		};
+	};
+};
+
+&eth1 {
+	status = "disabled";
+	phy-mode = "rgmii-id";
+	max-speed = <1000>;
+	phy-handle = <&phy1>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_gpio111_default>;
+	rst-gpios = <&portd 15 GPIO_ACTIVE_LOW>;
+
+	mdio1 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		phy1: ethernet-phy@1 {
+			reg = <0>;
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+&display_logo {
+	status = "disabled";
+};
+&dwc3_typec0 {
+		status = "okay";
+		dr_mode = "peripheral";
+		maximum-speed = "high-speed";
+};
+&usb0 {
+	status = "okay";
+};
+&usb1 {
+	status = "okay";
+};
+&hdmi {
+	status = "okay";
+};
+&display_subsystem {
+	status = "okay";
+};
+&route_hdmi {
+	status = "okay";
+};
+&osd {
+	status = "okay";
+};
+&i2c0 {
+	status = "disabled";
+};
+&i2c2 {
+	status = "disabled";
+};
+&i2c3 {
+	status = "disabled";
+};
+/* eeprom */
+&i2c11 {
+	status = "okay";
+};
+
+/*
+GPIO USED ON CarrierBoard:
+	gpio0   : FP Audio Jack Sense(I), active low
+	gpio5   : TYPE C cc logic interrupt(I), active low
+	gpio11  : BT WAKE HOST(I), active low
+	gpio12  : PCIE present(I), active low
+	gpio14  : DSI FPC CON CTRL(J10&J11)
+	gpio15  : Wlan wake host(I), active low
+	gpio28  : RP audio jack sense(I), active low
+	gpio29  : EMMC active led ctrl(O)
+
+	gpio43  : USB3.2 Gen1 hub Resetn(O), active low
+	gpio71  : CSI fpc con ctrl(O)
+	gpio74  : CSI fpc con ctrl(O)
+	gpio77  : CSI fpc con ctrl(O)
+	gpio76  : HOST WAKE BT(O), active low
+	gpio79  : WLAN POWER ON(O), active high
+	gpio80  : CSI fpc con ctrl(O)
+	gpio82  : DSI FPC CON CTRL(J10)
+	gpio85  : DSI FPC CON CTRL(J11)
+	gpio84  : GPIO LED CTRL(O), active high
+
+ GPIO USED ON SOM:
+	gpio18  : HOST WAKE WLAN(O), active low
+	gpio19  : HOST WAKE BT(O), active low
+	gpio20  : WLAN WAKE HOST(I), active low
+	gpio21  : BT WAKE HOST(I), active low
+	gpio106 : gphy0 resern(O), active low
+	gpio111 : gphy1 resern(O), active low
+
+*/
+
+&gpio0 {
+	status = "okay";
+};

@@ -24,6 +24,9 @@
  */
 #define DW_I2C_COMP_TYPE	0x44570140
 
+#define CONFIG_SYS_I2C_BASE   0x50950000
+#define CONFIG_SYS_I2C_SPEED  100000
+#define SYS_CRG_I2C_RST_CTRL	 (0x51828000 + 0x424)
 /*
  * This constant is used to calculate when during the clock high phase the data
  * bit shall be read. The value was copied from the Linux v6.5 function
@@ -779,10 +782,20 @@ int designware_i2c_of_to_plat(struct udevice *bus)
 	return 0;
 }
 
+/*
+  For eswin eswin soc, we must deasset the i2c controller at first
+*/
+void es_i2c_init(void)
+{
+	writel(0xffffffff, (void *)(SYS_CRG_I2C_RST_CTRL));
+}
+
 int designware_i2c_probe(struct udevice *bus)
 {
 	struct dw_i2c *priv = dev_get_priv(bus);
 	uint comp_type;
+
+	es_i2c_init();
 
 	comp_type = readl(&priv->regs->comp_type);
 	if (comp_type != DW_I2C_COMP_TYPE) {

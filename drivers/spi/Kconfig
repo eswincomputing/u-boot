@@ -181,6 +181,13 @@ config DESIGNWARE_SPI
 	  access the SPI NOR flash on platforms embedding this Designware
 	  IP core.
 
+config ESWIN_SPI
+	bool "ESWIN SPI driver"
+	help
+	  Enable the ESWIN SPI driver. This driver can be used to
+	  access the SPI NOR flash on platforms embedding this ESWIN
+	  IP core.
+
 config EXYNOS_SPI
 	bool "Samsung Exynos SPI driver"
 	help

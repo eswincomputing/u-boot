@@ -1,0 +1,6 @@
+ESWIN EIC7700 EVB BOARD
+M:  Xiang Xu <xuxiang@eswincomputing.com>
+S:  Maintained
+F:  board/eswin/eic7700/
+F:  include/configs/eswin_eic7700_evb.h
+F:  configs/eic7700_uboot_defconfig

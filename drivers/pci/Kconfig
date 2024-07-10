@@ -11,6 +11,14 @@ menuconfig PCI
 
 if PCI
 
+config PCIE_DW_ESWIN
+	bool "Eswin EIC7700 DesignWare based PCIe controller"
+	depends on DM
+	select PCIE_DW_COMMON
+	help
+	  Say Y here if you want to enable DW PCIe controller support on
+	  Eswin EIC7700 SoCs.
+
 config DM_PCI_COMPAT
 	bool "Enable compatible functions for PCI"
 	help

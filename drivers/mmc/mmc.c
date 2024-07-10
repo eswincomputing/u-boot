@@ -1417,14 +1417,22 @@ static int sd_get_capabilities(struct mmc *mmc)
 		return 0;
 
 	sd3_bus_mode = __be32_to_cpu(switch_status[3]) >> 16 & 0x1f;
+#if defined(__SD_UHS) && defined(__SD_SDR104)
 	if (sd3_bus_mode & SD_MODE_UHS_SDR104)
 		mmc->card_caps |= MMC_CAP(UHS_SDR104);
+#endif
+#if defined(__SD_UHS) && defined(__SD_SDR50)
 	if (sd3_bus_mode & SD_MODE_UHS_SDR50)
 		mmc->card_caps |= MMC_CAP(UHS_SDR50);
+#endif
+#if defined(__SD_UHS) && defined(__SD_SDR25)
 	if (sd3_bus_mode & SD_MODE_UHS_SDR25)
 		mmc->card_caps |= MMC_CAP(UHS_SDR25);
+#endif
+#if defined(__SD_UHS) && defined(__SD_SDR12)
 	if (sd3_bus_mode & SD_MODE_UHS_SDR12)
 		mmc->card_caps |= MMC_CAP(UHS_SDR12);
+#endif
 	if (sd3_bus_mode & SD_MODE_UHS_DDR50)
 		mmc->card_caps |= MMC_CAP(UHS_DDR50);
 #endif

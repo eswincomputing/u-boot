@@ -138,6 +138,11 @@ static inline unsigned long ffz(unsigned long word)
 	return k;
 }
 
+static __inline__ int find_next_zero_bit (void * addr, int size, int offset)
+{
+	return 0;
+}
+
 /*
  * ffs: find first bit set. This is defined the same way as
  * the libc and compiler builtin ffs routines, therefore

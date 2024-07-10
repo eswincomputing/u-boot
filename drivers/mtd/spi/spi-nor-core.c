@@ -967,6 +967,7 @@ static int spi_nor_erase(struct mtd_info *mtd, struct erase_info *instr)
 	struct spi_nor *nor = mtd_to_spi_nor(mtd);
 	bool addr_known = false;
 	u32 addr, len, rem;
+	u32 erasesize, erase_opcode;
 	int ret, err;
 
 	dev_dbg(nor->dev, "at 0x%llx, len %lld\n", (long long)instr->addr,
@@ -1004,7 +1005,21 @@ static int spi_nor_erase(struct mtd_info *mtd, struct erase_info *instr)
 		    !(nor->flags & SNOR_F_NO_OP_CHIP_ERASE)) {
 			ret = spi_nor_erase_chip(nor);
 		} else {
+			erase_opcode = nor->erase_opcode;
+			erasesize = mtd->erasesize;
+			if ( len >= 0x10000)
+			{
+				nor->erase_opcode = SPINOR_OP_SE;
+				mtd->erasesize = 0x10000;
+			}
+			else
+			{
+				nor->erase_opcode = SPINOR_OP_BE_4K;
+				mtd->erasesize = 0x1000;
+			}
 			ret = spi_nor_erase_sector(nor, addr);
+			nor->erase_opcode = erase_opcode;
+			mtd->erasesize = erasesize;
 		}
 		if (ret < 0)
 			goto erase_err;

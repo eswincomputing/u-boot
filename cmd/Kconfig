@@ -1247,6 +1247,24 @@ config CMD_LOADS
 	help
 	  Load an S-Record file over serial line
 
+config CMD_ESWUPDATE
+	bool "eswupdate"
+	default n
+	help
+	  Performs the Bootloader update boot flow
+
+config CMD_ESWOTP
+	bool "eswotp"
+	default n
+	help
+	  Performs the otp write flow
+
+config CMD_ESWINMGLTEST
+	bool "eswinmgltest"
+	default n
+	help
+	  Performs the Bootloader update boot flow
+
 config LOADS_ECHO
 	bool "Echo all characters received during a loads back to console"
 	depends on CMD_LOADS

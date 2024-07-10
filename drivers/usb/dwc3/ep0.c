@@ -736,10 +736,17 @@ static int dwc3_ep0_std_request(struct dwc3 *dwc, struct usb_ctrlrequest *ctrl)
 static void dwc3_ep0_inspect_setup(struct dwc3 *dwc,
 		const struct dwc3_event_depevt *event)
 {
-	struct usb_ctrlrequest *ctrl = dwc->ctrl_req;
 	int ret = -EINVAL;
 	u32 len;
+#ifdef CONFIG_USB_DWC3_ESWIN
 
+	u64 cahce = (u64)dwc->ctrl_req;
+	cahce += 0xBF80000000ULL;
+	struct usb_ctrlrequest *ctrl = (struct usb_ctrlrequest *)cahce;
+	//dwc3_flush_cache((uintptr_t)dwc->ctrl_req, sizeof(struct usb_ctrlrequest));
+#else
+	struct usb_ctrlrequest *ctrl = dwc->ctrl_req;
+#endif
 	if (!dwc->gadget_driver)
 		goto out;
 

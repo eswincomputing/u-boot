@@ -1,0 +1,6 @@
+hifive_premier_p550 DVB BOARD
+M:  Xiang Xu <xuxiang@eswincomputing.com>
+S:  Maintained
+F:  board/eswin/hifive_premier_p550/
+F:  include/configs/hifive_premier_p550.h
+F:  configs/hifive_premier_p550_defconfig

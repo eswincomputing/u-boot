@@ -956,6 +956,28 @@ config ANDROID_AB_BACKUP_OFFSET
 	  the partition will tried in the event that the primary one (starting
 	  at offset 0) fails its checksum.
 
+choice
+	prompt "Eswin update model select"
+	optional
+
+config SYSTEM_UPDATE_A
+	bool "SYSTEM UPDATE A"
+	select CMD_ESWUPDATE
+	help
+	  If enabled, adds support for the new update model.
+
+config SYSTEM_UPDATE_B
+	bool "SYSTEM UPDATE B"
+	select CMD_ESWUPDATE
+	help
+	  If enabled, adds support for the new update model.
+
+config SYSTEM_UPDATE_C
+	bool "SYSTEM UPDATE C"
+	select CMD_ESWUPDATE
+	help
+	  If enabled, adds support for the new update model.
+endchoice
 endmenu
 
 menu "Blob list"
