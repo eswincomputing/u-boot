@@ -209,7 +209,7 @@ static int es_spi_flash_erase(uint64_t offset, uint64_t size)
 	debug_printf("offset : %llx, size %llx\n",offset, size);
 
 	package_blk = DIV_ROUND_UP(total_size, BOOTCHAIN_PACKAGE_SIZE);  /* blkcnt */
-	printf("Erase progress: %3d:\r", 0);
+	printf("Erase progress: %3lld%:\r", 0);
 	for(int i = 0;i < package_blk; i++) {
 		if(total_size > BOOTCHAIN_PACKAGE_SIZE)
 		{
@@ -220,7 +220,7 @@ static int es_spi_flash_erase(uint64_t offset, uint64_t size)
 		total_size -= BOOTCHAIN_PACKAGE_SIZE;
 		ret = spi_flash_erase(flash, offset + i*BOOTCHAIN_PACKAGE_SIZE, erase_size);
 		currentIndex = (uint64_t)i * 100 / package_blk;
-		printf("Erase progress: %3d:", currentIndex);
+		printf("Erase progress: %3lld%:", currentIndex);
 		for(int col = 0; col < currentIndex/2; col++) {
 			printf("%s","+");
 		}
@@ -229,7 +229,7 @@ static int es_spi_flash_erase(uint64_t offset, uint64_t size)
 			break;
 	}
 	if(!ret) {
-		printf("Erase progress: %3d :", 100);
+		printf("Erase progress: %3lld%:", 100);
 		for(int j = 0; j < 100/2; j ++)
 			printf("%s","+");
 		printf("\r\n");
@@ -279,7 +279,7 @@ static int norflash_write_bootchain(uint64_t src_addr, uint64_t offset, uint64_t
 
 	package_blk = DIV_ROUND_UP(size, BOOTCHAIN_PACKAGE_SIZE); 
 	total_size = size;
-	printf("Write progress: %3d:\r", 0);
+	printf("Write progress: %3lld%:\r", 0);
 	for(int i = 0;i < package_blk; i++) {
 		if(total_size > BOOTCHAIN_PACKAGE_SIZE)
 		{
@@ -291,7 +291,7 @@ static int norflash_write_bootchain(uint64_t src_addr, uint64_t offset, uint64_t
 		ret = spi_flash_write(flash, offset + i * BOOTCHAIN_PACKAGE_SIZE, write_size,
 						      src_addr + i * BOOTCHAIN_PACKAGE_SIZE);
 		currentIndex = (uint64_t)i * 100 / package_blk;
-		printf("Write progress: %3d:", currentIndex);
+		printf("Write progress: %3lld%:", currentIndex);
 		for(int col = 0; col < currentIndex/2; col++) {
 			printf("%s","+");
 		}
@@ -301,7 +301,7 @@ static int norflash_write_bootchain(uint64_t src_addr, uint64_t offset, uint64_t
 	}
 
 	if(!ret) {
-		printf("Write progress: %3d :", 100);
+		printf("Write progress: %3lld%:", 100);
 		for(int j = 0; j < 100/2; j ++)
 			printf("%s","+");
 		printf("\r\n");
@@ -693,7 +693,6 @@ static int do_bootchain_erase(int argc, char *const argv[])
 		}
 		fht->num_entries = cnt;
 	}
-	printf("%s len %d \n",__func__, len);
 	ret = es_write_bootchain((uint64_t)&fht->magic, FW_HEAD_OFFSET, len);
 	free(fht);
 
@@ -877,7 +876,7 @@ static int do_rootfs_write(int argc, char *const argv[])
 	for(int i = 0;i < cycle_index; i++) {
 		currentIndex = i / 2;
 		ret = blk_dwrite(mmc_dev_desc, rootfs_part_info.start + i * package_blk, package_blk, (void __iomem *)(addr + i * package_blk * rootfs_part_info.blksz));
-		printf("Write progress: %3d:", i);
+		printf("Write progress: %3lld%:", i);
 		for(int col = 0; col < currentIndex; col++) {
 			printf("%s","+");
 		}
@@ -896,7 +895,7 @@ static int do_rootfs_write(int argc, char *const argv[])
 	if(last_blk)
 	{
 		ret = blk_dwrite(mmc_dev_desc, rootfs_part_info.start + cycle_index * cycle_index, last_blk, (void __iomem *)(addr + cycle_index * package_blk * rootfs_part_info.blksz));
-		printf("Write progress: %3d :", 100);
+		printf("Write progress: %3lld%:", 100);
 		for(int j = 0; j < 100/2; j ++)
 			printf("%s","+");
 		printf("\r\n");

@@ -7,6 +7,7 @@
 
 #include <fdtdec.h>
 #include <init.h>
+#include <mapmem.h>
 #include <asm/global_data.h>
 #include <linux/sizes.h>
 DECLARE_GLOBAL_DATA_PTR;
@@ -39,3 +40,23 @@ phys_addr_t board_get_usable_ram_top(phys_size_t total_size)
 #endif
 	return gd->ram_top;
 }
+
+#if CONFIG_IS_ENABLED(EFI_LOADER)
+/**
+ * efi_add_known_memory() - add memory banks to map
+ *
+ */
+void efi_add_known_memory(void)
+{
+	int i;
+	/* Add RAM */
+	for (i = 0; i < CONFIG_NR_DRAM_BANKS; i++) {
+		u64 ram_end, ram_start, ram_top;
+
+		ram_start = (uintptr_t)map_sysmem(gd->bd->bi_dram[i].start, 0);
+		ram_end = ram_start + gd->bd->bi_dram[i].size;
+		ram_top = ram_end;
+		efi_add_conventional_memory_map(ram_start, ram_end, ram_top);
+	}
+}
+#endif
