@@ -57,13 +57,7 @@ int sata_probe(int devnum)
 	int rc;
 
 	rc = uclass_get_device(UCLASS_AHCI, devnum, &dev);
-	if (rc)
-		rc = uclass_find_first_device(UCLASS_AHCI, &dev);
 	if (rc) {
-		printf("Cannot probe SATA device %d (err=%d)\n", devnum, rc);
-		return CMD_RET_FAILURE;
-	}
-	if (!dev) {
 		printf("No SATA device found!\n");
 		return CMD_RET_FAILURE;
 	}
