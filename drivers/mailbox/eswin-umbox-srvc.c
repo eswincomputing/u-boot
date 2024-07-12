@@ -43,6 +43,31 @@ int eswin_umbox_service_send(struct udevice* dev, u8* data)
 	return ret;
 }
 
+int eswin_umbox_service_send_lpcpu(struct udevice* dev, u8* data)
+{
+	int ret = 0;
+
+    struct eswin_umbox_srvc *sbmt = dev_get_priv(dev);
+
+    // if (WARN_ON(!data))
+    //     return -EINVAL;
+
+    ret = mbox_send(&sbmt->chan, (void*) data);  // call eswin_umbox_send
+
+	if (ret)
+		printk("eswin_umbox_srvc_send:ServiceSessionSendReq/Res failed.\r\n");
+	return ret;
+}
+
+int lpcpu_misc_func(void)
+{
+	struct udevice *dev;
+	uclass_get_device_by_name(UCLASS_MISC, "mbox_srvc1@d0", &dev);
+	eswin_umbox_service_get(dev);
+
+	return 0;
+}
+
 int eswin_umbox_service_recv(struct udevice* dev, uint32_t* msg)
 {
 	int ret = 0;

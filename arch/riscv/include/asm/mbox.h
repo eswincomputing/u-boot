@@ -14,6 +14,7 @@ struct udevice;
 
 int eswin_umbox_service_get(struct udevice *dev);
 int eswin_umbox_service_send(struct udevice *dev, u8*data);
+int eswin_umbox_service_send_lpcpu(struct udevice* dev, u8* data);
 int eswin_umbox_service_recv(struct udevice *dev, uint32_t *msg);
 int eswin_umbox_service_free(struct udevice *dev);
 

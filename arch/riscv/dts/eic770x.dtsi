@@ -300,10 +300,25 @@
 			interrupt-parent = <&plic0>;
 			interrupts = <8>;
 		};
+		d0_mbox1: mbox@0x50a20000 {
+			status = "disabled";
+			compatible = "eswin,lpcpu";
+			memory-region = <&lpcpu_reserved>;
+			#mbox-cells = <1>;
+			reg = <0 0x50a20000 0 0x10000>,<0 0x50a30000 0 0x10000>;
+			interrupt-parent = <&plic0>;
+			interrupts = <8>;
+		};
 		d0_mbox_srvc: mbox_srvc@d0 {
 			status = "disabled";
 			compatible = "eswin,mbox-srvc";
 			mboxes = <&d0_mbox 0>, <&d0_mbox 1>;
+			mbox-names = "tx", "rx";
+		};
+		d0_mbox_srvc1: mbox_srvc1@d0 {
+			status = "disabled";
+			compatible = "eswin,mbox-srvc";
+			mboxes = <&d0_mbox1 0>, <&d0_mbox1 1>;
 			mbox-names = "tx", "rx";
 		};
 

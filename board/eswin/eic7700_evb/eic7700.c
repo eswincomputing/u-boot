@@ -30,6 +30,9 @@
 #include <net.h>
 #include <stdlib.h>
 #include <init.h>
+#ifdef CONFIG_ESWIN_UMBOX
+#include <eswin/eswin-umbox-srvc.h>
+#endif
 
 #define EMMC_MAC_SIZE 6
 #define DTB_MAC_SIZE 20
@@ -239,5 +242,8 @@ int board_init(void)
 
 int board_late_init(void)
 {
+#ifdef CONFIG_ESWIN_UMBOX
+	lpcpu_misc_func();
+#endif
 	return 0;
 }

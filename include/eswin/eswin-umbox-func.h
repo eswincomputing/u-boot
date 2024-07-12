@@ -24,5 +24,6 @@ extern int Fill_RES_DATA_DOMAIN_T(RES_DATA_DOMAIN_T* pResData,SRVC_TYPE SerType)
 extern int Fill_RData( REGISTER_DATA_T* pRegData,struct mbox_chan *chan,u8* pIpcAddr);
 extern bool IsChanBusy(struct eswin_umbox *umbox, struct mbox_chan *chan);
 extern void TriggerRemoteIrq(struct eswin_umbox *umbox);
+extern void TriggerRemoteIrqLpcpu(struct eswin_umbox *umbox);
 
 #endif //__ESWIN_IPC_FUNC_H__

@@ -119,6 +119,12 @@ void TriggerRemoteIrq(struct eswin_umbox *umbox)
     writel(BIT(dst_irq), umbox->tx_base + REG_MB_INT);
 }
 
+void TriggerRemoteIrqLpcpu(struct eswin_umbox *umbox)
+{
+    unsigned int dst_irq = 2;
+    writel(BIT(dst_irq), umbox->tx_base + REG_MB_INT);
+}
+
 bool IsChanBusy(struct eswin_umbox *umbox, struct mbox_chan *chan)
 {
     u32 dwInVal, dwOutVal;

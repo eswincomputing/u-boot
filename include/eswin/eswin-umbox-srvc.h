@@ -19,4 +19,5 @@ struct eswin_umbox_srvc {
 extern int ServiceSessionSendReq(struct udevice *dev, REQ_SRVC_T *pReqData);
 extern void DbgPrintSerDataU84(MSG_SEND_T *msg_t);
 extern void DbgPrintSerDataE21(MSG_RECV_T *msg_t);
+extern int lpcpu_misc_func(void);
 #endif
