@@ -22,7 +22,7 @@
 
 #define MMC_ENV \
     "emmc_dev=0\0" \
-    "partitions=name=misc,start=1MiB,size=100KiB;name=env,size=10KiB;name=boot,size=100MiB;name=rootfs,size=30GiB;name=userdata,size=-;\0" \
+    "partitions=name=misc,start=1MiB,size=512KiB;name=env,size=512KiB;name=boot,size=100MiB;name=rootfs,size=30GiB;name=userdata,size=-;\0" \
     "gpt_partition=gpt write mmc ${emmc_dev} $partitions\0" \
     "mmcroot=/dev/mmcblk0p4 rootfstype=ext4 rootwait\0" \
     "loadimage=fatload mmc 0#boot 0x90000000 fitimage\0"

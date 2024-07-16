@@ -32,7 +32,7 @@
 #include <system_update.h>
 #include <boot_ab.h>
 #include <cpu_func.h>
-
+#include <lmb.h>
 #include <dm.h>
 #include <spi.h>
 #include <spi_flash.h>
@@ -83,6 +83,22 @@ static struct entry_head_info_t fw_head_info[MAX_FW_NUM];
 static struct blk_desc *mmc_dev_desc;
 static struct disk_partition bootchain_part_info;
 static struct disk_partition misc_part_info;
+
+
+static int esburn_init_load_addr(uint64_t addr, uint64_t size)
+{
+#ifdef CONFIG_LMB
+	struct lmb lmb;
+	phys_size_t max_size;
+
+	lmb_init_and_reserve(&lmb, gd->bd, (void *)gd->fdt_blob);
+
+	max_size = lmb_get_free_size(&lmb, addr);
+	if (!max_size || max_size < size)
+		return -1;
+#endif
+	return 0;
+}
 
 /******************************emmc*********************************************/
 static int emmc_dev_get(void)
@@ -209,7 +225,7 @@ static int es_spi_flash_erase(uint64_t offset, uint64_t size)
 	debug_printf("offset : %llx, size %llx\n",offset, size);
 
 	package_blk = DIV_ROUND_UP(total_size, BOOTCHAIN_PACKAGE_SIZE);  /* blkcnt */
-	printf("Erase progress: %3lld%:\r", 0);
+	printf("Erase progress: %3d%:\r", 0);
 	for(int i = 0;i < package_blk; i++) {
 		if(total_size > BOOTCHAIN_PACKAGE_SIZE)
 		{
@@ -229,7 +245,7 @@ static int es_spi_flash_erase(uint64_t offset, uint64_t size)
 			break;
 	}
 	if(!ret) {
-		printf("Erase progress: %3lld%:", 100);
+		printf("Erase progress: %3d%:", 100);
 		for(int j = 0; j < 100/2; j ++)
 			printf("%s","+");
 		printf("\r\n");
@@ -740,9 +756,17 @@ static int do_kernel_write(int argc, char *const argv[])
 	const char *filename;
 	int32_t ret = 0;
 
+	if (argc < 3)
+		return -ENXIO;
 
 	addr = simple_strtoul(argv[1], NULL, 16);
 	len = simple_strtoul(argv[2], NULL, 16);
+
+	if(esburn_init_load_addr(addr, len)) {
+		puts("\nes_burn error: ");
+		puts("trying to overwrite reserved memory...\n");
+		return -ENXIO;
+	}
 
 	if (strcmp(argv[3], "emmc") == 0) {
 		flash_stg = 1;
@@ -839,8 +863,17 @@ static int do_rootfs_write(int argc, char *const argv[])
 	struct disk_partition rootfs_part_info;
 	int block = 1;
 
+	if (argc < 3)
+		return -ENXIO;
+
 	addr = simple_strtoul(argv[1], NULL, 16);
 	size = simple_strtoul(argv[2], NULL, 16);
+
+	if(esburn_init_load_addr(addr, size)) {
+		puts("\nes_burn error: ");
+		puts("trying to overwrite reserved memory...\n");
+		return -ENXIO;
+	}
 
 	if (strcmp(argv[3], "emmc") == 0) {
 		flash_stg = 1;
@@ -876,7 +909,7 @@ static int do_rootfs_write(int argc, char *const argv[])
 	for(int i = 0;i < cycle_index; i++) {
 		currentIndex = i / 2;
 		ret = blk_dwrite(mmc_dev_desc, rootfs_part_info.start + i * package_blk, package_blk, (void __iomem *)(addr + i * package_blk * rootfs_part_info.blksz));
-		printf("Write progress: %3lld%:", i);
+		printf("Write progress: %3d%:", i);
 		for(int col = 0; col < currentIndex; col++) {
 			printf("%s","+");
 		}
@@ -895,7 +928,7 @@ static int do_rootfs_write(int argc, char *const argv[])
 	if(last_blk)
 	{
 		ret = blk_dwrite(mmc_dev_desc, rootfs_part_info.start + cycle_index * cycle_index, last_blk, (void __iomem *)(addr + cycle_index * package_blk * rootfs_part_info.blksz));
-		printf("Write progress: %3lld%:", 100);
+		printf("Write progress: %3d%:", 100);
 		for(int j = 0; j < 100/2; j ++)
 			printf("%s","+");
 		printf("\r\n");
@@ -936,6 +969,156 @@ out:
 	return ret;
 
 }
+
+static int do_boot_write(int argc, char *const argv[])
+{
+
+	uint64_t addr, size, cnt;
+	uint64_t package_blk, last_blk = 0, cycle_index, currentIndex = 0;
+	int32_t ret = 0;
+	const char *dev_part_str;
+	struct disk_partition rootfs_part_info;
+	int block = 1;
+
+	if (argc < 3)
+		return -ENXIO;
+
+	addr = simple_strtoul(argv[1], NULL, 16);
+	size = simple_strtoul(argv[2], NULL, 16);
+
+	if(esburn_init_load_addr(addr, size)) {
+		puts("\nes_burn error: ");
+		puts("trying to overwrite reserved memory...\n");
+		return -ENXIO;
+	}
+
+	if (strcmp(argv[3], "emmc") == 0) {
+		flash_stg = 1;
+	}else{
+		printf("arguments : The rootfs can only be written to emmc!\r\n");
+		return -ENXIO;
+	}
+
+	/* addr blk cnt */
+	dev_part_str = UPDATE_BOOTA_DEV_PART;  /* "rootfsa" */
+
+	if (part_get_info_by_dev_and_name_or_num(MMC_DEV_IFACE, dev_part_str,
+				&mmc_dev_desc, &rootfs_part_info,true) < 0) {
+		printf("UPDATE: Get information of rootfs partition failed!\r\n");
+		return -ENOENT;
+	}
+
+	cnt = DIV_ROUND_UP(size, rootfs_part_info.blksz);  /* blkcnt */
+	if(cnt % 100) {
+		package_blk = cnt/100;
+		last_blk = package_blk + cnt % 100;
+		cycle_index = 99;
+	}
+	else {
+		package_blk = cnt/100;
+		cycle_index = 100;
+	}
+	printf("Write progress: %3d%:\r", 0);
+	for(int i = 0;i < cycle_index; i++) {
+		currentIndex = i / 2;
+		ret = blk_dwrite(mmc_dev_desc, rootfs_part_info.start + i * package_blk, package_blk, (void __iomem *)(addr + i * package_blk * rootfs_part_info.blksz));
+		printf("Write progress: %3d%:", i);
+		for(int col = 0; col < currentIndex; col++) {
+			printf("%s","+");
+		}
+		printf("\r");
+	}
+	if(last_blk)
+	{
+		ret = blk_dwrite(mmc_dev_desc, rootfs_part_info.start + cycle_index * cycle_index, last_blk, (void __iomem *)(addr + cycle_index * package_blk * rootfs_part_info.blksz));
+		printf("Write progress: %3d%:", 100);
+		for(int j = 0; j < 100/2; j ++)
+			printf("%s","+");
+		printf("\r\n");
+	}
+	else {
+		printf("\r\n");
+	}
+	printf("boot has been successfully writen in %s\r\n", dev_part_str);
+	return 0;
+
+}
+
+static int do_root_write(int argc, char *const argv[])
+{
+
+	uint64_t addr, size, cnt;
+	uint64_t package_blk, last_blk = 0, cycle_index, currentIndex = 0;
+	int32_t ret = 0;
+	const char *dev_part_str;
+	struct disk_partition rootfs_part_info;
+	int block = 1;
+
+	if (argc < 3)
+		return -ENXIO;
+
+	addr = simple_strtoul(argv[1], NULL, 16);
+	size = simple_strtoul(argv[2], NULL, 16);
+
+	if(esburn_init_load_addr(addr, size)) {
+		puts("\nes_burn error: ");
+		puts("trying to overwrite reserved memory...\n");
+		return -ENXIO;
+	}
+
+	if (strcmp(argv[3], "emmc") == 0) {
+		flash_stg = 1;
+	}else{
+		printf("arguments : The rootfs can only be written to emmc!\r\n");
+		return -ENXIO;
+	}
+
+	/* addr blk cnt */
+	dev_part_str = UPDATE_ROOT_DEV_PART;  /* "root" */
+
+	if (part_get_info_by_dev_and_name_or_num(MMC_DEV_IFACE, dev_part_str,
+				&mmc_dev_desc, &rootfs_part_info,true) < 0) {
+		printf("UPDATE: Get information of rootfs partition failed!\r\n");
+		return -ENOENT;
+	}
+
+	cnt = DIV_ROUND_UP(size, rootfs_part_info.blksz);  /* blkcnt */
+	if(cnt % 100) {
+		package_blk = cnt/100;
+		last_blk = package_blk + cnt % 100;
+		cycle_index = 99;
+	}
+	else {
+		package_blk = cnt/100;
+		cycle_index = 100;
+	}
+	printf("Write progress: %3d%:\r", 0);
+
+	for(int i = 0;i < cycle_index; i++) {
+		currentIndex = i / 2;
+		ret = blk_dwrite(mmc_dev_desc, rootfs_part_info.start + i * package_blk, package_blk, (void __iomem *)(addr + i * package_blk * rootfs_part_info.blksz));
+		printf("Write progress: %3d%:", i);
+		for(int col = 0; col < currentIndex; col++) {
+			printf("%s","+");
+		}
+		printf("\r");
+	}
+	if(last_blk)
+	{
+		ret = blk_dwrite(mmc_dev_desc, rootfs_part_info.start + cycle_index * cycle_index, last_blk, (void __iomem *)(addr + cycle_index * package_blk * rootfs_part_info.blksz));
+		printf("Write progress: %3d%:", 100);
+		for(int j = 0; j < 100/2; j ++)
+			printf("%s","+");
+		printf("\r\n");
+	}
+	else{
+		printf("\r\n");
+	}
+
+	printf("root has been successfully writen in %s\r\n", dev_part_str);
+	return 0;
+}
+
 static int do_esburn_bootchain(struct cmd_tbl *cmdtp, int flag, int argc,
 			char *const argv[])
 {
@@ -964,6 +1147,10 @@ static int do_esburn_bootchain(struct cmd_tbl *cmdtp, int flag, int argc,
 		ret = do_kernel_write(argc, argv);
 	else if (strcmp(cmd, "wrootfs") == 0)
 		ret = do_rootfs_write(argc, argv);
+	else if (strcmp(cmd, "wboot") == 0)
+		ret = do_boot_write(argc, argv);
+	else if (strcmp(cmd, "wroot") == 0)
+		ret = do_root_write(argc, argv);
 	else
 		ret = -1;
 
@@ -980,6 +1167,8 @@ U_BOOT_CMD(
 	"es_burn read fw_type addr flash_stg	- read firmware who type is 'fw_type' from mtd 'flash_stg', to memory at `addr'\n"
 	"es_burn write addr flash_stg	- write binary file from memory at `addr' to mtd\n"
 	"es_burn erase fw_type flash_stg	- erase binary file who type is 'fw_type' from 'flash_stg'\n"
-	"es_burn wkernel addr len flash_stg	- write binary file from memory at `addr' to mtd 'flash_stg'\n"
-	"es_burn wrootfs addr len flash_stg	- write binary file from memory at `addr' to mtd 'flash_stg'\n"
+	"es_burn wkernel addr len flash_stg	- write fitimage binary file from memory at `addr' to mtd 'flash_stg'\n"
+	"es_burn wrootfs addr len flash_stg	- write rootfs binary file from memory at `addr' to mtd 'flash_stg'\n"
+	"es_burn wboot addr len flash_stg	- write debian boot binary file from memory at `addr' to mtd 'flash_stg'\n"
+	"es_burn wroot addr len flash_stg	- write debian root binary file from memory at `addr' to mtd 'flash_stg'\n"
 );

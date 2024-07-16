@@ -31,6 +31,7 @@
 #else
 #define UPDATE_BOOTA_DEV_PART    "0#boot"
 #define UPDATE_ROOTFSA_DEV_PART  "0#rootfs"
+#define UPDATE_ROOT_DEV_PART  "0#root"
 #define MISC_DEV_PART            "0#misc"
 #define BOOTCHAIN_DEV_PART       "0#bootchain"
 #define USERDATA_DEV_PART        "0#userdata"
