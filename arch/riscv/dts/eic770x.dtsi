@@ -606,13 +606,6 @@
 				snps,phyif-utmi-bits = <16>;
 				snps,dis-u2-freeclk-exists-quirk;
 				snps,dis-u2-susphy-quirk;
-
-				#address-cells = <2>;
-				#size-cells = <2>;
-				hub {
-					  compatible = "usb-hub";
-					  usb,device-class = <USB_CLASS_HUB>;
-				};
 		};
 		hdmi: hdmi@502a0000 {
 			compatible = "eswin,eswin-dw-hdmi";

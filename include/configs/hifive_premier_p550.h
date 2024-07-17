@@ -43,6 +43,9 @@
     "pxefile_addr_r=0x88200000\0" \
     "ramdisk_addr_r=0x88300000\0" \
     MMC_ENV \
+    "stdin=serial,usbkbd\0" \
+    "stderr=serial,vidconsole\0" \
+    "stdout=serial,vidconsole\0" \
     "bootusb=echo Not usb_update!\0" \
     "mmcargs=setenv bootargs root=${mmcroot}\0" \
     "addargs=setenv bootargs ${bootargs} video=mxcfb1\0" \
@@ -62,6 +65,9 @@
     "pxefile_addr_r=0x88200000\0" \
     "ramdisk_addr_r=0x88300000\0" \
     SATA_ENV \
+    "stdin=serial,usbkbd\0" \
+    "stderr=serial,vidconsole\0" \
+    "stdout=serial,vidconsole\0" \
     "sataboot=echo Booting from sata ...;" \
             "run sata_init; " \
             "run loadimage\0" \
@@ -78,6 +84,9 @@
     "pxefile_addr_r=0x88200000\0" \
     "ramdisk_addr_r=0x88300000\0" \
     MMC_ENV \
+    "stdin=serial,usbkbd\0" \
+    "stderr=serial,vidconsole\0" \
+    "stdout=serial,vidconsole\0" \
     "serverip="CONFIG_TFTP_SERVERIP"\0" \
     "nfsargs=setenv bootargs root=/dev/nfs init=/linuxrc ip=dhcp nfsroot="CONFIG_ROOTFS_NFS_PATH"/${board_info}/rootfs,proto=tcp,nfsvers=3,nolock\0" \
     "setimageload=setenv loadimage dhcp 0x90000000 ${board_info}/fitImage\0" \

@@ -37,8 +37,10 @@
     "partitions=name=misc,start=1MiB,size=512KiB;name=env,size=512KiB;name=vendor,size=1MiB;name=boot,start=5MiB,size=500MiB,type=boot;name=swap,size=4096MiB,type=swap,uuid=${uuid_swap};name=root,size=-,type=linux,uuid=${uuid_rootfsA}\0" \
     "gpt_partition=gpt write mmc ${emmc_dev} $partitions\0" \
     "emmc_dev=0\0" \
-    "boot_conf_file=/extlinux/extlinux.conf\0" 
-
+    "boot_conf_file=/extlinux/extlinux.conf\0" \
+    "stdin=serial,usbkbd\0" \
+    "stderr=serial,vidconsole\0" \
+    "stdout=serial,vidconsole\0"
     //BOOTENV
 #undef CONFIG_BOOTCOMMAND
 
