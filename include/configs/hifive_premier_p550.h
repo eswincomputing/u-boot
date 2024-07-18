@@ -20,6 +20,20 @@
 
 #include <config_distro_bootcmd.h>
 
+#define COMMON_ENV \
+    "fdt_high=0xffffffffffffffff\0" \
+    "initrd_high=0xffffffffffffffff\0" \
+    "kernel_addr_r=0x84000000\0" \
+    "fdt_addr_r=0x88000000\0" \
+    "scriptaddr=0x88100000\0" \
+    "pxefile_addr_r=0x88200000\0" \
+    "ramdisk_addr_r=0x88300000\0" \
+    "stdin=serial,usbkbd\0" \
+    "stderr=serial,vidconsole\0" \
+    "stdout=serial,vidconsole\0" \
+    "kernel_comp_addr_r=0x180000000\0" \
+    "kernel_comp_size=0x4000000\0"
+
 #define MMC_ENV \
     "emmc_dev=0\0" \
     "partitions=name=misc,start=1MiB,size=512KiB;name=env,size=512KiB;name=boot,size=100MiB;name=rootfs,size=30GiB;name=userdata,size=-;\0" \
@@ -35,17 +49,8 @@
 #ifndef CONFIG_BOOT_SATA
 #define CFG_EXTRA_ENV_SETTINGS \
     "bootdelay=2\0" \
-    "fdt_high=0xffffffffffffffff\0" \
-    "initrd_high=0xffffffffffffffff\0" \
-    "kernel_addr_r=0x84000000\0" \
-    "fdt_addr_r=0x88000000\0" \
-    "scriptaddr=0x88100000\0" \
-    "pxefile_addr_r=0x88200000\0" \
-    "ramdisk_addr_r=0x88300000\0" \
+    COMMON_ENV \
     MMC_ENV \
-    "stdin=serial,usbkbd\0" \
-    "stderr=serial,vidconsole\0" \
-    "stdout=serial,vidconsole\0" \
     "bootusb=echo Not usb_update!\0" \
     "mmcargs=setenv bootargs root=${mmcroot}\0" \
     "addargs=setenv bootargs ${bootargs} video=mxcfb1\0" \
@@ -57,17 +62,8 @@
 #else
 #define CFG_EXTRA_ENV_SETTINGS \
     "bootdelay=2\0" \
-    "fdt_high=0xffffffffffffffff\0" \
-    "initrd_high=0xffffffffffffffff\0" \
-    "kernel_addr_r=0x84000000\0" \
-    "fdt_addr_r=0x88000000\0" \
-    "scriptaddr=0x88100000\0" \
-    "pxefile_addr_r=0x88200000\0" \
-    "ramdisk_addr_r=0x88300000\0" \
+    COMMON_ENV \
     SATA_ENV \
-    "stdin=serial,usbkbd\0" \
-    "stderr=serial,vidconsole\0" \
-    "stdout=serial,vidconsole\0" \
     "sataboot=echo Booting from sata ...;" \
             "run sata_init; " \
             "run loadimage\0" \
@@ -76,17 +72,8 @@
 #else
 #define CFG_EXTRA_ENV_SETTINGS \
     "bootdelay=2\0" \
-    "fdt_high=0xffffffffffffffff\0" \
-    "initrd_high=0xffffffffffffffff\0" \
-    "kernel_addr_r=0x84000000\0" \
-    "fdt_addr_r=0x88000000\0" \
-    "scriptaddr=0x88100000\0" \
-    "pxefile_addr_r=0x88200000\0" \
-    "ramdisk_addr_r=0x88300000\0" \
+    COMMON_ENV \
     MMC_ENV \
-    "stdin=serial,usbkbd\0" \
-    "stderr=serial,vidconsole\0" \
-    "stdout=serial,vidconsole\0" \
     "serverip="CONFIG_TFTP_SERVERIP"\0" \
     "nfsargs=setenv bootargs root=/dev/nfs init=/linuxrc ip=dhcp nfsroot="CONFIG_ROOTFS_NFS_PATH"/${board_info}/rootfs,proto=tcp,nfsvers=3,nolock\0" \
     "setimageload=setenv loadimage dhcp 0x90000000 ${board_info}/fitImage\0" \
@@ -113,12 +100,5 @@
     "run nfsboot;" \
     "run bootkernel;"
 #endif /* !CONFIG_BOOT_NFS */
-
-#undef CONFIG_PREBOOT
-#define CONFIG_PREBOOT \
-    "setenv fdt_addr ${fdtcontroladdr};" \
-    "fdt addr ${fdtcontroladdr};" \
-    "usb start;"
-
 
 #endif /* __CONFIG_H */

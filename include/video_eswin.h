@@ -18,7 +18,7 @@
 #endif
 
 #define MEMORY_POOL_SIZE        32 * 1024 * 1024
-#define DRM_ESWIN_FB_BUF        (0xa0000000)
+#define DRM_ESWIN_FB_BUF        (0xe0000000)
 #define DRM_ESWIN_FB_SIZE \
         VNBYTES(DRM_ESWIN_FB_BPP) * DRM_ESWIN_FB_WIDTH * DRM_ESWIN_FB_HEIGHT
 
