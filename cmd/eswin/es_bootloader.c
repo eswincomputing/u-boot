@@ -256,7 +256,7 @@ static int es_spi_flash_erase(uint64_t offset, uint64_t size)
 	return ret == 0 ? 0 : 1;
 }
 
-static int norflash_read_bootchain(uint64_t dst_addr, uint64_t offset, uint64_t size)
+int norflash_read_bootchain(uint64_t dst_addr, uint64_t offset, uint64_t size)
 {
 	int ret = 1;
 	/* Consistency checking */
@@ -295,7 +295,7 @@ static int norflash_write_bootchain(uint64_t src_addr, uint64_t offset, uint64_t
 
 	package_blk = DIV_ROUND_UP(size, BOOTCHAIN_PACKAGE_SIZE); 
 	total_size = size;
-	printf("Write progress: %3lld%:\r", 0);
+	printf("Write progress: %3d%:\r", 0);
 	for(int i = 0;i < package_blk; i++) {
 		if(total_size > BOOTCHAIN_PACKAGE_SIZE)
 		{
@@ -317,7 +317,7 @@ static int norflash_write_bootchain(uint64_t src_addr, uint64_t offset, uint64_t
 	}
 
 	if(!ret) {
-		printf("Write progress: %3lld%:", 100);
+		printf("Write progress: %3d%:", 100);
 		for(int j = 0; j < 100/2; j ++)
 			printf("%s","+");
 		printf("\r\n");
@@ -927,11 +927,8 @@ static int do_rootfs_write(int argc, char *const argv[])
 	}
 	if(last_blk)
 	{
-		ret = blk_dwrite(mmc_dev_desc, rootfs_part_info.start + cycle_index * cycle_index, last_blk, (void __iomem *)(addr + cycle_index * package_blk * rootfs_part_info.blksz));
-		printf("Write progress: %3d%:", 100);
-		for(int j = 0; j < 100/2; j ++)
-			printf("%s","+");
-		printf("\r\n");
+		ret = blk_dwrite(mmc_dev_desc, rootfs_part_info.start + cycle_index * package_blk, last_blk, (void __iomem *)(addr + cycle_index * package_blk * rootfs_part_info.blksz));
+
 		if(ret != last_blk){
 		/*TODO*/
 		#ifdef CONFIG_SYSTEM_UPDATE_C
@@ -943,9 +940,10 @@ static int do_rootfs_write(int argc, char *const argv[])
 			goto out;
 		}
 	}
-	else{
-		printf("\r\n");
-	}
+	printf("Write progress: %3d%:", 100);
+	for(int j = 0; j < 100/2; j ++)
+		printf("%s","+");
+	printf("\r\n");
 
 	bank->rootfs_version = 0;
 	abc->rtfs_bank = 0;
@@ -1030,15 +1028,13 @@ static int do_boot_write(int argc, char *const argv[])
 	}
 	if(last_blk)
 	{
-		ret = blk_dwrite(mmc_dev_desc, rootfs_part_info.start + cycle_index * cycle_index, last_blk, (void __iomem *)(addr + cycle_index * package_blk * rootfs_part_info.blksz));
-		printf("Write progress: %3d%:", 100);
-		for(int j = 0; j < 100/2; j ++)
-			printf("%s","+");
-		printf("\r\n");
+		ret = blk_dwrite(mmc_dev_desc, rootfs_part_info.start + cycle_index * package_blk, last_blk, (void __iomem *)(addr + cycle_index * package_blk * rootfs_part_info.blksz));
+
 	}
-	else {
-		printf("\r\n");
-	}
+	printf("Write progress: %3d%:", 100);
+	for(int j = 0; j < 100/2; j ++)
+		printf("%s","+");
+	printf("\r\n");
 	printf("boot has been successfully writen in %s\r\n", dev_part_str);
 	return 0;
 
@@ -1105,17 +1101,36 @@ static int do_root_write(int argc, char *const argv[])
 	}
 	if(last_blk)
 	{
-		ret = blk_dwrite(mmc_dev_desc, rootfs_part_info.start + cycle_index * cycle_index, last_blk, (void __iomem *)(addr + cycle_index * package_blk * rootfs_part_info.blksz));
-		printf("Write progress: %3d%:", 100);
-		for(int j = 0; j < 100/2; j ++)
-			printf("%s","+");
-		printf("\r\n");
+		ret = blk_dwrite(mmc_dev_desc, rootfs_part_info.start + cycle_index * package_blk, last_blk, (void __iomem *)(addr + cycle_index * package_blk * rootfs_part_info.blksz));
 	}
-	else{
-		printf("\r\n");
-	}
+	printf("Write progress: %3d%:", 100);
+	for(int j = 0; j < 100/2; j ++)
+		printf("%s","+");
+	printf("\r\n");
 
 	printf("root has been successfully writen in %s\r\n", dev_part_str);
+	return 0;
+}
+
+static int do_vendor_write(int argc, char *const argv[])
+{
+	int32_t ret = 0;
+
+	uint64_t fw_addr = simple_strtoul(argv[1], NULL, 16);
+	debug_printf("fw_addr 0x%llx\r\n", fw_addr);
+
+	ret = es_spi_flash_probe();
+	if(ret < 0)
+		return -ENOENT;
+
+	struct vendor_info_t *vendor_info = (struct vendor_info_t *) fw_addr;
+	if(vendor_info->magic != VENDOR_MAGIC)
+		return -ENOENT;
+
+	ret = norflash_write_bootchain((uint64_t)&vendor_info->magic, VENDER_OFFSET, VENDER_SIZE);
+	if(ret)
+		return -1;
+	printf("vendor info wirte OK\r\n");
 	return 0;
 }
 
@@ -1125,8 +1140,7 @@ static int do_esburn_bootchain(struct cmd_tbl *cmdtp, int flag, int argc,
 	const char *cmd;
 	int ret;
 
-	/* need at least two arguments */
-	if (argc < 4)
+	if (argc < 3)
 		goto usage;
 
 	cmd = argv[1];
@@ -1151,6 +1165,8 @@ static int do_esburn_bootchain(struct cmd_tbl *cmdtp, int flag, int argc,
 		ret = do_boot_write(argc, argv);
 	else if (strcmp(cmd, "wroot") == 0)
 		ret = do_root_write(argc, argv);
+	else if (strcmp(cmd, "vendor") == 0)
+		ret = do_vendor_write(argc, argv);
 	else
 		ret = -1;
 
@@ -1168,7 +1184,8 @@ U_BOOT_CMD(
 	"es_burn write addr flash_stg	- write binary file from memory at `addr' to mtd\n"
 	"es_burn erase fw_type flash_stg	- erase binary file who type is 'fw_type' from 'flash_stg'\n"
 	"es_burn wkernel addr len flash_stg	- write fitimage binary file from memory at `addr' to mtd 'flash_stg'\n"
-	"es_burn wrootfs addr len flash_stg	- write rootfs binary file from memory at `addr' to mtd 'flash_stg'\n"
-	"es_burn wboot addr len flash_stg	- write debian boot binary file from memory at `addr' to mtd 'flash_stg'\n"
-	"es_burn wroot addr len flash_stg	- write debian root binary file from memory at `addr' to mtd 'flash_stg'\n"
+	"es_burn wrootfs addr len flash_stg	- write rootfs filesystem binary file from memory at `addr' to mtd 'flash_stg'\n"
+	"es_burn wboot addr len flash_stg	- write bootmenu mode boot filesystem binary file from memory at `addr' to mtd 'flash_stg'\n"
+	"es_burn wroot addr len flash_stg	- write bootmenu mode root filesystem binary file from memory at `addr' to mtd 'flash_stg'\n"
+	"es_burn vendor addr	- write vendor info binary file from memory at `addr' to flash\n"
 );

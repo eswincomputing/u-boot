@@ -8,6 +8,7 @@
 #define __UPDATE_INIT_H_
 
 #define FHT_MAGIC                0x42575345
+#define VENDOR_MAGIC             0x44565345
 #define SIGN_MAGIC               0x575345bb
 #define BOOTMESS_MAGIC           0x10101010
 #define BOOTBANK_MAGIC           0x10101010
@@ -19,6 +20,25 @@
 
 #define MMC_DEV                  0
 #define PART_MISC                "misc"
+
+struct item_t {
+        uint32_t id;
+        uint32_t offset;
+        uint32_t size;
+        uint32_t flag;
+};
+
+struct vendor_info_t {
+        uint32_t magic;
+        uint32_t version;
+        uint32_t total_item;
+        uint32_t free_offset;
+        uint32_t free_size;
+        struct item_t item[0];
+};
+
+#define VENDER_SIZE   0x100000
+#define VENDER_OFFSET 0xF00000
 
 #if defined(CONFIG_SYSTEM_UPDATE_B) || defined(CONFIG_SYSTEM_UPDATE_C)
 #define UPDATE_BOOTA_DEV_PART    "0#boota"
