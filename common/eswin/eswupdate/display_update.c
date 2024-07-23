@@ -25,6 +25,7 @@
 #include <mmc.h>
 #include "../../../drivers/mini_graphic_library/mglib_driver.h"
 #include "../../../drivers/mini_graphic_library/mglib_api.h"
+#include "update_init.h"
 
 #ifdef CONFIG_DRM_ESWIN_DW_HDMI
 #define X_AXIS       400
@@ -44,7 +45,7 @@ int draw_progressBar(u16 percentage)
     err_no ret = RET_OK;
     osdInfo = eswin_mgl_get_osdBuf(OSDLAYER1);
 
-    u32 progressBar_x = X_AXIS;
+    u32 progressBar_x = (osdInfo.resolution.w - BAR_WIDTH)/2;
     u32 progressBar_y = Y_AXIS;
     u32 progressBar_w = BAR_WIDTH;
     u32 progressBar_h = BAR_HEIGHT;
@@ -111,6 +112,7 @@ int draw_updateinfo(u32 textBar_x, u32 textBar_y, char* versionInfo_text)
     TEXTBAR_S* textBar = NULL;
     u32 textBar_w = BAR_WIDTH;
     u32 textBar_h = BAR_HEIGHT;
+    textBar_x = (osdInfo.resolution.w - textBar_w) / 2;
 
     ret = eswin_mgl_create_textbar(&textBar, textBar_x, textBar_y, textBar_w, textBar_h, SYSTEM_WHITE_COLOR, osdInfo.osdBuf);
     if(ret){

@@ -50,9 +50,10 @@ config DRM_ESWIN_RGB
 	  Choose this option to enable support for Eswin RGB driver.
 	  say Y to enable its driver.
 
-config XILINX_ZCU102_PHY
-	bool "Eswin HDMI XILINX_ZCU102_PHY Support"
+config ESWIN_LOGO_DISPLAY
+	bool "Display ESWIN logo instead of vidconsole"
 	depends on DRM_ESWIN
 	help
-	  Choose this option to enable support for Eswin XILINX_ZCU102_PHY.
+	  Choose this option to display ESWIN logo instead of
+	  vidconsole even if the stdout been set to vidconsole.
 	  say Y to enable it.

@@ -305,6 +305,7 @@
     }
 
 void eswin_mipi_gpio_config(void);
+static int eswin_dw_mipi_dsi_bind(struct udevice *dev);
 
 struct eswin_dw_mipi_dsi_plat_data {
     unsigned long max_bit_rate_per_lane;
@@ -1218,9 +1219,15 @@ void eswin_mipi_gpio_config(void) {
     // unsigned int val;
     printf("mipi eswin_mipi_gpio_config reset\n");
     // mipi gpio reset
+    //evb
     writel(0x2 << 16 | 0xd, gpio_reg_base + 0xd0);
     writel(0x1u << 7, gpio_reg_base + 0x4);
     writel(0x1u << 7, gpio_reg_base + 0x0);
+
+    // evb-a2
+    // writel(0x0 << 16 | 0xd, gpio_reg_base + 0xc8);
+    // writel(0x1u << 5, gpio_reg_base + 0x4);
+    // writel(0x1u << 5, gpio_reg_base + 0x0);
 
     writel(0x0 << 16 | 0xd, gpio_reg_base + 0x2f8);
     writel(0x1u << 15, gpio_reg_base + 0x28);
@@ -1242,8 +1249,6 @@ static int eswin_dw_mipi_dsi_probe(struct udevice *dev) {
     const struct eswin_dw_mipi_dsi_plat_data *pdata = connector->data;
     int id;
 
-    printf("%s IN--\n", __FUNCTION__);
-
     dsi->base = dev_read_addr_ptr(dev);
 
     id = of_alias_get_id(ofnode_to_np(dev->node_), "dsi");
@@ -1255,6 +1260,7 @@ static int eswin_dw_mipi_dsi_probe(struct udevice *dev) {
 
     eswin_syscrg_config(1485000000);
     eswin_mipi_gpio_config();
+    eswin_dw_mipi_dsi_bind(dev);
     return 0;
 }
 
@@ -1300,7 +1306,6 @@ static const struct mipi_dsi_host_ops eswin_dw_mipi_dsi_host_ops = {
 static int eswin_dw_mipi_dsi_bind(struct udevice *dev) {
     struct mipi_dsi_host *host = dev_get_plat(dev);
 
-    printf("%s IN--\n", __FUNCTION__);
     host->dev = dev;
     host->ops = &eswin_dw_mipi_dsi_host_ops;
 
@@ -1311,8 +1316,6 @@ static int eswin_dw_mipi_dsi_child_post_bind(struct udevice *dev) {
     struct mipi_dsi_host *host = dev_get_plat(dev->parent);
     struct mipi_dsi_device *device = dev_get_parent_plat(dev);
     char name[20];
-
-     printf("%s IN--\n", __FUNCTION__);
 
     sprintf(name, "%s.%d", host->dev->name, device->channel);
     device_set_name(dev, name);
@@ -1347,11 +1350,9 @@ U_BOOT_DRIVER(eswin_dw_mipi_dsi) = {
     .id = UCLASS_DISPLAY,
     .of_match = eswin_dw_mipi_dsi_ids,
     .probe = eswin_dw_mipi_dsi_probe,
-    .bind = eswin_dw_mipi_dsi_bind,
     .priv_auto = sizeof(struct eswin_dw_mipi_dsi),
     .per_child_plat_auto = sizeof(struct mipi_dsi_device),
     .plat_auto = sizeof(struct mipi_dsi_host),
     .child_post_bind = eswin_dw_mipi_dsi_child_post_bind,
     .child_pre_probe = eswin_dw_mipi_dsi_child_pre_probe,
 };
-

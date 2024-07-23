@@ -32,31 +32,19 @@
 extern const unsigned char* font24x24zk_table[];
 extern const unsigned char* font12x24ascii_table[];
 extern const unsigned char* font24x24zk_code;
-#ifdef CONFIG_DRM_ESWIN_DW_HDMI
+
 RESOLUTION_S gResolution_Layer1 =
 {
-    .w = 1280,
-    .h = 720
+    .w = DRM_ESWIN_FB_WIDTH,
+    .h = DRM_ESWIN_FB_HEIGHT
 };
 
 RESOLUTION_S gResolution_Layer2 =
 {
-    .w = 1280,
-    .h = 720
-};
-#else
-RESOLUTION_S gResolution_Layer1 =
-{
-    .w = 320,
-    .h = 480
+    .w = DRM_ESWIN_FB_WIDTH,
+    .h = DRM_ESWIN_FB_HEIGHT
 };
 
-RESOLUTION_S gResolution_Layer2 =
-{
-    .w = 320,
-    .h = 480
-};
-#endif
 /* layer 1 only support ARGB8888 */
 COLOR_FMT_E gColorFmt_Layer1 = ARGB8888;
 COLOR_FMT_E gColorFmt_Layer2 = ARGB8888;

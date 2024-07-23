@@ -51,8 +51,11 @@
 #include <dm.h>
 #include <dm/of_access.h>
 #include <dm/ofnode.h>
-#include "logo.h"
 #include <fs.h>
+#include "eswin_dc_reg.h"
+#ifdef CONFIG_ESWIN_LOGO_DISPLAY
+#include "logo.h"
+#endif
 
 #define DRIVER_VERSION	"v1.0.1"
 
@@ -773,12 +776,11 @@ static int display_logo(struct display_state *state)
 	struct logo_info *logo = &state->logo;
 	int hdisplay, vdisplay, ret;
 
-        if (state->is_init && crtc_state->dma_addr != 0)
-        {
-            memcpy((u32 *)(u64)crtc_state->dma_addr, logo->mem, DRM_ESWIN_FB_SIZE);
-            sifive_l3_flush64_range((unsigned long)crtc_state->dma_addr, DRM_ESWIN_FB_SIZE);
-            return 0;
-        }
+	if (state->is_init && crtc_state->dma_addr != 0)
+	{
+		sifive_l3_flush64_range((unsigned long)crtc_state->dma_addr, DRM_ESWIN_FB_SIZE);
+		return 0;
+	}
 
 	ret = display_init(state);
 	if (!state->is_init || ret)
@@ -805,7 +807,9 @@ static int display_logo(struct display_state *state)
 	crtc_state->ymirror = logo->ymirror;
 
 	crtc_state->xvir = ALIGN(crtc_state->src_w * logo->bpp, 32) >> 5;
+#ifdef CONFIG_ESWIN_LOGO_DISPLAY
 	memcpy((u32 *)(u64)crtc_state->dma_addr, logo->mem, DRM_ESWIN_FB_SIZE);
+#endif
 	sifive_l3_flush64_range((unsigned long)crtc_state->dma_addr, DRM_ESWIN_FB_SIZE);
 	debug("[%s]crtc_state->dma_addr=0x%x,logo->mem=0x%s\n", __FUNCTION__, crtc_state->dma_addr, logo->mem);
 
@@ -923,6 +927,7 @@ enum LOGO_SOURCE {
     FROM_INTERNEL
 };
 
+#ifdef CONFIG_ESWIN_LOGO_DISPLAY
 static int load_bmp_logo(struct logo_info *logo, const char *bmp_name)
 {
 	struct eswin_logo_cache *logo_cache;
@@ -1099,6 +1104,7 @@ int eswin_show_logo(int layer)
 
 	return ret;
 }
+#endif
 
 enum {
 	PORT_DIR_IN,
@@ -1299,6 +1305,7 @@ static int eswin_display_probe(struct udevice *dev)
 	data->phy_init = false;
 
 	init_display_buffer(plat->base);
+#ifdef CONFIG_ESWIN_LOGO_DISPLAY
 	logo_buf = (unsigned char *)get_display_buffer(DRM_ESWIN_FB_SIZE);
 	if(logo_buf != NULL) {
 #ifdef CONFIG_DRM_ESWIN_DW_HDMI
@@ -1307,6 +1314,7 @@ static int eswin_display_probe(struct udevice *dev)
 		memcpy(logo_buf, buf_320_480, DRM_ESWIN_FB_SIZE);   //mipi test
 #endif
 	}
+#endif
 
 	route_node = dev_read_subnode(dev, "route");
 	if (!ofnode_valid(route_node))
@@ -1403,7 +1411,11 @@ static int eswin_display_probe(struct udevice *dev)
 		s->conn_state.overscan.top_margin = 100;
 		s->conn_state.overscan.bottom_margin = 100;
 		s->crtc_state.node = np_to_ofnode(dc_node);
+#ifdef CONFIG_ESWIN_LOGO_DISPLAY
 		s->crtc_state.dma_addr = (u32)DRM_ESWIN_FB_BUF;
+#else
+		s->crtc_state.dma_addr = (u32)plat->base;
+#endif
 		s->crtc_state.dev = crtc_dev;
 		s->crtc_state.crtc = crtc;
 		s->crtc_state.crtc_id = get_crtc_id(np_to_ofnode(ep_node));
@@ -1440,7 +1452,10 @@ static int eswin_display_probe(struct udevice *dev)
 
 	uc_priv->xsize = DRM_ESWIN_FB_WIDTH;
 	uc_priv->ysize = DRM_ESWIN_FB_HEIGHT;
-	uc_priv->bpix = VIDEO_BPP32;
+	uc_priv->bpix = DRM_ESWIN_FB_BPP;
+#ifndef CONFIG_ESWIN_LOGO_DISPLAY
+	uc_priv->fb = (void *)plat->base;
+#endif
 
 	s->logo.mode = ESWIN_DISPLAY_FULLSCREEN;
 	s->layer = ESWIN_VIDEO_LAYER;
@@ -1466,6 +1481,22 @@ int eswin_display_bind(struct udevice *dev)
 	return 0;
 }
 
+#ifndef CONFIG_ESWIN_LOGO_DISPLAY
+static int eswin_display_sync(struct udevice *dev)
+{
+	struct video_uc_plat *plat = dev_get_uclass_plat(dev);
+
+	sifive_l3_flush64_range((unsigned long)plat->base, DRM_ESWIN_FB_SIZE);
+
+	return 0;
+}
+
+static const struct video_ops eswin_display_ops = {
+	.video_sync = eswin_display_sync,
+};
+#endif
+
+
 static const struct udevice_id eswin_display_ids[] = {
 	{ .compatible = "eswin,display-subsystem" },
 	{ }
@@ -1475,6 +1506,9 @@ U_BOOT_DRIVER(eswin_display) = {
 	.name	= "eswin_display",
 	.id	= UCLASS_VIDEO,
 	.of_match = eswin_display_ids,
+#ifndef CONFIG_ESWIN_LOGO_DISPLAY
+	.ops = &eswin_display_ops,
+#endif
 	.bind	= eswin_display_bind,
 	.probe	= eswin_display_probe,
 };
@@ -1505,13 +1539,22 @@ unsigned int eswin_get_fbbpp(int layer)
 
 int eswin_show_fbbase(int layer)
 {
-    struct display_state *s = NULL;;
+    struct display_state *s = NULL;
+	struct crtc_state *crtc_state = NULL;
 
     list_for_each_entry(s, &eswin_display_list, head) {
+		crtc_state = &s->crtc_state;
+		s->crtc_state.dma_addr = (u32)DRM_ESWIN_FB_BUF;
+		struct dc8000_dc *dc = crtc_state->private;
+		eswin_hw_set_framebuffer_address(dc, s->crtc_state.dma_addr);
 		s->logo.mode = ESWIN_DISPLAY_FULLSCREEN;
 		s->layer = layer;
-		argb8888_to_rgb565((unsigned char *)upgrade_buf[layer], (unsigned short *)s->logo.mem, DRM_ESWIN_FB_WIDTH * DRM_ESWIN_FB_HEIGHT * 4); //upgrade test
-        display_logo(s);
+		if(crtc_state->format == ESWIN_FMT_RGB565) {
+			argb8888_to_rgb565((unsigned char *)upgrade_buf[layer], (unsigned short *)(u64)crtc_state->dma_addr, DRM_ESWIN_FB_WIDTH * DRM_ESWIN_FB_HEIGHT * 4); //upgrade test
+		}else {
+			memcpy((char *)(u64)crtc_state->dma_addr, (char *)upgrade_buf[layer], DRM_ESWIN_FB_SIZE);
+		}
+		display_logo(s);
         return 0;
     }
     return -1;
@@ -1528,6 +1571,7 @@ int eswin_display_disable(void)
     return -1;
 }
 
+#ifdef CONFIG_ESWIN_LOGO_DISPLAY
 static int do_eswin_logo_show(struct cmd_tbl *cmdtp, int flag, int argc,
 			char *const argv[])
 {
@@ -1553,6 +1597,7 @@ static int do_eswin_show_bmp(struct cmd_tbl *cmdtp, int flag, int argc,
 
 	return 0;
 }
+#endif
 
 static int do_read_dc8k_regs(struct cmd_tbl *cmdtp, int flag, int argc,
 			char *const argv[])
@@ -1626,6 +1671,8 @@ static int do_writeback_to_mem(struct cmd_tbl *cmdtp, int flag, int argc,
 	return 0;
 }
 
+
+#ifdef CONFIG_ESWIN_LOGO_DISPLAY
 U_BOOT_CMD(show_logo, 2, 1, do_eswin_logo_show,
 	"load and display log from resource partition",
 	"<value>"
@@ -1635,6 +1682,7 @@ U_BOOT_CMD(show_bmp, 2, 1, do_eswin_show_bmp,
 	"load and display bmp from resource partition",
 	"<bmp_name>"
 );
+#endif
 
 U_BOOT_CMD(read_regs, 1, 1, do_read_dc8k_regs,
 	"read and print value from dc8k regs",
