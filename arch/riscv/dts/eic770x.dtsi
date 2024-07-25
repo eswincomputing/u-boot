@@ -528,7 +528,7 @@
 			clock-names = "hsp_cfg_clk";
 			reset-names = "hsp_sata_arstn";
 			resets = <&rst HSPDMA_RST_CTRL SW_HSP_SATA_ARSTN>;
-			status = "okay";
+			status = "disabled";
 		};
 		uart0: serial@50900000 {
 			status = "disabled";
