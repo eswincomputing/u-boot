@@ -75,6 +75,9 @@ struct eswin_panel_plat {
 
     struct eswin_panel_cmds *on_cmds;
     struct eswin_panel_cmds *off_cmds;
+
+    struct gpio_desc *backlight_gpio;
+    struct gpio_desc *reset_gpio;
 };
 
 struct eswin_panel_priv {
@@ -485,6 +488,42 @@ free_on_cmds:
 static int eswin_panel_probe(struct udevice *dev) {
     struct eswin_panel_plat *plat = dev_get_plat(dev);
     struct eswin_panel *panel;
+    int ret = 0;
+
+    plat->reset_gpio = devm_gpiod_get_optional(dev, "rst", GPIOD_IS_OUT | GPIOD_ACTIVE_LOW);
+    if (plat->reset_gpio) {
+        ret = dm_gpio_set_value(plat->reset_gpio, 1);
+        if (ret) {
+            pr_err("panel gpio set failed\n");
+            return ret;
+        }
+
+        udelay(10);
+
+        ret = dm_gpio_set_value(plat->reset_gpio, 0);
+        if (ret) {
+            pr_err("panel gpio set failed\n");
+            return ret;
+        }
+    }
+
+    plat->backlight_gpio = devm_gpiod_get_optional(dev, "backlight", GPIOD_IS_OUT | GPIOD_ACTIVE_LOW);
+    if (plat->backlight_gpio) {
+        ret = dm_gpio_set_value(plat->backlight_gpio, 1);
+        if (ret) {
+            pr_err("panel gpio set failed\n");
+            return ret;
+        }
+
+        udelay(10);
+
+        ret = dm_gpio_set_value(plat->backlight_gpio, 0);
+        if (ret) {
+            pr_err("panel gpio set failed\n");
+            return ret;
+        }
+    }
+
 #if !defined(__HAPS)
     struct eswin_panel_priv *priv = dev_get_priv(dev);
     int ret;

@@ -304,7 +304,6 @@
         }                                                      \
     }
 
-void eswin_mipi_gpio_config(void);
 static int eswin_dw_mipi_dsi_bind(struct udevice *dev);
 
 struct eswin_dw_mipi_dsi_plat_data {
@@ -1214,27 +1213,6 @@ static int eswin_dw_mipi_dsi_connector_disable(struct display_state *state) {
     return 0;
 }
 
-void eswin_mipi_gpio_config(void) {
-    void *gpio_reg_base = (void *)(0x51600000);
-    // unsigned int val;
-    printf("mipi eswin_mipi_gpio_config reset\n");
-    // mipi gpio reset
-    //evb
-    writel(0x2 << 16 | 0xd, gpio_reg_base + 0xd0);
-    writel(0x1u << 7, gpio_reg_base + 0x4);
-    writel(0x1u << 7, gpio_reg_base + 0x0);
-
-    // evb-a2
-    // writel(0x0 << 16 | 0xd, gpio_reg_base + 0xc8);
-    // writel(0x1u << 5, gpio_reg_base + 0x4);
-    // writel(0x1u << 5, gpio_reg_base + 0x0);
-
-    writel(0x0 << 16 | 0xd, gpio_reg_base + 0x2f8);
-    writel(0x1u << 15, gpio_reg_base + 0x28);
-    writel(0x1u << 15, gpio_reg_base + 0x24);
-    udelay(5);
-}
-
 static const struct eswin_connector_funcs eswin_dw_mipi_dsi_connector_funcs = {
     .init = eswin_dw_mipi_dsi_connector_init,
     .prepare = eswin_dw_mipi_dsi_connector_prepare,
@@ -1259,7 +1237,6 @@ static int eswin_dw_mipi_dsi_probe(struct udevice *dev) {
     dsi->id = id;
 
     eswin_syscrg_config(1485000000);
-    eswin_mipi_gpio_config();
     eswin_dw_mipi_dsi_bind(dev);
     return 0;
 }

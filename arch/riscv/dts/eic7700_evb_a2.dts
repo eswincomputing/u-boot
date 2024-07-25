@@ -227,8 +227,8 @@
 		dsi,lanes = <4>;
 		status = "disabled";
 		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_gpio7_default &pinctrl_gpio111_default>;
-		backlight-gpios = <&porta 7 GPIO_ACTIVE_LOW>;
+		pinctrl-0 = <&pinctrl_gpio5_default &pinctrl_gpio111_default>;
+		backlight-gpios = <&porta 5 GPIO_ACTIVE_LOW>;
 		rst-gpios = <&portd 15 GPIO_ACTIVE_LOW>;
 		display-timings {
 			native-mode = <&timing0>;
@@ -300,20 +300,23 @@
 	group C: gpio64~93, 95
 	group D: gpio96~105
 
-	gpio0   : head phone plug/unplug detection0(I)
-	gpio7   : led back light power on/off(O)
-	gpio8   : dsi touch interrupt(I)
-	gpio9   : pcie present(I)
-	gpio10  : software define key input(I)
+	gpio0   : pcie prstn(I)
+	gpio5   : led back light power on/off(O)
+	gpio6   : system key(I)
+	gpio10  : dsi touch interrupt(I)
 	gpio11  : head phone plug/unplug detection2(I)
-	gpio16  : gphy1 resern(O)
+	gpio12  : tf card power on/off(O)
+	gpio14  : bt wake host(I)
+	gpio15  : wlan wake host(I)
+	gpio16  : gphy1 resetn(O)
 	gpio28  : head phone plug/unplug detection1(I)
-	gpio94  : gphy0 resern(O)
-	gpio106 : pcie socket power on/off(O)
-	gpio107 : tf card power on/off(O)
-	gpio108 : system led0(O)
-	gpio109 : system led1(O)
-	gpio110 : system led2(O)
+	gpio34  : m.2 power on/off(O)
+	gpio94  : gphy0 resetn(O)
+	gpio106 : touch reset(O)
+	gpio107 : system led0(O)
+	gpio108 : system led1(O)
+	gpio109 : system led2(O)
+	gpio110 : system led3(O)
 	gpio111 : mipi dsi resetn(O)
 */
 
