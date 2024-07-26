@@ -31,7 +31,7 @@
     "stdin=serial,usbkbd\0" \
     "stderr=serial,vidconsole\0" \
     "stdout=serial,vidconsole\0" \
-    "kernel_comp_addr_r=0x180000000\0" \
+    "kernel_comp_addr_r=0xa0000000\0" \
     "kernel_comp_size=0x4000000\0"
 
 #define MMC_ENV \
