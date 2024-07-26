@@ -39,6 +39,8 @@
     "kernel_comp_addr_r=0xa0000000\0" \
     "kernel_comp_size=0x4000000\0" \
     "emmc_dev=0\0" \
+    "usbupdate=ext4load usb 0 0x90000000 usbupdate.scr;source 0x90000000\0" \
+    "sdupdate=ext4load mmc 1:1 0x90000000 sdupdate.scr;source 0x90000000\0" \
     "typeid_efi=C12A7328-F81F-11D2-BA4B-00A0C93EC93B\0" \
     "partitions=name=misc,start=1MiB,size=512KiB;name=env,size=512KiB;name=boot,size=100MiB,type=${typeid_efi};name=rootfs,size=30GiB;name=userdata,size=-;\0" \
     "gpt_partition=gpt write mmc ${emmc_dev} $partitions\0"
