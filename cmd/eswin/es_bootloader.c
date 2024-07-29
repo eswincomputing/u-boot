@@ -551,7 +551,7 @@ static int do_bootchain_write(int argc, char *const argv[])
 		free(fht);
 		return ret;
 	}
-	printf("bootloader wirte OK\r\n");
+	printf("bootloader write OK\r\n");
 	return 0;
 }
 
@@ -1130,7 +1130,7 @@ static int do_vendor_write(int argc, char *const argv[])
 	ret = norflash_write_bootchain((uint64_t)&vendor_info->magic, VENDER_OFFSET, VENDER_SIZE);
 	if(ret)
 		return -1;
-	printf("vendor info wirte OK\r\n");
+	printf("vendor info write OK\r\n");
 	return 0;
 }
 
