@@ -1151,22 +1151,22 @@ static int do_esburn_bootchain(struct cmd_tbl *cmdtp, int flag, int argc,
 		fw_head_info[i].fw_valid_flag = 0;
 	}
 
-	if (strcmp(cmd, "read") == 0)
-		ret = do_bootchain_read(argc, argv);
-	else if (strcmp(cmd, "write") == 0)
+	// if (strcmp(cmd, "read") == 0)
+	// 	ret = do_bootchain_read(argc, argv);
+	if (strcmp(cmd, "write") == 0)
 		ret = do_bootchain_write(argc, argv);
 	else if (strcmp(cmd, "erase") == 0)
 		ret = do_bootchain_erase(argc, argv);
-	else if (strcmp(cmd, "wkernel") == 0)
-		ret = do_kernel_write(argc, argv);
-	else if (strcmp(cmd, "wrootfs") == 0)
-		ret = do_rootfs_write(argc, argv);
+	// else if (strcmp(cmd, "wkernel") == 0)
+	// 	ret = do_kernel_write(argc, argv);
+	// else if (strcmp(cmd, "wrootfs") == 0)
+	// 	ret = do_rootfs_write(argc, argv);
 	else if (strcmp(cmd, "wboot") == 0)
 		ret = do_boot_write(argc, argv);
 	else if (strcmp(cmd, "wroot") == 0)
 		ret = do_root_write(argc, argv);
-	else if (strcmp(cmd, "vendor") == 0)
-		ret = do_vendor_write(argc, argv);
+	// else if (strcmp(cmd, "vendor") == 0)
+		// ret = do_vendor_write(argc, argv);
 	else
 		ret = -1;
 
@@ -1179,13 +1179,9 @@ usage:
 
 U_BOOT_CMD(
 	es_burn,	5,	0,	do_esburn_bootchain,
-	"ESWIN burn tool\n",
-	"es_burn read fw_type addr flash_stg	- read firmware who type is 'fw_type' from mtd 'flash_stg', to memory at `addr'\n"
-	"es_burn write addr flash_stg	- write binary file from memory at `addr' to mtd\n"
+	"ESWIN burn tool",
+	"\nes_burn write addr flash_stg	- write binary file from memory at `addr' to mtd\n"
 	"es_burn erase fw_type flash_stg	- erase binary file who type is 'fw_type' from 'flash_stg'\n"
-	"es_burn wkernel addr len flash_stg	- write fitimage binary file from memory at `addr' to mtd 'flash_stg'\n"
-	"es_burn wrootfs addr len flash_stg	- write rootfs filesystem binary file from memory at `addr' to mtd 'flash_stg'\n"
 	"es_burn wboot addr len flash_stg	- write bootmenu mode boot filesystem binary file from memory at `addr' to mtd 'flash_stg'\n"
 	"es_burn wroot addr len flash_stg	- write bootmenu mode root filesystem binary file from memory at `addr' to mtd 'flash_stg'\n"
-	"es_burn vendor addr	- write vendor info binary file from memory at `addr' to flash\n"
 );
