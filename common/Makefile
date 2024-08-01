@@ -106,10 +106,4 @@ obj-$(CONFIG_SCP03) += scp03.o
 
 obj-$(CONFIG_QFW) += qfw.o
 
-ifdef CONFIG_TARGET_ESWIN_EVB_EIC7700
 obj-y += eswin/
-endif
-
-ifdef CONFIG_TARGET_HIFIVE_PREMIER_P550
-obj-y += eswin/
-endif

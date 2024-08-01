@@ -444,7 +444,7 @@ static int eswin_umbox_probe(struct udevice *dev)
 
     // lpcpu firmware load
     printf("start lpcpu boot\n");
-    dev_part_str = UPDATE_ROOTFSA_DEV_PART;
+    dev_part_str = UPDATE_ROOT_DEV_PART;
 
 	if (fs_set_blk_dev(MMC_DEV_IFACE, dev_part_str, FS_TYPE_EXT)) {
 		log_err("Can't set block device for lpcpu\n");
