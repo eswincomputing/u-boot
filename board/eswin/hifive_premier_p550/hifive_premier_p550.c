@@ -155,7 +155,7 @@ void irq_mux_route(void)
 	*/
 
 	val = 0;
-	writel(val,0x51810000+0x3c0);
+	writel(val,(void *)(0x51810000+0x3c0));
 }
 
 int board_init(void)
