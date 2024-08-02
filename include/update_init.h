@@ -132,4 +132,6 @@ void usb_update_exit(void);
 
 int draw_background(void);
 
+void es_bootspi_wp_cfg(int enable);
+
 #endif
