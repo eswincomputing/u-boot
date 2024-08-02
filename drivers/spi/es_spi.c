@@ -307,12 +307,12 @@ static int es_spi_of_to_plat(struct udevice *bus)
 	dev_info(bus, "max-frequency=%d\n", plat->frequency);
 	plat->sys_regs = (void *)(uintptr_t)dev_read_u32_default(bus, "es,sysscr_reg",
 					       0x51828000);
-	plat->write_status_reg_time = (void *)(uintptr_t)dev_read_u32_default(bus, "write-status-reg-time", 15);
-	plat->page_program_time = (void *)(uintptr_t)dev_read_u32_default(bus, "page-program-time", 3);
-	plat->sector_erase_time = (void *)(uintptr_t)dev_read_u32_default(bus, "sector-erase-time", 400);
-	plat->small_block_erase_time = (void *)(uintptr_t)dev_read_u32_default(bus, "small-block-erase-time", 1600);
-	plat->large_block_erase_time = (void *)(uintptr_t)dev_read_u32_default(bus, "large-block-erase-time", 2000);
-	plat->chip_erase_time = (void *)(uintptr_t)dev_read_u32_default(bus, "chip-erase-time", 200);
+	plat->write_status_reg_time = (uintptr_t)dev_read_u32_default(bus, "write-status-reg-time", 15);
+	plat->page_program_time = (uintptr_t)dev_read_u32_default(bus, "page-program-time", 3);
+	plat->sector_erase_time = (uintptr_t)dev_read_u32_default(bus, "sector-erase-time", 400);
+	plat->small_block_erase_time = (uintptr_t)dev_read_u32_default(bus, "small-block-erase-time", 1600);
+	plat->large_block_erase_time = (uintptr_t)dev_read_u32_default(bus, "large-block-erase-time", 2000);
+	plat->chip_erase_time = (uintptr_t)dev_read_u32_default(bus, "chip-erase-time", 200);
 
 	dev_dbg(bus, "write_status_reg_time %d, page_program_time %d "
 			"sector_erase_time %d, small_block_erase_time %d "
