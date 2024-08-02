@@ -23,9 +23,9 @@
 #include <fat.h>
 #include <image.h>
 #include <mmc.h>
+#include <update_init.h>
 #include "../../../drivers/mini_graphic_library/mglib_driver.h"
 #include "../../../drivers/mini_graphic_library/mglib_api.h"
-#include "update_init.h"
 
 #ifdef CONFIG_DRM_ESWIN_DW_HDMI
 #define X_AXIS       400

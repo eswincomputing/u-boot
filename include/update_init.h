@@ -130,4 +130,6 @@ void mmc_update_exit(void);
 int usb_update_init(void);
 void usb_update_exit(void);
 
+int draw_background(void);
+
 #endif
