@@ -306,7 +306,7 @@ static int norflash_write_bootchain(uint64_t src_addr, uint64_t offset, uint64_t
 		}
 		total_size -= BOOTCHAIN_PACKAGE_SIZE;
 		ret = spi_flash_write(flash, offset + i * BOOTCHAIN_PACKAGE_SIZE, write_size,
-						      src_addr + i * BOOTCHAIN_PACKAGE_SIZE);
+				      (void *)(src_addr + i * BOOTCHAIN_PACKAGE_SIZE));
 		currentIndex = (uint64_t)i * 100 / package_blk;
 		printf("Write progress: %3lld%%:", currentIndex);
 		for(int col = 0; col < currentIndex/2; col++) {
