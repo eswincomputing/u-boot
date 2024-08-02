@@ -33,6 +33,7 @@
 #include <malloc.h>
 #include <memalign.h>
 #include <part.h>
+#include <reset.h>
 #include <sata.h>
 #include <asm/cache.h>
 #include <asm/io.h>
@@ -948,7 +949,7 @@ static int eswin_sata_clk_enable(struct udevice *dev)
 static int eswin_sata_reset(struct udevice *dev)
 {
     int ret = 0;
-	struct reset_control *sata_arstn;
+	struct reset_ctl *sata_arstn;
 	sata_arstn = devm_reset_control_get(dev, "hsp_sata_arstn");
 	if (IS_ERR_OR_NULL(sata_arstn)) {
         dev_err(dev, "Failed to asic0_rst handle\n");
