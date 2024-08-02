@@ -4,5 +4,5 @@
 
 obj-$(CONFIG_CMD_ESWUPDATE) += eswupdate/
 obj-$(CONFIG_CMD_ESWOTP) += eswotp/
-obj-y += dosfstools/
-obj-y += lib/
+obj-$(CONFIG_CMD_ESWUPDATE) += dosfstools/
+obj-$(CONFIG_CMD_ESWUPDATE) += lib/
