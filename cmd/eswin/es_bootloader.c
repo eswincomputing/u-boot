@@ -37,6 +37,7 @@
 #include <spi.h>
 #include <spi_flash.h>
 #include <fs.h>
+#include <dm/device-internal.h>
 #include <eswin/esw_mkfs.h>
 
 // #define DEBUG
