@@ -132,9 +132,9 @@ static int check_signature_value(int mode, int index)
     if(sign_type == SIGN_TYPE_PLAINTEXT)
         return 0;
     size = feht->size;
-    signAddr = LOAD_ADDR_SIG_IMA;
-    imageAddr = LOAD_ADDR_SIG_IMA + SIGN_SIZE;
-    destAddr = TEST_DSET;
+    signAddr = (void *)LOAD_ADDR_SIG_IMA;
+    imageAddr = (void *)(LOAD_ADDR_SIG_IMA + SIGN_SIZE);
+    destAddr = (void *)TEST_DSET;
 
     srvcReq.SrvcType = SRVC_TYPE_SIGN_CHECK;                             //service ID
     srvcReq.data.SigChkReq.flag.bAlgorithm = (u8)sign_type;
@@ -225,7 +225,7 @@ static unsigned long long int ntohl64(unsigned long long int netlong)
  * else return -1.
  *
  */
-u64 sign_destaddr = 0;
+static void *sign_destaddr = NULL;
 static int check_header_valid(uint64_t size, uint8_t sign_type, uint8_t key_index, uint32_t version)
 {
     int srvc_type = 3;    /* SRVC_TYPE_RSA_CRYPT_DECRYPT 0x03 */
@@ -240,10 +240,10 @@ static int check_header_valid(uint64_t size, uint8_t sign_type, uint8_t key_inde
     RECV_MSG_EXT_T recvMsg;
 
     /* prepare service request data */
-    signAddr = LOAD_ADDR_SIG_IMA;
-    imageAddr = LOAD_ADDR_SIG_IMA + SIGN_SIZE;
-    destAddr = TEST_DSET;
-    sign_destaddr = TEST_DSET;
+    signAddr = (void *)LOAD_ADDR_SIG_IMA;
+    imageAddr = (void *)(LOAD_ADDR_SIG_IMA + SIGN_SIZE);
+    destAddr = (void *)TEST_DSET;
+    sign_destaddr = (void *)TEST_DSET;
     if(sign_type == SIGN_TYPE_PLAINTEXT)
     {
         sign_destaddr = signAddr;
