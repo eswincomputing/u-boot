@@ -28,8 +28,11 @@
 #include <system_update.h>
 #include <boot_ab.h>
 #include <display_update.h>
+#include <asm/cache.h>
+#include <asm/mbox.h>
 #include <eswin/eswin-service.h>
 #include <eswin/eswin-uMsg.h>
+#include <eswin/esw_mkfs.h>
 #include <eswin/ipc.h>
 #include <dm/uclass.h>
 
@@ -160,7 +163,7 @@ static int check_signature_value(int mode, int index)
     ret = eswin_umbox_service_send(dev, (u8*)&srvcReq);
     if (0 != ret) goto Failed;
 
-    ret = eswin_umbox_service_recv(dev, (u8*)&recvMsg);
+    ret = eswin_umbox_service_recv(dev, (u32*)&recvMsg);
     if (0 != ret) goto Failed;
 
     debug("\r\n");
@@ -277,7 +280,7 @@ static int check_header_valid(uint64_t size, uint8_t sign_type, uint8_t key_inde
         if (0 != ret){
             printf("eswin_umbox_test_send failed\n");
         }
-        ret = eswin_umbox_service_recv(dev, (u8*)&recvMsg);
+        ret = eswin_umbox_service_recv(dev, (u32*)&recvMsg);
         if (0 != ret){
             printf("eswin_umbox_test_recv failed\n");
         }

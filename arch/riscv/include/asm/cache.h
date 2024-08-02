@@ -11,6 +11,7 @@
 void cache_flush(void);
 void flush_dcache_range(unsigned long start, unsigned long end);
 void invalidate_dcache_range(unsigned long start, unsigned long end);
+void flush_cache(unsigned long addr, unsigned long size);
 /*
  * The current upper bound for RISCV L1 data cache line sizes is 32 bytes.
  * We use that value for aligning DMA buffers unless the board config has
