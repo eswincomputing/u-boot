@@ -275,7 +275,7 @@ static int eswin_umbox_send(struct mbox_chan *chan, const void *data)
     }
 
     u8 * testaddr= (u8 *)data;
-    printf("testaddr = %x\n", (unsigned int)testaddr);
+    printf("testaddr = %p\n", testaddr);
     ret = Fill_RData(&rData, chan, testaddr);
     if (0 != ret) {
         printk("win2030_umbox_send: Fill_RData return %d, failed.\r\n", ret);
