@@ -938,13 +938,11 @@ static int es_spi_set_speed(struct udevice *bus, uint speed)
 {
 	struct es_spi_plat *plat = dev_get_plat(bus);
 	struct es_spi_priv *priv = dev_get_priv(bus);
-	u16 clk_div;
 
 	if (speed > plat->frequency)
 		speed = plat->frequency;
 
 	priv->freq = speed;
-	//dev_err(bus, "speed=%d clk_div=%d\n", priv->freq, clk_div);
 
 	return 0;
 }
