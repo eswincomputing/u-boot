@@ -28,8 +28,11 @@
 #include <system_update.h>
 #include <boot_ab.h>
 #include <display_update.h>
+#include <asm/cache.h>
+#include <asm/mbox.h>
 #include <eswin/eswin-service.h>
 #include <eswin/eswin-uMsg.h>
+#include <eswin/esw_mkfs.h>
 #include <eswin/ipc.h>
 #include <dm/uclass.h>
 
@@ -132,9 +135,9 @@ static int check_signature_value(int mode, int index)
     if(sign_type == SIGN_TYPE_PLAINTEXT)
         return 0;
     size = feht->size;
-    signAddr = LOAD_ADDR_SIG_IMA;
-    imageAddr = LOAD_ADDR_SIG_IMA + SIGN_SIZE;
-    destAddr = TEST_DSET;
+    signAddr = (void *)LOAD_ADDR_SIG_IMA;
+    imageAddr = (void *)(LOAD_ADDR_SIG_IMA + SIGN_SIZE);
+    destAddr = (void *)TEST_DSET;
 
     srvcReq.SrvcType = SRVC_TYPE_SIGN_CHECK;                             //service ID
     srvcReq.data.SigChkReq.flag.bAlgorithm = (u8)sign_type;
@@ -160,7 +163,7 @@ static int check_signature_value(int mode, int index)
     ret = eswin_umbox_service_send(dev, (u8*)&srvcReq);
     if (0 != ret) goto Failed;
 
-    ret = eswin_umbox_service_recv(dev, (u8*)&recvMsg);
+    ret = eswin_umbox_service_recv(dev, (u32*)&recvMsg);
     if (0 != ret) goto Failed;
 
     debug("\r\n");
@@ -225,7 +228,7 @@ static unsigned long long int ntohl64(unsigned long long int netlong)
  * else return -1.
  *
  */
-u64 sign_destaddr = 0;
+static void *sign_destaddr = NULL;
 static int check_header_valid(uint64_t size, uint8_t sign_type, uint8_t key_index, uint32_t version)
 {
     int srvc_type = 3;    /* SRVC_TYPE_RSA_CRYPT_DECRYPT 0x03 */
@@ -240,10 +243,10 @@ static int check_header_valid(uint64_t size, uint8_t sign_type, uint8_t key_inde
     RECV_MSG_EXT_T recvMsg;
 
     /* prepare service request data */
-    signAddr = LOAD_ADDR_SIG_IMA;
-    imageAddr = LOAD_ADDR_SIG_IMA + SIGN_SIZE;
-    destAddr = TEST_DSET;
-    sign_destaddr = TEST_DSET;
+    signAddr = (void *)LOAD_ADDR_SIG_IMA;
+    imageAddr = (void *)(LOAD_ADDR_SIG_IMA + SIGN_SIZE);
+    destAddr = (void *)TEST_DSET;
+    sign_destaddr = (void *)TEST_DSET;
     if(sign_type == SIGN_TYPE_PLAINTEXT)
     {
         sign_destaddr = signAddr;
@@ -277,7 +280,7 @@ static int check_header_valid(uint64_t size, uint8_t sign_type, uint8_t key_inde
         if (0 != ret){
             printf("eswin_umbox_test_send failed\n");
         }
-        ret = eswin_umbox_service_recv(dev, (u8*)&recvMsg);
+        ret = eswin_umbox_service_recv(dev, (u32*)&recvMsg);
         if (0 != ret){
             printf("eswin_umbox_test_recv failed\n");
         }

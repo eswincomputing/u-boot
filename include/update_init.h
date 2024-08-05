@@ -130,4 +130,8 @@ void mmc_update_exit(void);
 int usb_update_init(void);
 void usb_update_exit(void);
 
+int draw_background(void);
+
+void es_bootspi_wp_cfg(int enable);
+
 #endif

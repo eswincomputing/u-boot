@@ -5,6 +5,7 @@
  *  Author: Xiang Xu <xuxiang@eswincomputing.com>
  */
 
+#include <efi_loader.h>
 #include <fdtdec.h>
 #include <init.h>
 #include <mapmem.h>

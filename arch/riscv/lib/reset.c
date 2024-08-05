@@ -7,7 +7,7 @@
 #include <hang.h>
 #include <asm/io.h>
 
-#define RESET_REG	(0x51828300UL)
+#define RESET_REG	((void *)0x51828300UL)
 int do_reset(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 {
 	printf("resetting ...\n");
