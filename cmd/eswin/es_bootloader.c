@@ -83,7 +83,7 @@ static struct entry_head_info_t fw_head_info[MAX_FW_NUM];
 
 static struct blk_desc *mmc_dev_desc;
 static struct disk_partition bootchain_part_info;
-static struct disk_partition misc_part_info;
+// static struct disk_partition misc_part_info;
 
 
 static int esburn_init_load_addr(uint64_t addr, uint64_t size)
@@ -182,9 +182,6 @@ int es_spi_flash_probe(void)
 {
 	unsigned int bus = CONFIG_SF_DEFAULT_BUS;
 	unsigned int cs = CONFIG_SF_DEFAULT_CS;
-	/* In DM mode, defaults speed and mode will be taken from DT */
-	unsigned int speed = CONFIG_SF_DEFAULT_SPEED;
-	unsigned int mode = CONFIG_SF_DEFAULT_MODE;
 	struct udevice *new, *bus_dev;
 	int ret;
 
@@ -213,7 +210,6 @@ static int es_spi_flash_erase(uint64_t offset, uint64_t size)
 {
 	int ret;
 	uint64_t package_blk, total_size, erase_size, currentIndex = 0;
-	double percent;
 
 	debug_printf("offset : %llx, size %llx  flash->size %x\n",offset, size, flash->size);
 	total_size = DIV_ROUND_UP(size, 0x1000)*0x1000;
@@ -555,7 +551,7 @@ static int do_bootchain_write(int argc, char *const argv[])
 	printf("bootloader write OK\r\n");
 	return 0;
 }
-
+#if 0
 static int do_bootchain_read(int argc, char *const argv[])
 {
 	struct firmware_header_t *fht;
@@ -624,6 +620,7 @@ static int do_bootchain_read(int argc, char *const argv[])
 
 	return 0;
 }
+#endif
 
 static int do_bootchain_erase(int argc, char *const argv[])
 {
@@ -715,7 +712,7 @@ static int do_bootchain_erase(int argc, char *const argv[])
 
 	return 0;
 }
-
+#if 0
 static struct bootloader_message *abc = NULL;
 static struct boot_bank *bank = NULL;
 
@@ -968,7 +965,7 @@ out:
 	return ret;
 
 }
-
+#endif
 static int do_boot_write(int argc, char *const argv[])
 {
 
@@ -977,7 +974,6 @@ static int do_boot_write(int argc, char *const argv[])
 	int32_t ret = 0;
 	const char *dev_part_str;
 	struct disk_partition rootfs_part_info;
-	int block = 1;
 
 	if (argc < 3)
 		return -ENXIO;
@@ -1049,7 +1045,6 @@ static int do_root_write(int argc, char *const argv[])
 	int32_t ret = 0;
 	const char *dev_part_str;
 	struct disk_partition rootfs_part_info;
-	int block = 1;
 
 	if (argc < 3)
 		return -ENXIO;
@@ -1112,7 +1107,7 @@ static int do_root_write(int argc, char *const argv[])
 	printf("root has been successfully writen in %s\r\n", dev_part_str);
 	return 0;
 }
-
+#if 0
 static int do_vendor_write(int argc, char *const argv[])
 {
 	int32_t ret = 0;
@@ -1133,6 +1128,101 @@ static int do_vendor_write(int argc, char *const argv[])
 		return -1;
 	printf("vendor info write OK\r\n");
 	return 0;
+}
+#endif
+static struct mmc *__init_mmc_device(int dev, bool force_init,
+				     enum bus_mode speed_mode)
+{
+	struct mmc *mmc;
+	mmc = find_mmc_device(dev);
+	if (!mmc) {
+		printf("no mmc device at slot %x\n", dev);
+		return NULL;
+	}
+
+	if (!mmc_getcd(mmc))
+		force_init = true;
+
+	if (force_init)
+		mmc->has_init = 0;
+
+	if (IS_ENABLED(CONFIG_MMC_SPEED_MODE_SET))
+		mmc->user_speed_mode = speed_mode;
+
+	if (mmc_init(mmc))
+		return NULL;
+
+#ifdef CONFIG_BLOCK_CACHE
+	struct blk_desc *bd = mmc_get_blk_desc(mmc);
+	blkcache_invalidate(bd->uclass_id, bd->devnum);
+#endif
+
+	return mmc;
+}
+
+static int do_mmc_write(int argc, char *const argv[])
+{
+	struct mmc *mmc;
+	u64 blk = 0, cnt, n;
+	int curr_device;
+	void *addr;
+	uint64_t package_blk, last_blk = 0, cycle_index = 100, currentIndex = 0;
+
+	if (argc != 3)
+		return CMD_RET_USAGE;
+	curr_device = 0;
+	addr = (void *)hextoul(argv[1], NULL);
+	cnt = hextoul(argv[2], NULL);
+	mmc = __init_mmc_device(curr_device, false, MMC_MODES_END);
+	if (!mmc)
+		return CMD_RET_FAILURE;
+
+	if(esburn_init_load_addr(addr, cnt)) {
+		puts("\nes_burn error: ");
+		puts("trying to overwrite reserved memory...\n");
+		return -ENXIO;
+	}
+
+	cnt = DIV_ROUND_UP(cnt, mmc->write_bl_len);  /* blkcnt */
+	if (mmc_getwp(mmc) == 1) {
+		printf("Error: card is write protected!\n");
+		return CMD_RET_FAILURE;
+	}
+
+	if(cnt % 100) {
+		package_blk = cnt/100;
+		last_blk = cnt % 100;
+	}
+	else {
+		package_blk = cnt/100;
+	}
+	printf("Write progress: %3d%%:\r", 0);
+	for(int i = 0;i < cycle_index; i++) {
+		n = blk_dwrite(mmc_get_blk_desc(mmc), blk + i * package_blk, package_blk, 
+				(void __iomem *)(addr + i * package_blk * mmc->write_bl_len));
+		if(n != package_blk){
+			return CMD_RET_FAILURE;
+		}
+		if ((i == cycle_index -1) && last_blk) {
+			n = blk_dwrite(mmc_get_blk_desc(mmc), blk + (i + 1) * package_blk, last_blk, 
+							(void __iomem *)(addr + (i + 1) * package_blk * mmc->write_bl_len));
+			if(n != last_blk){
+				return CMD_RET_FAILURE;
+			}
+		}
+		printf("Write progress: %3d%%:", i);
+		for(int col = 0; col < i/2; col++) {
+			printf("%s","+");
+		}
+		printf("\r");
+	}
+	printf("Write progress: %3lld%%:", currentIndex);
+	for(int col = 0; col < currentIndex/2; col++) {
+		printf("%s","+");
+	}
+	printf("\r");
+	printf("\nMMC dev # %d, %lld blocks written: OK\n", curr_device, n);
+	return CMD_RET_SUCCESS;
 }
 
 static int do_esburn_bootchain(struct cmd_tbl *cmdtp, int flag, int argc,
@@ -1166,6 +1256,8 @@ static int do_esburn_bootchain(struct cmd_tbl *cmdtp, int flag, int argc,
 		ret = do_boot_write(argc, argv);
 	else if (strcmp(cmd, "wroot") == 0)
 		ret = do_root_write(argc, argv);
+	else if (strcmp(cmd, "wmmc") == 0)
+		ret = do_mmc_write(argc, argv);
 	// else if (strcmp(cmd, "vendor") == 0)
 		// ret = do_vendor_write(argc, argv);
 	else
