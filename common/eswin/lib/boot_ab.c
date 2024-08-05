@@ -120,7 +120,7 @@ int get_bootmessage_from_disk(struct blk_desc *dev_desc,
     abc_blocks = DIV_ROUND_UP(sizeof(struct bootloader_message),
                   part_info->blksz);
     if (abc_blocks > part_info->size) {
-        printf("UPDATE: misc partition too small. Need at least %lu blocks but have %lu blocks.\n",
+        printf("UPDATE: misc partition too small. Need at least %lu blocks but have " LBAFU " blocks.\n",
                 abc_blocks, part_info->size);
         return -EIO;
     }
@@ -150,7 +150,7 @@ int get_bootbank_from_disk(struct blk_desc *dev_desc,
     bank_blocks = DIV_ROUND_UP(sizeof(struct boot_bank),
             part_info->blksz);
     if (bank_blocks > part_info->size) {
-        printf("UPDATE: misc partition too small. Need at least %lu blocks, but have %lu blocks.\n",
+        printf("UPDATE: misc partition too small. Need at least %lu blocks, but have " LBAFU " blocks.\n",
                 bank_blocks, part_info->size);
         return -EIO;
     }
