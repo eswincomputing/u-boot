@@ -962,7 +962,7 @@ static int eswin_sata_reset(struct udevice *dev)
     return 0;
 }
 
-static int eswin_sata_init_cfg()
+static int eswin_sata_init_cfg(void)
 {
 	unsigned long hsp_io_mem = HSP_CSR_BASE_ADDR;
 	eswin_ahci_write((void *)(hsp_io_mem + SATA_REF_CTRL1), 0x1);
