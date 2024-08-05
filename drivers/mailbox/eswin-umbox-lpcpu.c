@@ -178,20 +178,14 @@ static int eswin_umbox_recv(struct mbox_chan *chan, void *data)
     struct eswin_umbox *umbox = dev_get_priv(chan->dev);
     struct eswin_umbox_session *umbox_session;
     unsigned int state0, i;
-    void *pOffset;
-    void *pOffset_tmp;
     u8 regData0[8];
-    u8 regData1[8];
     u32 msg[MBOX_MSG_LEN];
-    int len, ret, count;
-    REGISTER_DATA_T rData;
+    int count;
     umbox_session = umbox->umbox_session;
 
     u32 dwVal;
     unsigned int state;
     unsigned int ack_irq = 0;
-    RECV_MSG_EXT_T *pMsg;
-    IPC_RES_T IpcResData;
 
     debug("\r\nwin2030_umbox_recv: start...\n");
     while (1) {
