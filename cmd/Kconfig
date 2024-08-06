@@ -1253,6 +1253,13 @@ config CMD_ESWUPDATE
 	help
 	  Performs the Bootloader update boot flow
 
+config CMD_ESFS
+	bool "ESWIN filesystem command"
+	default n
+	help
+	  Enables ESWIN filesystem commands (e.g. write, update) that work for multiple
+	  fs types.
+
 config CMD_ESWOTP
 	bool "eswotp"
 	default n

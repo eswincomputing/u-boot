@@ -182,17 +182,10 @@ int es_spi_flash_probe(void)
 {
 	unsigned int bus = CONFIG_SF_DEFAULT_BUS;
 	unsigned int cs = CONFIG_SF_DEFAULT_CS;
-	struct udevice *new, *bus_dev;
+	struct udevice *new;
 	int ret;
 
 	if(flash == NULL) {
-		/* Remove the old device, otherwise probe will just be a nop */
-		ret = spi_find_bus_and_cs(bus, cs, &bus_dev, &new);
-		if (!ret) {
-			printf("device_remove(new, DM_REMOVE_NORMAL)(error %d)\n", ret);
-			device_remove(new, DM_REMOVE_NORMAL);
-		}
-		flash = NULL;
 		ret = spi_flash_probe_bus_cs(bus, cs, &new);
 		if (ret) {
 			printf("Failed to initialize SPI flash at %u:%u (error %d)\n",
@@ -712,6 +705,7 @@ static int do_bootchain_erase(int argc, char *const argv[])
 
 	return 0;
 }
+
 #if 0
 static struct bootloader_message *abc = NULL;
 static struct boot_bank *bank = NULL;
@@ -966,6 +960,7 @@ out:
 
 }
 #endif
+
 static int do_boot_write(int argc, char *const argv[])
 {
 
@@ -1107,6 +1102,7 @@ static int do_root_write(int argc, char *const argv[])
 	printf("root has been successfully writen in %s\r\n", dev_part_str);
 	return 0;
 }
+
 #if 0
 static int do_vendor_write(int argc, char *const argv[])
 {
@@ -1130,6 +1126,7 @@ static int do_vendor_write(int argc, char *const argv[])
 	return 0;
 }
 #endif
+
 static struct mmc *__init_mmc_device(int dev, bool force_init,
 				     enum bus_mode speed_mode)
 {
@@ -1277,4 +1274,5 @@ U_BOOT_CMD(
 	"es_burn erase fw_type flash_stg	- erase binary file who type is 'fw_type' from 'flash_stg'\n"
 	"es_burn wboot addr len flash_stg	- write bootmenu mode boot filesystem binary file from memory at `addr' to mtd 'flash_stg'\n"
 	"es_burn wroot addr len flash_stg	- write bootmenu mode root filesystem binary file from memory at `addr' to mtd 'flash_stg'\n"
+	"es_burn wmmc addr len	- write .wic image binary file from memory at `addr' to eMMC\n"
 );

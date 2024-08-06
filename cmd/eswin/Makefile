@@ -7,3 +7,4 @@ obj-$(CONFIG_CMD_ESWUPDATE) += bootesw.o
 obj-$(CONFIG_CMD_ESWUPDATE) += eswupdate.o
 obj-$(CONFIG_CMD_ESWUPDATE) += mkfs.fat.o
 obj-$(CONFIG_CMD_ESWUPDATE) += es_bootloader.o
+obj-$(CONFIG_CMD_ESFS) += es_fs.o
