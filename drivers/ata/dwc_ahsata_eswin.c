@@ -1056,8 +1056,8 @@ static const struct udevice_id dwc_ahsata_ahci_ids[] = {
 	{ }
 };
 
-U_BOOT_DRIVER(dwc_ahsata_ahci) = {
-	.name     = "dwc_ahsata_ahci",
+U_BOOT_DRIVER(dwc_ahsata_eswin) = {
+	.name     = "dwc_ahsata_eswin",
 	.id       = UCLASS_AHCI,
 	.of_match = dwc_ahsata_ahci_ids,
 	.ops      = &dwc_ahsata_ahci_ops,
