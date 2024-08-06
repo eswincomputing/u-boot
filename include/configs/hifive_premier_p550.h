@@ -35,8 +35,8 @@
     "pxefile_addr_r=0x88200000\0" \
     "ramdisk_addr_r=0x88300000\0" \
     "stdin=serial,usbkbd\0" \
-    "stderr=serial,vidconsole\0" \
-    "stdout=serial,vidconsole\0" \
+    "stderr=vidconsole,serial\0" \
+    "stdout=vidconsole,serial\0" \
     "kernel_comp_addr_r=0xa0000000\0" \
     "kernel_comp_size=0x4000000\0" \
     "emmc_dev=0\0" \
