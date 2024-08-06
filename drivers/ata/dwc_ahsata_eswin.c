@@ -23,6 +23,7 @@
 #include <common.h>
 #include <ahci.h>
 #include <blk.h>
+#include <bootdev.h>
 #include <clk.h>
 #include <cpu_func.h>
 #include <dm.h>
@@ -928,7 +929,11 @@ int dwc_ahsata_scan(struct udevice *dev)
 	ret = blk_probe_or_unbind(dev);
 	if (ret < 0)
 		/* TODO: undo create */
-		return ret;
+		return log_msg_ret("pro", ret);
+
+	ret = bootdev_setup_for_sibling_blk(blk, "sata_bootdev");
+	if (ret)
+		return log_msg_ret("bd", ret);
 
 	return 0;
 }
