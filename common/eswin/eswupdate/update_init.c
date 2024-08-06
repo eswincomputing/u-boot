@@ -42,10 +42,10 @@ static int get_misc_command(struct blk_desc *dev_desc, struct disk_partition *pa
     }
     printf("bootloader_message info\n \
             magic : 0x%08x\t command : %s\t crc32_bc : 0x%08x \n\
-            kernel : boot%c \t rootfs : rootfs%c \n\
+            kernel : boot%s \t rootfs : rootfs%s \n\
             ", abc->magic, abc->command, abc->crc32_bc,\
-            ( abc->curr_bank == 0 )?'a':  ( abc->curr_bank == 1)?'b':' err', \
-            ( abc->rtfs_bank == 0 )?'a':  ( abc->rtfs_bank == 1)?'b':' err');
+            ( abc->curr_bank == 0 )?"a":  ( abc->curr_bank == 1)?"b":" err", \
+            ( abc->rtfs_bank == 0 )?"a":  ( abc->rtfs_bank == 1)?"b":" err");
     if (!strcmp(abc->command, "boot_normal")){
         return UPDATE_MODE_NORMAL;
     }

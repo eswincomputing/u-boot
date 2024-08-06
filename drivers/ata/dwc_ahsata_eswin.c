@@ -387,8 +387,9 @@ static int ahci_fill_sg(struct ahci_uc_priv *uc_priv, u8 port,
 	}
 
 	for (i = 0; i < sg_count; i++) {
-		ahci_sg->addr =
-			cpu_to_le32((u32)buf + i * max_bytes);
+		u64 addr = (uintptr_t)buf + i * max_bytes;
+
+		ahci_sg->addr = cpu_to_le32(lower_32_bits(addr));
 		ahci_sg->addr_hi = 0;
 		ahci_sg->flags_size = cpu_to_le32(0x3fffff &
 					(buf_len < max_bytes
@@ -962,7 +963,7 @@ static int eswin_sata_reset(struct udevice *dev)
     return 0;
 }
 
-static int eswin_sata_init_cfg()
+static int eswin_sata_init_cfg(void)
 {
 	unsigned long hsp_io_mem = HSP_CSR_BASE_ADDR;
 	eswin_ahci_write((void *)(hsp_io_mem + SATA_REF_CTRL1), 0x1);

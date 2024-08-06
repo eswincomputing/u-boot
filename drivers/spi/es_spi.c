@@ -493,7 +493,7 @@ static void spi_read_write_cfg(struct es_spi_priv *priv, u32 byte, u32 addr)
 /**
  *  @brief write data from dest address to flash
  */
-static void spi_send_data(struct es_spi_priv *priv, u32 *dest, u32 size)
+static void spi_send_data(struct es_spi_priv *priv, u8 *dest, u32 size)
 {
     u32  offset          = 0;
     u8  *write_byte_buff = NULL;
@@ -506,7 +506,7 @@ static void spi_send_data(struct es_spi_priv *priv, u32 *dest, u32 size)
     }
 
     if (size != 0) {
-        write_byte_buff = (u8 *)dest;
+        write_byte_buff = dest;
         for (int i = 0; i < size; i++) {
             flash_end_data |= (*write_byte_buff) << (8 * i);
             write_byte_buff++;
@@ -589,7 +589,7 @@ void es_writer(struct es_spi_priv *priv)
 		}
 
 		spi_read_write_cfg(priv, write_size, offset);
-		spi_send_data(priv, (u32 *)wr_dest, write_size);
+		spi_send_data(priv, wr_dest, write_size);
 		spi_command_cfg(priv, cmd_code, cmd_type);
 		spi_wait_over(priv);
 		wr_dest += write_size;
@@ -729,7 +729,7 @@ void es_write_flash_status_register(struct es_spi_priv *priv, uint8_t register_d
 
 	//Flash status register-2 is 1byte
 	spi_read_write_cfg(priv, 1, 0);
-	spi_send_data(priv, (u32 *)&register_data, 1);
+	spi_send_data(priv, &register_data, 1);
 
 	command = es_read(priv, ES_SPI_CSR_06);
 	command &= ~((0xFF << 6) | (0x1 << 5) | (0xF << 1) | 0x1);
@@ -938,13 +938,11 @@ static int es_spi_set_speed(struct udevice *bus, uint speed)
 {
 	struct es_spi_plat *plat = dev_get_plat(bus);
 	struct es_spi_priv *priv = dev_get_priv(bus);
-	u16 clk_div;
 
 	if (speed > plat->frequency)
 		speed = plat->frequency;
 
 	priv->freq = speed;
-	//dev_err(bus, "speed=%d clk_div=%d\n", priv->freq, clk_div);
 
 	return 0;
 }

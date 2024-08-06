@@ -77,7 +77,6 @@ struct eswin_pcie {
 /* sys crg base */
 #define SYSCRG_CSR    0x01828000
 
-#define PCI_EXP_DEVCTL_PAYLOAD  (0x00e0)  /* Max_Payload_Size */
 #define PCIE_CAP_MAX_PAYLOAD_SIZE(x)    ((x) << 5)
 #define PCIE_CAP_MAX_READ_REQ_SIZE(x)   ((x) << 12)
 

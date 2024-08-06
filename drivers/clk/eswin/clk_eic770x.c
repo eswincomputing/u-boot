@@ -276,7 +276,6 @@ static ulong eic770x_clk_get_bootspi_rate(struct clk *clk)
 
 static ulong eic770x_clk_get_rate(struct clk *clk)
 {
-	struct eic770x_clk_priv *priv = dev_get_priv(clk->dev);
 	int id = clk->id;
 	ulong rate = -1;
 
@@ -339,7 +338,6 @@ static ulong eic770x_clk_get_rate(struct clk *clk)
 static ulong eic770x_clk_set_rate(struct clk *clk, ulong rate)
 {
 	ulong new_rate;
-	struct eic770x_clk_priv *priv = dev_get_priv(clk->dev);
 
 	switch (clk->id) {
 		case EIC7X_CLK_HSP_MSHC1_CORE_CLK:
