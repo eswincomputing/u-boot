@@ -54,38 +54,40 @@ int sata_scan(struct udevice *dev)
 
 int sata_rescan(bool verbose)
 {
+	struct uclass *uc;
+	struct udevice *dev; /* SATA controller */
 	int ret;
-	struct udevice *dev;
 
 	if (verbose)
-		printf("Removing devices on SATA bus...\n");
+		printf("scanning bus for devices...\n");
 
-	blk_unbind_all(UCLASS_AHCI);
+	ret = uclass_get(UCLASS_AHCI, &uc);
+	if (ret)
+		return ret;
 
-	ret = uclass_find_first_device(UCLASS_AHCI, &dev);
-	if (ret || !dev) {
-		printf("Cannot find SATA device (err=%d)\n", ret);
-		return -ENOENT;
-	}
-
-	ret = device_remove(dev, DM_REMOVE_NORMAL);
-	if (ret) {
-		printf("Cannot remove SATA device '%s' (err=%d)\n", dev->name, ret);
-		return -ENOSYS;
+	/* Remove all children of SATA devices (blk and bootdev) */
+	uclass_foreach_dev(dev, uc) {
+		log_debug("unbind %s\n", dev->name);
+		ret = device_chld_remove(dev, NULL, DM_REMOVE_NORMAL);
+		if (!ret)
+			ret = device_chld_unbind(dev, NULL);
+		if (ret) {
+			if (verbose)
+				printf("unable to unbind devices (%dE)\n", ret);
+			return log_msg_ret("unb", ret);
+		}
 	}
 
 	if (verbose)
 		printf("Rescanning SATA bus for devices...\n");
 
-	ret = uclass_probe_all(UCLASS_AHCI);
-
-	if (ret == -ENODEV) {
-		if (verbose)
-			printf("No SATA block device found\n");
-		return 0;
+	uclass_foreach_dev(dev, uc) {
+		ret = sata_scan(dev);
+		if (ret)
+			return ret;
 	}
 
-	return ret;
+	return 0;
 }
 
 #ifndef CONFIG_AHCI
