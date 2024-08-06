@@ -140,7 +140,7 @@ static void set_efi_bootdev(struct blk_desc *desc, struct bootflow *bflow)
 		  dev_get_uclass_name(media_dev), devnum_str, bflow->fname,
 		  bflow->buf, size);
 	dev_name = device_get_uclass_id(media_dev) == UCLASS_MASS_STORAGE ?
-		 "usb" : dev_get_uclass_name(media_dev);
+		 "usb" : blk_get_uclass_name(device_get_uclass_id(media_dev));
 	efi_set_bootdev(dev_name, devnum_str, bflow->fname, bflow->buf, size);
 }
 
