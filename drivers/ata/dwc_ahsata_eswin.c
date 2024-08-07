@@ -411,11 +411,8 @@ static void ahci_fill_cmd_slot(struct ahci_ioports *pp, u32 cmd_slot, u32 opts)
 	memset(cmd_hdr, 0, AHCI_CMD_SLOT_SZ);
 	cmd_hdr->opts = cpu_to_le32(opts);
 	cmd_hdr->status = 0;
-	pp->cmd_slot->tbl_addr = cpu_to_le32((u32)pp->cmd_tbl & 0xffffffff);
-#ifdef CONFIG_PHYS_64BIT
-	pp->cmd_slot->tbl_addr_hi =
-	    cpu_to_le32((u32)(((pp->cmd_tbl) >> 16) >> 16));
-#endif
+	pp->cmd_slot->tbl_addr = cpu_to_le32(lower_32_bits(pp->cmd_tbl));
+	pp->cmd_slot->tbl_addr_hi = cpu_to_le32(upper_32_bits(pp->cmd_tbl));
 }
 
 #define AHCI_GET_CMD_SLOT(c) ((c) ? ffs(c) : 0)
