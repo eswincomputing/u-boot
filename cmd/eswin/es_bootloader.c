@@ -39,6 +39,7 @@
 #include <fs.h>
 #include <dm/device-internal.h>
 #include <eswin/esw_mkfs.h>
+#include <eic7700_common.h>
 
 // #define DEBUG
 #ifndef DEBUG
@@ -544,6 +545,7 @@ static int do_bootchain_write(int argc, char *const argv[])
 	printf("bootloader write OK\r\n");
 	return 0;
 }
+
 #if 0
 static int do_bootchain_read(int argc, char *const argv[])
 {
@@ -771,14 +773,14 @@ static int do_kernel_write(int argc, char *const argv[])
 	if(ret < 0)
 		return -ENXIO;
 
-	dev_part_str = UPDATE_BOOTA_DEV_PART;
+	dev_part_str = UPDATE_BOOT_DEV_PART;
 
 
 #ifdef CONFIG_SYSTEM_UPDATE_B
 	if(0 == abc->curr_bank){
 		dev_part_str = UPDATE_BOOTB_DEV_PART;  /* "0#bootb" */
 	}else{
-		dev_part_str = UPDATE_BOOTA_DEV_PART;
+		dev_part_str = UPDATE_BOOT_DEV_PART;
 	}
 #endif
 	if (fs_set_blk_dev(MMC_DEV_IFACE, dev_part_str, FS_TYPE_FAT)) {
@@ -990,7 +992,7 @@ static int do_boot_write(int argc, char *const argv[])
 	}
 
 	/* addr blk cnt */
-	dev_part_str = UPDATE_BOOTA_DEV_PART;  /* "rootfsa" */
+	dev_part_str = UPDATE_BOOT_DEV_PART;  /* "rootfsa" */
 
 	if (part_get_info_by_dev_and_name_or_num(MMC_DEV_IFACE, dev_part_str,
 				&mmc_dev_desc, &rootfs_part_info,true) < 0) {
@@ -1102,12 +1104,10 @@ static int do_root_write(int argc, char *const argv[])
 	printf("root has been successfully writen in %s\r\n", dev_part_str);
 	return 0;
 }
-
-#if 0
 static int do_vendor_write(int argc, char *const argv[])
 {
 	int32_t ret = 0;
-
+	uint64_t size = 5*1024;
 	uint64_t fw_addr = simple_strtoul(argv[1], NULL, 16);
 	debug_printf("fw_addr 0x%llx\r\n", fw_addr);
 
@@ -1115,17 +1115,20 @@ static int do_vendor_write(int argc, char *const argv[])
 	if(ret < 0)
 		return -ENOENT;
 
-	struct vendor_info_t *vendor_info = (struct vendor_info_t *) fw_addr;
-	if(vendor_info->magic != VENDOR_MAGIC)
+	HardwareBoardInfo_t *gHardware_Board_Info = (HardwareBoardInfo_t *) fw_addr;
+	printf("gHardware_Board_Info->magicNumber %x\n",gHardware_Board_Info->magicNumber);
+	if(gHardware_Board_Info->magicNumber != HARDWARE_BOARD_INFO_MAGIC_NUMBER)
 		return -ENOENT;
 
-	ret = norflash_write_bootchain((uint64_t)&vendor_info->magic, VENDER_OFFSET, VENDER_SIZE);
+	ret = norflash_write_bootchain((uint64_t)&gHardware_Board_Info->magicNumber, HARDWARE_BOARD_INFO_FLASH_MAIN_OFFSET, size);
+	if(ret)
+		return -1;
+	ret = norflash_write_bootchain((uint64_t)&gHardware_Board_Info->magicNumber, HARDWARE_BOARD_INFO_FLASH_BACKUP_OFFSET, size);
 	if(ret)
 		return -1;
 	printf("vendor info write OK\r\n");
 	return 0;
 }
-#endif
 
 static struct mmc *__init_mmc_device(int dev, bool force_init,
 				     enum bus_mode speed_mode)
@@ -1255,8 +1258,8 @@ static int do_esburn_bootchain(struct cmd_tbl *cmdtp, int flag, int argc,
 		ret = do_root_write(argc, argv);
 	else if (strcmp(cmd, "wmmc") == 0)
 		ret = do_mmc_write(argc, argv);
-	// else if (strcmp(cmd, "vendor") == 0)
-		// ret = do_vendor_write(argc, argv);
+	else if (strcmp(cmd, "vendor") == 0)
+		ret = do_vendor_write(argc, argv);
 	else
 		ret = -1;
 

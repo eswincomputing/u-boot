@@ -189,12 +189,12 @@ int set_bootable_devplist(void)
     get_bootmessage_from_disk(dev_desc, &part_info, &abc);
 
     if(0 == abc->curr_bank){
-        dev_part_str = UPDATE_BOOTA_DEV_PART;
+        dev_part_str = UPDATE_BOOT_DEV_PART;
         other_dev_part_str = UPDATE_BOOTB_DEV_PART;
     }
     if(1 == abc->curr_bank){
         dev_part_str = UPDATE_BOOTB_DEV_PART;
-        other_dev_part_str = UPDATE_BOOTA_DEV_PART;
+        other_dev_part_str = UPDATE_BOOT_DEV_PART;
     }
     free(abc);
 

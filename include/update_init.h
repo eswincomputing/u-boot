@@ -41,7 +41,7 @@ struct vendor_info_t {
 #define VENDER_OFFSET 0xF00000
 
 #if defined(CONFIG_SYSTEM_UPDATE_B) || defined(CONFIG_SYSTEM_UPDATE_C)
-#define UPDATE_BOOTA_DEV_PART    "0#boota"
+#define UPDATE_BOOT_DEV_PART    "0#boota"
 #define UPDATE_BOOTB_DEV_PART    "0#bootb"
 #define UPDATE_ROOTFSA_DEV_PART  "0#rootfsa"
 #define UPDATE_ROOTFSB_DEV_PART  "0#rootfsb"
@@ -49,7 +49,7 @@ struct vendor_info_t {
 #define BOOTCHAIN_DEV_PART       "0#bootchain"
 #define USERDATA_DEV_PART        "0#userdata"
 #else
-#define UPDATE_BOOTA_DEV_PART    "0#boot"
+#define UPDATE_BOOT_DEV_PART    "0#boot"
 #define UPDATE_ROOTFSA_DEV_PART  "0#rootfs"
 #define UPDATE_ROOT_DEV_PART  "0#root"
 #define MISC_DEV_PART            "0#misc"
