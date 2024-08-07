@@ -789,14 +789,22 @@ void es_bootspi_wp_cfg(int enable)
 	// printf("Bootspi flash write protection %s\n", enable ? "enabled" : "disabled");
 }
 
-extern int es_spi_flash_probe(void);
 int es_bootspi_write_protection_init(void)
 {
 	int ret;
 
-	ret = es_spi_flash_probe();
-	if (ret < 0)
-		return -ENOENT;
+	unsigned int bus = CONFIG_SF_DEFAULT_BUS;
+	unsigned int cs = CONFIG_SF_DEFAULT_CS;
+	/* In DM mode, defaults speed and mode will be taken from DT */
+	struct udevice *new;
+
+	ret = spi_flash_probe_bus_cs(bus, cs, &new);
+	if (ret) {
+		printf("Failed to initialize SPI flash at %u:%u (error %d)\n",
+			bus, cs, ret);
+		return -1;
+	}
+	dev_get_uclass_priv(new);
 
 	es_bootspi_wp_cfg(1);
 	return 0;
