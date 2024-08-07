@@ -38,6 +38,7 @@
 #include <sata.h>
 #include <asm/cache.h>
 #include <asm/io.h>
+#include <asm/types.h>
 #include <linux/bitops.h>
 #include <linux/ctype.h>
 #include <linux/delay.h>
@@ -388,10 +389,9 @@ static int ahci_fill_sg(struct ahci_uc_priv *uc_priv, u8 port,
 	}
 
 	for (i = 0; i < sg_count; i++) {
-		u64 addr = (uintptr_t)buf + i * max_bytes;
-
+		u64 addr = (uintptr_t)(buf + i * max_bytes);
 		ahci_sg->addr = cpu_to_le32(lower_32_bits(addr));
-		ahci_sg->addr_hi = 0;
+		ahci_sg->addr_hi = cpu_to_le32(upper_32_bits(addr));
 		ahci_sg->flags_size = cpu_to_le32(0x3fffff &
 					(buf_len < max_bytes
 					? (buf_len - 1)
