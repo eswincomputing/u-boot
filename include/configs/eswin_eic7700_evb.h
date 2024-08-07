@@ -43,8 +43,8 @@
     "emmc_dev=0\0" \
     "boot_conf_file=/extlinux/extlinux.conf\0" \
     "stdin=serial,usbkbd\0" \
-    "stderr=serial,vidconsole\0" \
-    "stdout=serial,vidconsole\0"
+    "stderr=vidconsole,serial\0" \
+    "stdout=vidconsole,serial\0"
     //BOOTENV
 #undef CONFIG_BOOTCOMMAND
 
