@@ -393,13 +393,13 @@ static int emmc_write_kernel(uint32_t version, uint64_t offset, uint64_t size)
     unsigned long time;
     const char *filename;
     const char *dev_part_str;
-    dev_part_str = UPDATE_BOOTA_DEV_PART;      /* "0#boota" */
+    dev_part_str = UPDATE_BOOT_DEV_PART;      /* "0#boota" */
 
 #ifdef CONFIG_SYSTEM_UPDATE_B
     if(0 == abc->curr_bank){
         dev_part_str = UPDATE_BOOTB_DEV_PART;  /* "0#bootb" */
     }else if(1 == abc->curr_bank){
-        dev_part_str = UPDATE_BOOTA_DEV_PART;
+        dev_part_str = UPDATE_BOOT_DEV_PART;
     }else{
         printf("UPDATE: Read curr_bank failed!\n");
         free(abc);

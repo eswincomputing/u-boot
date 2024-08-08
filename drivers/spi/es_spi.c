@@ -31,6 +31,7 @@
 #include <malloc.h>
 #include <reset.h>
 #include <spi.h>
+#include <spi_flash.h>
 #include <spi-mem.h>
 #include <asm/io.h>
 #include <asm-generic/gpio.h>

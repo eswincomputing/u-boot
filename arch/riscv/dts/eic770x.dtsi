@@ -668,6 +668,25 @@
 			reg-io-width = <4>;
 
 		};
+		bootspi_d1: spi@71800000 {
+			status = "disabled";
+			compatible = "eswin,es-apb-spi-1.0";
+			reg = <0x0 0x71800000 0x0 0x8000>;
+			es,sysscr_reg = <0x71828000>;
+			write-status-reg-time = <1>;    // time in ms
+			page-program-time = <1>;
+			sector-erase-time = <45>;
+			small-block-erase-time = <120>;
+			large-block-erase-time = <150>;
+			chip-erase-time = <40>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&cru EIC7X_CLK_CLK_BOOTSPI>;
+			spi-max-frequency = <4800000>;
+			num-cs = <1>;
+			reg-io-width = <4>;
+
+		};
 		sd: sd@50460000 {
 			compatible = "eswin,sd-sdhci";
 			reg = <0x0 0x50460000 0x0 0x10000>;
