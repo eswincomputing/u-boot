@@ -1177,7 +1177,7 @@ static int do_mmc_write(int argc, char *const argv[])
 	if (!mmc)
 		return CMD_RET_FAILURE;
 
-	if(esburn_init_load_addr(addr, cnt)) {
+	if (esburn_init_load_addr((uintptr_t)addr, cnt)) {
 		puts("\nes_burn error: ");
 		puts("trying to overwrite reserved memory...\n");
 		return -ENXIO;
