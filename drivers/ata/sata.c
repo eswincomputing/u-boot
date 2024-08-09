@@ -81,7 +81,7 @@ int sata_rescan(bool verbose)
 	if (verbose)
 		printf("Rescanning SATA bus for devices...\n");
 
-	uclass_foreach_dev(dev, uc) {
+	uclass_foreach_dev_probe(UCLASS_AHCI, dev) {
 		ret = sata_scan(dev);
 		if (ret)
 			return ret;
