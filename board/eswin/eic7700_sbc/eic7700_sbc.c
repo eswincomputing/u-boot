@@ -40,6 +40,7 @@
 #include <dm/pinctrl.h>
 #include <eswin/cpu.h>
 #include <eic7700_common.h>
+#include <fdt_support.h>
 #ifdef CONFIG_ESWIN_UMBOX
 #include <eswin/eswin-umbox-srvc.h>
 #endif
@@ -186,7 +187,6 @@ int misc_init_r(void)
 		env_set("fdtfile","eswin/eic7700-sbc-a1.dtb");
 	}
 
-	env_set_ulong("ram_size", (gd->ram_size / 1024 / 1024 / 1024));
 	eswin_update_bootargs();
 	return 0;
 }
@@ -226,4 +226,9 @@ int board_late_init(void)
 	lpcpu_misc_func();
 #endif
 	return 0;
+}
+
+int ft_board_setup(void *blob, struct bd_info *bd)
+{
+	return fdt_fixup_memory(blob, gd->ram_base, gd->ram_size);
 }

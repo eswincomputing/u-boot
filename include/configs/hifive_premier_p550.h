@@ -60,7 +60,7 @@
 
 #undef CONFIG_BOOTCOMMAND
 #define CONFIG_BOOTCOMMAND \
-    "bootflow scan;"
+    "bootflow scan -b;"
 
 
 #endif /* __CONFIG_H */
