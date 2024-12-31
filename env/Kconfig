@@ -827,6 +827,12 @@ config SPL_ENV_IS_IN_FLASH
 
 endif
 
+config BOARD_INFO_OFFSET
+	hex "Board info offset"
+	default 0
+	help
+	  Eswin board info Offset from the start of the flash.
+
 if TPL_ENV_SUPPORT
 
 config TPL_ENV_IS_NOWHERE
@@ -938,5 +944,4 @@ config VERSION_VARIABLE
 	  version as printed by the "version" command.
 	  Any change to this variable will be reverted at the
 	  next reset.
-
 endmenu

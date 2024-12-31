@@ -42,6 +42,7 @@
 #ifdef CONFIG_ESWIN_UMBOX
 #include <eswin/eswin-umbox-srvc.h>
 #endif
+#include "eic7700_common.h"
 
 typedef struct {
 	uint32_t magicNumber;
@@ -78,22 +79,15 @@ typedef struct som_info{
 #define GAP_SIZE		16
 #define USER_MAX_SIZE		96
 
-/* A, B sominfo */
-#define SOM_BOARD_INFO_SIZE	(1024 * 256)
-#define SOM_BOARD_INFO_FLASH_MAIN_OFFSET	0xf80000
-#define SOM_BOARD_INFO_FLASH_BACKUP_OFFSET	(SOM_BOARD_INFO_FLASH_MAIN_OFFSET + SOM_BOARD_INFO_SIZE)
-
 /* A, B cbinfo */
 #define CARRIER_BOARD_INFO_EEPROM_MAIN_OFFSET	0
 #define CARRIER_BOARD_INFO_EEPROM_BACKUP_OFFSET	(CARRIER_BOARD_INFO_EEPROM_MAIN_OFFSET + CBINFO_MAX_SIZE + GAP_SIZE)
 
-#define MAGIC_NUMBER 0x45505EF1
-
 int update_som_info(struct spi_flash *flash, u64 offset, u32 size, const void *buf)
 {
 	int ret = 0;
-	es_flash_region_wp_cfg(flash, (void *)offset, SOM_BOARD_INFO_SIZE, 0);
-	ret = spi_flash_erase(flash, offset, SOM_BOARD_INFO_SIZE);
+	es_flash_region_wp_cfg(flash, (void *)offset, HARDWARE_BOARD_INFO_SIZE, 0);
+	ret = spi_flash_erase(flash, offset, HARDWARE_BOARD_INFO_SIZE);
 	if(ret) {
 		goto out;
 	}
@@ -102,14 +96,14 @@ int update_som_info(struct spi_flash *flash, u64 offset, u32 size, const void *b
 		goto out;
 	}
 out:
-	es_flash_region_wp_cfg(flash, (void *)offset, SOM_BOARD_INFO_SIZE, 1);
+	es_flash_region_wp_cfg(flash, (void *)offset, HARDWARE_BOARD_INFO_SIZE, 1);
 	return ret;
 }
 
 static int get_som_info(const char *node_name)
 {
-	som_info_t gSom_Board_InfoA;
-	som_info_t gSom_Board_InfoB;
+	HardwareBoardInfo_t gSom_Board_InfoA;
+	HardwareBoardInfo_t gSom_Board_InfoB;
 	struct spi_flash *flash = NULL;
 	struct udevice *bus, *dev;
 	uint64_t size = 0;
@@ -136,26 +130,28 @@ static int get_som_info(const char *node_name)
 		return -1;
 	}
 
-	size = sizeof(som_info_t);
+	size = sizeof(HardwareBoardInfo_t);
 	memset((uint8_t *)&gSom_Board_InfoA, 0, size);
 	memset((uint8_t *)&gSom_Board_InfoB, 0, size);
 	printf("Get som info from flash\n");
-	ret = spi_flash_read(flash, SOM_BOARD_INFO_FLASH_MAIN_OFFSET, size, (void *)&gSom_Board_InfoA);
+	ret = spi_flash_read(flash, HARDWARE_BOARD_INFO_FLASH_MAIN_OFFSET, size, (void *)&gSom_Board_InfoA);
 	if(ret) {
 		return ret;
 	}
-	ret = spi_flash_read(flash, SOM_BOARD_INFO_FLASH_BACKUP_OFFSET, size, (void *)&gSom_Board_InfoB);
+	ret = spi_flash_read(flash, HARDWARE_BOARD_INFO_FLASH_BACKUP_OFFSET, size, (void *)&gSom_Board_InfoB);
 	if(ret) {
 		return ret;
 	}
-	crc32ChecksumA = crc32(0xffffffff,  (uint8_t *)&gSom_Board_InfoA, sizeof(som_info_t)-4);
-	crc32ChecksumB = crc32(0xffffffff,  (uint8_t *)&gSom_Board_InfoB, sizeof(som_info_t)-4);
-	valid_flaga = (gSom_Board_InfoA.magic == MAGIC_NUMBER) && (gSom_Board_InfoA.crc == crc32ChecksumA);
-	valid_flagb = (gSom_Board_InfoB.magic == MAGIC_NUMBER) && (gSom_Board_InfoB.crc == crc32ChecksumB);
-	if (valid_flaga && !valid_flagb) {
-		update_som_info(flash, SOM_BOARD_INFO_FLASH_BACKUP_OFFSET, size, &gSom_Board_InfoA);
+	crc32ChecksumA = crc32(0xffffffff,  (uint8_t *)&gSom_Board_InfoA, sizeof(HardwareBoardInfo_t)-4);
+	crc32ChecksumB = crc32(0xffffffff,  (uint8_t *)&gSom_Board_InfoB, sizeof(HardwareBoardInfo_t)-4);
+	valid_flaga = (gSom_Board_InfoA.magicNumber == HARDWARE_BOARD_INFO_MAGIC_NUMBER) && (gSom_Board_InfoA.crc32Checksum == crc32ChecksumA);
+	valid_flagb = (gSom_Board_InfoB.magicNumber == HARDWARE_BOARD_INFO_MAGIC_NUMBER) && (gSom_Board_InfoB.crc32Checksum == crc32ChecksumB);
+	if (valid_flaga) {
+		printf("SOM SerialNumber : %s\r\n", gSom_Board_InfoA.boardSerialNumber);
+		update_som_info(flash, HARDWARE_BOARD_INFO_FLASH_BACKUP_OFFSET, size, &gSom_Board_InfoA);
 	} else if (!valid_flaga && valid_flagb) {
-		update_som_info(flash, SOM_BOARD_INFO_FLASH_MAIN_OFFSET, size, &gSom_Board_InfoB);
+		printf("SOM SerialNumber : %s\r\n", gSom_Board_InfoB.boardSerialNumber);
+		update_som_info(flash, HARDWARE_BOARD_INFO_FLASH_MAIN_OFFSET, size, &gSom_Board_InfoB);
 	} else if (!valid_flaga && !valid_flagb) {
 		printf("ERROR: No valid SOM Board info\r\n");
 	}
@@ -194,12 +190,12 @@ static int get_carrier_board_info(void)
 	}
 	crc32Checksum = crc32(0xffffffff, (uint8_t *)&gCarrier_Board_Info, sizeof(CarrierBoardInfo)-4);
 
-	if((gCarrier_Board_Info.magicNumber != MAGIC_NUMBER) || (gCarrier_Board_Info.crc32Checksum != crc32Checksum)) {
+	if((gCarrier_Board_Info.magicNumber != HARDWARE_BOARD_INFO_MAGIC_NUMBER) || (gCarrier_Board_Info.crc32Checksum != crc32Checksum)) {
 		memset((uint8_t *)&gCarrier_Board_Info, 0, sizeof(CarrierBoardInfo));
 		ret = dm_i2c_read(dev, CARRIER_BOARD_INFO_EEPROM_BACKUP_OFFSET, (uint8_t *)&gCarrier_Board_Info, sizeof(CarrierBoardInfo));
 		crc32Checksum = crc32(0xffffffff, (uint8_t *)&gCarrier_Board_Info, sizeof(CarrierBoardInfo)-4);
 	}
-	if((gCarrier_Board_Info.magicNumber == MAGIC_NUMBER) && (gCarrier_Board_Info.crc32Checksum == crc32Checksum)) {
+	if((gCarrier_Board_Info.magicNumber == HARDWARE_BOARD_INFO_MAGIC_NUMBER) && (gCarrier_Board_Info.crc32Checksum == crc32Checksum)) {
 		if (!eth_env_get_enetaddr("ethaddr", mac1_addr) && is_valid_ethaddr(gCarrier_Board_Info.ethernetMAC1)) {
 			eth_env_set_enetaddr("ethaddr", gCarrier_Board_Info.ethernetMAC1);
 		}
