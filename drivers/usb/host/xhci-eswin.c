@@ -29,9 +29,9 @@
 #include <linux/compat.h>
 #include <linux/usb/dwc3.h>
 #include <power/regulator.h>
-
+#include <asm-generic/gpio.h>
+#include <linux/delay.h>
 #include "xhci.h"
-
 DECLARE_GLOBAL_DATA_PTR;
 
 struct eswin_xhci_platdata {
@@ -195,6 +195,7 @@ static int xhci_usb_probe(struct udevice *dev)
     struct eswin_xhci *ctx = dev_get_priv(dev);
     struct xhci_hcor *hcor;
     int ret;
+    struct gpio_desc *hub_reset_gpio;
 
     dwc_usb_clk_init();
     ctx->hcd = (struct xhci_hccr *)plat->hcd_base;
@@ -215,6 +216,14 @@ static int xhci_usb_probe(struct udevice *dev)
         pr_err("XHCI: failed to initialize controller\n");
         return ret;
     }
+    
+
+    hub_reset_gpio = devm_gpiod_get_optional(dev, "hub-rst", GPIOD_IS_OUT | GPIOD_IS_OUT_ACTIVE);
+    if (hub_reset_gpio) {
+        ret = dm_gpio_set_value(hub_reset_gpio, 1);
+        dm_gpio_free(dev, hub_reset_gpio);
+    }
+
 
     return xhci_register(dev, ctx->hcd, hcor);
 }

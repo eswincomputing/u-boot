@@ -1,0 +1,6 @@
+EIC7700 SBC BOARD
+M:  Xiang Xu <xuxiang@eswincomputing.com>
+S:  Maintained
+F:  board/eswin/eic7700_sbc/
+F:  include/configs/eic7700_sbc.h
+F:  configs/eic7700_sbc_defconfig

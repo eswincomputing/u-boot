@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
- * hifive premier p550 board init
+ * eic7700 d314 board init
  *
  * Copyright 2024, Beijing ESWIN Computing Technology Co., Ltd.. All rights reserved.
  * SPDX-License-Identifier: GPL-2.0

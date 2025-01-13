@@ -642,18 +642,23 @@
 			// 		function = "gpio22_func";
 			// 	};
 			// };
-			// pinctrl_gpio23_default: gpio23-default{
-			// 	mux {
-			// 		groups = "gpio23_group";
-			// 		function = "gpio23_func";
-			// 	};
-			// };
-			// pinctrl_gpio24_default: gpio24-default{
-			// 	mux {
-			// 		groups = "gpio24_group";
-			// 		function = "gpio24_func";
-			// 	};
-			// };
+			pinctrl_gpio23_default: gpio23-default{
+				mux {
+					groups = "gpio23_group";
+					function = "gpio23_func";
+				};
+				conf {
+					groups = "gpio23_group";
+					input-enable = <1>;
+					bias-pull-down = <1>;
+				};
+			};
+			pinctrl_gpio24_default: gpio24-default{
+				mux {
+					groups = "gpio24_group";
+					function = "gpio24_func";
+				};
+			};
 			// pinctrl_gpio25_default: gpio25-default{
 			// 	mux {
 			// 		groups = "gpio25_group";
