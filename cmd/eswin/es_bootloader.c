@@ -1360,3 +1360,39 @@ U_BOOT_CMD(
 	"es_burn wroot addr len flash_stg	- write bootmenu mode root filesystem binary file from memory at `addr' to mtd 'flash_stg'\n"
 	"es_burn wmmc addr len	- write .wic image binary file from memory at `addr' to eMMC\n"
 );
+#if defined(CONFIG_BOOTFW0_WRITE) || defined(CONFIG_BOOTFW1_WRITE)
+#include "bootfw.h"
+int do_autoburn(void)
+{
+	int ret;
+	char str[32];
+	int arg_count;
+	uint32_t data;
+	#if defined(CONFIG_BOOTFW0_WRITE)
+	printf("%s %d BOOTFW0_WRITE\r\n",__func__,__LINE__);
+	data = (uint32_t)&__bootfw_bootfw0_begin[0];
+	memset( str, 0, 32);
+	sprintf(str, "0x%x", data);
+	char *args[] = {"write", str, "flash", "0", NULL};
+	arg_count = 4;
+	ret = do_bootchain_write(arg_count, args);
+	if (ret != 0)
+		return ret;
+	printf("%s %d BOOTFW0_WRITE done\r\n",__func__,__LINE__);
+	#endif
+
+	#if defined(CONFIG_BOOTFW1_WRITE)
+	printf("%s %d BOOTFW1_WRITE\r\n",__func__,__LINE__);
+	data = (uint32_t)&__bootfw_bootfw1_begin[0];
+	memset( str, 0, 32);
+	sprintf(str, "0x%x", data);
+	char *args1[] = {"write", str, "flash", "1", NULL};
+	arg_count = 4;
+	ret = do_bootchain_write(arg_count, args1);
+	if (ret != 0)
+		return ret;
+	printf("%s %d BOOTFW1_WRITE done\r\n",__func__,__LINE__);
+	#endif
+	return 0;
+}
+#endif

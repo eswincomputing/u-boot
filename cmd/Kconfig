@@ -1267,6 +1267,36 @@ config CMD_ESBURN
 	help
 	  Enables ESWIN es_burn cmd to write boot/root filesystem file to mmc.
 
+if CMD_ESBURN
+
+config BOOTFW0_WRITE
+	bool "BOOTFW0_WRITE"
+	default n 
+	depends on CMD_ESBURN
+	imply ARCH_MISC_INIT
+	help
+	  Automatically updates the bootloader firmware
+
+config BOOTFW0_PATH
+	string "bootloader firmware path"
+	depends on BOOTFW0_WRITE
+	default ""
+
+config BOOTFW1_WRITE
+	bool "BOOTFW1_WRITE"
+	default n
+	depends on CMD_ESBURN
+	imply ARCH_MISC_INIT
+	help
+	  Automatically updates the Die1 bootloader firmware
+
+config BOOTFW1_PATH
+	string "Die1 bootloader firmware path"
+	depends on BOOTFW1_WRITE
+	default ""
+
+endif
+
 config CMD_ES_MKFSFAT
 	bool "mkfsfat"
 	select FS_FAT
