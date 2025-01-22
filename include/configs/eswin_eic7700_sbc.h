@@ -32,7 +32,7 @@
     "initrd_high=0xffffffffffffffff\0" \
     "kernel_addr_r=0x84000000\0" \
     "fdt_addr_r=0x88000000\0" \
-    "fdtfile=eswin/eic7700-sbc.dtb\0" \
+    "fdtfile=eswin/eic7700-sbc-a1.dtb\0" \
     "boot_conf_file=/extlinux/extlinux.conf\0" \
     "boot_conf_addr_r=0xc0000000\0" \
     "scriptaddr=0x88100000\0" \

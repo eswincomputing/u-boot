@@ -130,7 +130,7 @@ int hardware_info_env_set(void)
 	char *boardSerialNumber = gHardware_Board_Info.boardSerialNumber;
 	printf("BoardSerialNumber %s\n",boardSerialNumber);
 	if(strstr(boardSerialNumber, "EIMSB00")) {
-		env_set("fdtfile","eswin/eic7700-sbc.dtb");
+		env_set("fdtfile","eswin/eic7700-sbc-a1.dtb");
 	}
 
 	return 0;
@@ -183,7 +183,7 @@ int misc_init_r(void)
 	hardware_info_env_set();
 
 	if (NULL == env_get("fdtfile")) {
-		env_set("fdtfile","eswin/eic7700-sbc.dtb");
+		env_set("fdtfile","eswin/eic7700-sbc-a1.dtb");
 	}
 
 	env_set_ulong("ram_size", (gd->ram_size / 1024 / 1024 / 1024));
