@@ -1382,6 +1382,12 @@ config BOOTMENU_DISABLE_UBOOT_CONSOLE
 	  If this option is enabled, user can not enter the U-Boot console from
 	  bootmenu. It increases the system security.
 
+config BOOT_ESWIN_VPU7702
+	bool "boot for eswin vpu7702"
+	help
+	  If this option is enabled, the system will boot with vpu7702-specific
+	  configurations.
+
 config BOOT_RETRY
 	bool "Boot retry feature"
 	help

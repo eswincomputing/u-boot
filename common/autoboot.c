@@ -57,6 +57,12 @@ static int menukey;
 #define AUTOBOOT_MENUKEY 0
 #endif
 
+#ifdef CONFIG_BOOT_ESWIN_VPU7702
+#define BOOT_SIGN	0xB00C
+#define READY_SIGN	0x2EA1
+#define TEST_REG0	0x51810668
+#endif
+
 /**
  * passwd_abort_crypt() - check for a crypt-style hashed key sequence to abort booting
  *
@@ -367,6 +373,71 @@ static int abortboot_key_sequence(int bootdelay)
 	return abort;
 }
 
+#ifdef CONFIG_BOOT_ESWIN_VPU7702
+static int abortboot_single_key(int bootdelay)
+{
+	int abort = 0;
+	unsigned long ts;
+	u32 testreg_var = 0;
+
+	/*
+	 * set test reg to info host ready for loading image
+	 */
+	writel(READY_SIGN, (u32 *)TEST_REG0);
+	testreg_var = readl((u32 *)TEST_REG0);
+	if (testreg_var != READY_SIGN) {
+		printf("WARNING! set test reg failed. value is %d\n", testreg_var);
+	}
+	bootdelay = 5;
+	printf("Hit any key to cmd line, or will autoboot once image is loaded.\n");
+
+	/*
+	 * Check if key already pressed
+	 */
+	if (tstc()) {	/* we got a key press	*/
+		getchar();	/* consume input	*/
+		puts("\b\b\b 0");
+		abort = 1;	/* don't auto boot	*/
+	}
+
+	while ((bootdelay > 0) && (!abort)) {
+		//--bootdelay;
+		/* delay 1000 ms */
+		ts = get_timer(0);
+		do {
+			if (tstc()) {	/* we got a key press	*/
+				int key;
+
+				abort  = 1;	/* don't auto boot	*/
+				bootdelay = 0;	/* no more delay	*/
+				key = getchar();/* consume input	*/
+				if (IS_ENABLED(CONFIG_AUTOBOOT_USE_MENUKEY))
+					menukey = key;
+				break;
+			}
+
+			/*
+			 * autoboot if OS image is loaded from host
+			 * by checking test reg
+			 */
+			testreg_var = readl((u32 *)TEST_REG0);
+			debug_bootkeys("testreg value is %x.\n", testreg_var);
+			if (testreg_var == BOOT_SIGN) {
+				printf("OS image is loaded. Now autobooting ... \n");
+				run_command_list("bootm 0x100000000", -1, 0);
+			}
+
+			udelay(10000);
+		} while (!abort && get_timer(ts) < 1000);
+
+		//printf("\b\b\b%2d ", bootdelay);
+	}
+
+	putc('\n');
+
+	return abort;
+}
+#else
 static int abortboot_single_key(int bootdelay)
 {
 	int abort = 0;
@@ -408,6 +479,7 @@ static int abortboot_single_key(int bootdelay)
 
 	return abort;
 }
+#endif
 
 static int abortboot(int bootdelay)
 {
