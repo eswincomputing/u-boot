@@ -15,6 +15,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Authors: DengLei <denglei@eswincomputing.com>
  */
 
 #include <asm/unaligned.h>
@@ -44,8 +46,6 @@
 #include "eswin_display.h"
 #include "eswin_crtc.h"
 #include "eswin_connector.h"
-#include "eswin_bridge.h"
-#include "eswin_phy.h"
 #include "eswin_panel.h"
 #include "eswin_dc_test.h"
 #include <dm.h>
@@ -56,6 +56,7 @@
 #ifdef CONFIG_ESWIN_LOGO_DISPLAY
 #include "logo.h"
 #endif
+#include "eswin_vo_log.h"
 
 #define DRIVER_VERSION	"v1.0.1"
 
@@ -88,14 +89,6 @@ static unsigned char *upgrade_buf[ESWIN_LAYER_NUM] = {NULL, NULL};
 enum public_use_phy {
 	NONE,
 	INNO_HDMI_PHY
-};
-
-/* save public phy data */
-struct public_phy_data {
-	const struct eswin_phy *phy_drv;
-	int phy_node;
-	int public_phy_type;
-	bool phy_init;
 };
 
 extern void sifive_l3_flush64_range(unsigned long start, unsigned long len);
@@ -142,12 +135,6 @@ void *get_display_buffer(int size)
 bool can_direct_logo(int bpp)
 {
 	return bpp == 24 || bpp == 32;
-}
-
-static int connector_phy_init(struct display_state *state,
-			      struct public_phy_data *data)
-{
-	return 0;
 }
 
 static int connector_panel_init(struct display_state *state)
@@ -489,39 +476,33 @@ static int display_init(struct display_state *state)
 	const struct eswin_crtc_funcs *crtc_funcs = crtc->funcs;
 	struct drm_display_mode *mode = &conn_state->mode;
 	int ret = 0;
-	static bool __print_once = false;
-#if defined(CONFIG_I2C_EDID)
-	int bpc;
-#endif
-	if (!__print_once) {
-		__print_once = true;
-		printf("[%s]Eswin UBOOT DRM driver version: %s\n", __FUNCTION__, DRIVER_VERSION);
-	}
-	debug("[%s]enter.\n", __FUNCTION__);
+
+	vo_info("Eswin UBOOT DRM driver version: %s\n", DRIVER_VERSION);
+
 	if (state->is_init) {
-		printf("[%s]display init already.\n", __FUNCTION__);
+		vo_warn("display init already.\n");
 		return 0;
 	}
 	if (!conn_funcs || !crtc_funcs) {
-		printf("[%s]failed to find connector or crtc functions\n", __FUNCTION__);
+		vo_err("failed to find connector or crtc functions\n");
 		return -ENXIO;
 	}
 	if (crtc_state->crtc->active &&
 	    memcmp(&crtc_state->crtc->active_mode, &conn_state->mode,
 		   sizeof(struct drm_display_mode))) {
-			printf("%s has been used for output type: %d, mode: %dx%dp%d\n",
-			crtc_state->dev->name,
-			crtc_state->crtc->active_mode.type,
-			crtc_state->crtc->active_mode.hdisplay,
-			crtc_state->crtc->active_mode.vdisplay,
-			crtc_state->crtc->active_mode.vrefresh);
+			vo_info("%s has been used for output type: %d, mode: %dx%dp%d\n",
+					crtc_state->dev->name,
+					crtc_state->crtc->active_mode.type,
+					crtc_state->crtc->active_mode.hdisplay,
+					crtc_state->crtc->active_mode.vdisplay,
+					crtc_state->crtc->active_mode.vrefresh);
 		return -ENODEV;
 	}
 
 	if (crtc_funcs->preinit) {
 		ret = crtc_funcs->preinit(state);
 		if (ret) {
-			printf("[%s]crtc_funcs->preinit failed.\n", __FUNCTION__);
+			vo_err("crtc_funcs->preinit failed.\n");
 			return ret;
 		}
 	}
@@ -529,19 +510,14 @@ static int display_init(struct display_state *state)
 	if (conn_funcs->init) {
 		ret = conn_funcs->init(state);
 		if (ret) {
-			printf("[%s]conn_funcs->init failed.\n", __FUNCTION__);
+			vo_err("conn_funcs->init failed.\n");
 			goto deinit;
 		}
 	}
 
 	if (panel_state->panel) {
-		debug("[%s]panel_state->panel is not null.\n", __FUNCTION__);
+		vo_debug("panel_state->panel is not null.\n");
 		eswin_panel_init(panel_state->panel);
-	}
-
-	if (conn_state->phy) {
-		debug("[%s]conn_state->phy is not null.\n", __FUNCTION__);
-		eswin_phy_init(conn_state->phy);
 	}
 
 	/*
@@ -549,64 +525,32 @@ static int display_init(struct display_state *state)
 	 */
 	if (conn_funcs->detect) {
 		ret = conn_funcs->detect(state);
-		if (!ret)
+		if (!ret) {
+			vo_debug("no display connected!\n");
 			goto deinit;
+		}
 	}
 
 	if (panel_state->panel) {
+		vo_debug("get panle timing.\n");
 		ret = display_get_timing(state);
-#if defined(CONFIG_I2C_EDID)
-		if (ret < 0 && conn_funcs->get_edid) {
-			eswin_panel_prepare(panel_state->panel);
-
-			ret = conn_funcs->get_edid(state);
-			if (!ret) {
-				ret = edid_get_drm_mode((void *)&conn_state->edid,
-							sizeof(conn_state->edid),
-							mode, &bpc);
-				if (!ret)
-					edid_print_info((void *)&conn_state->edid);
-			}
-		}
-#endif
-	} else if (conn_state->bridge) {
-		ret = video_bridge_read_edid(conn_state->bridge->dev,
-					     conn_state->edid, EDID_SIZE);
-		if (ret > 0) {
-#if defined(CONFIG_I2C_EDID)
-			ret = edid_get_drm_mode(conn_state->edid, ret, mode,
-						&bpc);
-			if (!ret)
-				edid_print_info((void *)&conn_state->edid);
-#endif
-		} else {
-//			ret = video_bridge_get_timing(conn_state->bridge->dev);
-		}
 	} else if (conn_funcs->get_timing) {
-		debug("[%s]conn_funcs->get_timing.\n", __FUNCTION__);
+		vo_debug("get connctor timing.\n");
 		ret = conn_funcs->get_timing(state);
-	} else if (conn_funcs->get_edid) {
-		debug("[%s]conn_funcs->get_edid.\n", __FUNCTION__);
-		ret = conn_funcs->get_edid(state);
-#if defined(CONFIG_I2C_EDID)
-		if (!ret) {
-			ret = edid_get_drm_mode((void *)&conn_state->edid,
-						sizeof(conn_state->edid), mode, &bpc);
-			if (!ret)
-				edid_print_info((void *)&conn_state->edid);
-		}
-#endif
-	}
-	if (ret) {
-		printf("[%s]init failed.\n", __FUNCTION__);
+	} else {
+		vo_err("can't get any timing.\n");
 		goto deinit;
 	}
 
-	printf("[%s]Detailed mode clock %u kHz, flags[%x]\n"
+	if (ret) {
+		vo_err("get timing failed.\n");
+		goto deinit;
+	}
+
+	vo_info("Detailed mode clock %u kHz, flags[%x]\n"
 	       "    H: %04d %04d %04d %04d\n"
 	       "    V: %04d %04d %04d %04d\n"
 	       "bus_format: %x\n",
-		   __FUNCTION__,
 	       mode->clock, mode->flags,
 	       mode->hdisplay, mode->hsync_start,
 	       mode->hsync_end, mode->htotal,
@@ -618,7 +562,7 @@ static int display_init(struct display_state *state)
 	if (crtc_funcs->init) {
 		ret = crtc_funcs->init(state);
 		if (ret) {
-			printf("[%s]crtc_funcs->init failed.\n", __FUNCTION__);
+			vo_err("crtc_funcs->init failed.\n");
 			goto deinit;
 		}
 	}
@@ -627,7 +571,6 @@ static int display_init(struct display_state *state)
 	memcpy(&crtc_state->crtc->active_mode,
 	       &conn_state->mode, sizeof(struct drm_display_mode));
 
-	debug("[%s]leave.\n", __FUNCTION__);
 	return 0;
 
 deinit:
@@ -700,17 +643,11 @@ static int display_enable(struct display_state *state)
 	if (conn_funcs->prepare)
 		conn_funcs->prepare(state);
 
-	if (conn_state->bridge)
-		eswin_bridge_pre_enable(conn_state->bridge);
-
 	if (panel_state->panel)
 		eswin_panel_prepare(panel_state->panel);
 
 	if (conn_funcs->enable)
 		conn_funcs->enable(state);
-
-	if (conn_state->bridge)
-		eswin_bridge_enable(conn_state->bridge);
 
 	if (panel_state->panel)
 		eswin_panel_enable(panel_state->panel);
@@ -746,17 +683,11 @@ static int display_disable(struct display_state *state)
 	if (panel_state->panel)
 		eswin_panel_disable(panel_state->panel);
 
-	if (conn_state->bridge)
-		eswin_bridge_disable(conn_state->bridge);
-
 	if (conn_funcs->disable)
 		conn_funcs->disable(state);
 
 	if (panel_state->panel)
 		eswin_panel_unprepare(panel_state->panel);
-
-	if (conn_state->bridge)
-		eswin_bridge_post_disable(conn_state->bridge);
 
 	if (conn_funcs->unprepare)
 		conn_funcs->unprepare(state);
@@ -809,7 +740,7 @@ static int display_logo(struct display_state *state)
 	memcpy((u32 *)(u64)crtc_state->dma_addr, logo->mem, DRM_ESWIN_FB_SIZE);
 #endif
 	sifive_l3_flush64_range((unsigned long)crtc_state->dma_addr, DRM_ESWIN_FB_SIZE);
-	debug("[%s]crtc_state->dma_addr=0x%x,logo->mem=0x%s\n", __FUNCTION__, crtc_state->dma_addr, logo->mem);
+	vo_debug("crtc_state->dma_addr=0x%x,logo->mem=0x%s\n", crtc_state->dma_addr, logo->mem);
 
 	if (logo->mode == ESWIN_DISPLAY_FULLSCREEN) {
 		crtc_state->crtc_x = 0;
@@ -1170,62 +1101,6 @@ found:
 	return (struct eswin_panel *)dev_get_driver_data(panel_dev);
 }
 
-static struct eswin_bridge *eswin_of_find_bridge(struct udevice *conn_dev)
-{
-	ofnode node, ports, ep;
-	ofnode port = {0};
-	struct udevice *dev;
-	int ret;
-
-	ports = dev_read_subnode(conn_dev, "ports");
-	if (!ofnode_valid(ports))
-		return NULL;
-
-	ofnode_for_each_subnode(port, ports) {
-		u32 reg;
-
-		if (ofnode_read_u32(port, "reg", &reg))
-			continue;
-
-		if (reg != PORT_DIR_OUT)
-			continue;
-
-		ofnode_for_each_subnode(ep, port) {
-			ofnode _ep, _port, _ports;
-			uint phandle;
-
-			if (ofnode_read_u32(ep, "remote-endpoint", &phandle))
-				continue;
-
-			_ep = ofnode_get_by_phandle(phandle);
-			if (!ofnode_valid(_ep))
-				continue;
-
-			_port = ofnode_get_parent(_ep);
-			if (!ofnode_valid(_port))
-				continue;
-
-			_ports = ofnode_get_parent(_port);
-			if (!ofnode_valid(_ports))
-				continue;
-
-			node = ofnode_get_parent(_ports);
-			if (!ofnode_valid(node))
-				continue;
-
-			ret = uclass_get_device_by_ofnode(UCLASS_VIDEO_BRIDGE,
-							  node, &dev);
-			if (!ret)
-				goto found;
-		}
-	}
-
-	return NULL;
-
-found:
-	return (struct eswin_bridge *)dev_get_driver_data(dev);
-}
-
 static struct udevice *eswin_of_find_connector(ofnode endpoint)
 {
 	ofnode ep, port, ports, conn;
@@ -1259,18 +1134,6 @@ static struct udevice *eswin_of_find_connector(ofnode endpoint)
 	return dev;
 }
 
-static struct eswin_phy *eswin_of_find_phy(struct udevice *dev)
-{
-	struct udevice *phy_dev;
-	int ret;
-
-	ret = uclass_get_device_by_phandle(UCLASS_PHY, dev, "phys", &phy_dev);
-	if (ret)
-		return NULL;
-
-	return (struct eswin_phy *)dev_get_driver_data(phy_dev);
-}
-
 static int eswin_display_probe(struct udevice *dev)
 {
 	struct video_priv *uc_priv = dev_get_uclass_priv(dev);
@@ -1281,26 +1144,16 @@ static int eswin_display_probe(struct udevice *dev)
 	struct eswin_crtc *crtc;
 	const struct eswin_connector *conn;
 	struct eswin_panel *panel = NULL;
-	struct eswin_bridge *bridge = NULL;
-	struct eswin_phy *phy = NULL;
 	struct display_state *s = NULL;
 	const char *name;
 	int ret;
 	ofnode route_node;
 	ofnode node = {0};
 	struct device_node *port_node, *dc_node, *ep_node;
-	struct public_phy_data *data;
 
 	/* Before relocation we don't need to do anything */
 	if (!(gd->flags & GD_FLG_RELOC))
 		return 0;
-
-	data = malloc(sizeof(struct public_phy_data));
-	if (!data) {
-		printf("[%s]failed to alloc phy data\n", __FUNCTION__);
-		return -ENOMEM;
-	}
-	data->phy_init = false;
 
 	init_display_buffer(plat->base);
 #ifdef CONFIG_ESWIN_LOGO_DISPLAY
@@ -1358,13 +1211,7 @@ static int eswin_display_probe(struct udevice *dev)
 
 		conn = (const struct eswin_connector *)dev_get_driver_data(conn_dev);
 
-		phy = eswin_of_find_phy(conn_dev);
-
-		bridge = eswin_of_find_bridge(conn_dev);
-		if (bridge)
-			panel = eswin_of_find_panel(bridge->dev);
-		else
-			panel = eswin_of_find_panel(conn_dev);
+		panel = eswin_of_find_panel(conn_dev);
 
 		s = malloc(sizeof(*s));
 		if (!s)
@@ -1402,8 +1249,6 @@ static int eswin_display_probe(struct udevice *dev)
 		s->conn_state.node = conn_dev->node_;
 		s->conn_state.dev = conn_dev;
 		s->conn_state.connector = conn;
-		s->conn_state.phy = phy;
-		s->conn_state.bridge = bridge;
 		s->conn_state.overscan.left_margin = 100;
 		s->conn_state.overscan.right_margin = 100;
 		s->conn_state.overscan.top_margin = 100;
@@ -1419,9 +1264,6 @@ static int eswin_display_probe(struct udevice *dev)
 		s->crtc_state.crtc_id = get_crtc_id(np_to_ofnode(ep_node));
 		s->node = node;
 
-		if (bridge)
-			bridge->state = s;
-
 		if (panel)
 			panel->state = s;
 
@@ -1435,11 +1277,6 @@ static int eswin_display_probe(struct udevice *dev)
 			continue;
 		}
 
-		if (connector_phy_init(s, data)) {
-			printf("[%s]Warn: Failed to init phy drivers\n", __FUNCTION__);
-			free(s);
-			continue;
-		}
 		list_add_tail(&s->head, &eswin_display_list);
 	}
 
@@ -1669,6 +1506,25 @@ static int do_writeback_to_mem(struct cmd_tbl *cmdtp, int flag, int argc,
 	return 0;
 }
 
+static int do_read_hdmi_phy_regs(struct cmd_tbl *cmdtp, int flag, int argc,
+			char *const argv[])
+{
+	struct udevice *dev;
+	struct display_state *s = NULL;
+	struct connector_state *conn_state;
+
+	printf("do read hdmi phy: enter.\n");
+
+	uclass_get_device_by_name(UCLASS_VIDEO, "display-subsystem", &dev);
+
+	list_for_each_entry(s, &eswin_display_list, head) {
+		conn_state = &s->conn_state;
+		conn_state->connector->funcs->dump_hdmi_phy_regs(s);
+	}
+
+	return 0;
+}
+
 
 #ifdef CONFIG_ESWIN_LOGO_DISPLAY
 U_BOOT_CMD(show_logo, 2, 1, do_eswin_logo_show,
@@ -1694,6 +1550,11 @@ U_BOOT_CMD(write_regs, 2, 1, do_write_dc8k_regs,
 
 U_BOOT_CMD(write_back, 1, 1, do_writeback_to_mem,
 	"write and print value from dc8k regs",
+	NULL
+);
+
+U_BOOT_CMD(read_hdmi_phy, 1, 1, do_read_hdmi_phy_regs,
+	"read and print the hdmi phy regs value",
 	NULL
 );
 

@@ -15,6 +15,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Authors: DengLei <denglei@eswincomputing.com>
  */
 
 #include <common.h>
@@ -66,12 +68,31 @@ static const struct dw_hdmi_mpll_config eswin_mpll_cfg[] = {
             { 0x2008, 0x060f },
         },
     },  {
+		235690000, {
+			{ 0x0000, 0x0605 },
+			{ 0x1018, 0x0219 },
+			{ 0x2648, 0x020f },
+		},
+	}, {
         297000000, {
             { 0x0000, 0x0205 },
             { 0x1658, 0x0219 },
             { 0x2648, 0x020f },
         },
-    },  {
+    }, {
+		371370000, {
+			{ 0x0640, 0x0205 },
+			{ 0x1658, 0x0019 },
+			{ 0x2648, 0x000f },
+		},
+	}, {
+		513820000,
+		{
+			{ 0x0640, 0x0005 },
+			{ 0x1658, 0x0019 },
+			{ 0x2648, 0x000f },
+		},
+	}, {
         594000000, {
             { 0x0640, 0x0005 },
             { 0x1658, 0x0019 },
@@ -99,8 +120,14 @@ static const struct dw_hdmi_curr_ctrl eswin_cur_ctr[] = {
     },  {
         148500000, { 0x2080, 0x3203, 0x3141 },
     },  {
+		235690000, { 0x3040, 0x3182, 0x3100 },
+	},  {
         297000000, { 0x3041, 0x3182, 0x3100 },
     },  {
+		371370000, { 0x3041, 0x31c0, 0x3100 },
+	},  {
+		513820000, { 0x3080, 0x31c0, 0x3100 },
+	},  {
         594000000, { 0x3080, 0x31c0, 0x3100 },
     },  {
         ~0UL,      { 0x0000, 0x0000, 0x0000 },
@@ -111,7 +138,7 @@ static const struct dw_hdmi_phy_config eswin_phy_config[] = {
     /*pixelclk   symbol   term   vlev*/
     { 165000000, 0x8088, 0x0007, 0x0180},
     { 297000000, 0x80c8, 0x0004, 0x0180},
-    { 594000000, 0x80f8, 0x0000, 0x0180},
+    { 594000000, 0x80f3, 0x0000, 0x0180},
     { ~0UL,      0x0000, 0x0000, 0x0000}
 };
 
@@ -137,7 +164,7 @@ static const struct eswin_connector_funcs eswin_dw_hdmi_funcs = {
     .disable = eswin_dw_hdmi_disable,
     .get_timing = eswin_dw_hdmi_get_timing,
     .detect = eswin_dw_hdmi_detect,
-    .get_edid = eswin_dw_hdmi_get_edid,
+    .dump_hdmi_phy_regs = eswin_dw_hdmi_dump_phy,
 };
 
 const struct dw_hdmi_plat_data eswin_hdmi_drv_data = {
@@ -149,7 +176,7 @@ const struct dw_hdmi_plat_data eswin_hdmi_drv_data = {
 
 static int eswin_dw_hdmi_probe(struct udevice *dev)
 {
-    eswin_syscrg_config(0);
+    eswin_vo_clk_init(DEFAULT_PIXEL_CLK);
     return 0;
 }
 

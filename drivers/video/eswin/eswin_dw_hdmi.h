@@ -15,6 +15,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Authors: DengLei <denglei@eswincomputing.com>
  */
 
 #ifndef _ESWIN_DW_HDMI_REG_H_
@@ -31,7 +33,7 @@ int eswin_dw_hdmi_enable(struct display_state *state);
 int eswin_dw_hdmi_disable(struct display_state *state);
 int eswin_dw_hdmi_get_timing(struct display_state *state);
 int eswin_dw_hdmi_detect(struct display_state *state);
-int eswin_dw_hdmi_get_edid(struct display_state *state);
+int eswin_dw_hdmi_dump_phy(struct display_state *state);
 
 enum drm_connector_status
 inno_dw_hdmi_phy_read_hpd(struct dw_hdmi *hdmi,

@@ -15,6 +15,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Authors: DengLei <denglei@eswincomputing.com>
  */
 
 #include <drm/dw_mipi_dsi.h>
@@ -39,7 +41,6 @@
 #include "eswin_crtc.h"
 #include "eswin_connector.h"
 #include "eswin_panel.h"
-#include "eswin_phy.h"
 #include "linux/delay.h"
 // #include "linux/unaligned/le_byteshift.h"
 #include "eswin_dc_reg.h"
@@ -310,14 +311,6 @@ struct eswin_dw_mipi_dsi_plat_data {
     unsigned long max_bit_rate_per_lane;
 };
 
-struct eswin_mipi_dphy {
-    /* Non-SNPS PHY */
-    struct eswin_phy *phy;
-
-    u16 input_div;
-    u16 feedback_div;
-};
-
 struct pll_parameter {
     u32 max_freq;
     u32 actual_freq;
@@ -357,7 +350,6 @@ struct eswin_dw_mipi_dsi {
     u32 lanes;
     u32 format;
     u32 mode_flags;
-    struct eswin_mipi_dphy dphy;
     struct drm_display_mode mode;
 
     const struct eswin_dw_mipi_dsi_plat_data *pdata;
@@ -1009,7 +1001,6 @@ static int eswin_dw_mipi_dsi_connector_init(struct display_state *state) {
     printf("********[%s] enter*********\n", __func__);
     memcpy(&dsi->mode, &conn_state->mode, sizeof(struct drm_display_mode));
 
-    dsi->dphy.phy = conn_state->phy;
     conn_state->output_mode = ESWIN_OUT_MODE_P888;
     conn_state->color_space = V4L2_COLORSPACE_DEFAULT;
     conn_state->type = DRM_MODE_CONNECTOR_DSI;
@@ -1236,7 +1227,7 @@ static int eswin_dw_mipi_dsi_probe(struct udevice *dev) {
     dsi->pdata = pdata;
     dsi->id = id;
 
-    eswin_syscrg_config(1485000000);
+    eswin_vo_clk_init(DEFAULT_PIXEL_CLK);
     eswin_dw_mipi_dsi_bind(dev);
     return 0;
 }

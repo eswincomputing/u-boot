@@ -15,6 +15,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Authors: DengLei <denglei@eswincomputing.com>
  */
 
 #include <config.h>
@@ -27,6 +29,7 @@
 #include <linux/list.h>
 
 #include "eswin_dc_reg.h"
+#include "eswin_vo_log.h"
 
 /*******************************************************************************
 ** Register access.
@@ -692,11 +695,24 @@ gctVOID eswin_hw_set_display_dither_tablehigh(struct dc8000_dc *dc,
 }
 
 /* system config */
-void eswin_syscrg_config(int pclk)
+void eswin_vo_clk_init(int pclk)
 {
 	void *syscrg_reg_base = (void *)(0x51828000);
+	int div;
+	int clk_reg_val;
+
 	eswin_dc_write_reg(syscrg_reg_base, 0x1b0, 0xc0000020);
-	eswin_dc_write_reg(syscrg_reg_base, 0x1b8, 0x80000080);
+
+	if (pclk == 513820) {
+		vo_debug("set clk rate 520M\n");
+		eswin_dc_write_reg(syscrg_reg_base, 0x1b8, 0x80000021);
+	} else {
+		div = 1188000 / pclk;
+		clk_reg_val = 0x80000000 | div << 4;
+		vo_debug("clk reg val:0x%x\n", clk_reg_val);
+		eswin_dc_write_reg(syscrg_reg_base, 0x1b8, clk_reg_val);
+	}
+
 	eswin_dc_write_reg(syscrg_reg_base, 0x1bc, 0x80000500);
 	eswin_dc_write_reg(syscrg_reg_base, 0x1c0, 0x6);
 	eswin_dc_write_reg(syscrg_reg_base, 0x484, 0x3f);

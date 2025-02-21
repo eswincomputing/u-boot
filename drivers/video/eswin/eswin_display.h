@@ -15,6 +15,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Authors: DengLei <denglei@eswincomputing.com>
  */
 
 #ifndef _ESWIN_DISPLAY_H
@@ -147,8 +149,6 @@ struct overscan {
 struct connector_state {
 	struct udevice *dev;
 	const struct eswin_connector *connector;
-	struct eswin_bridge *bridge;
-	struct eswin_phy *phy;
 	ofnode node;
 
 	void *private;

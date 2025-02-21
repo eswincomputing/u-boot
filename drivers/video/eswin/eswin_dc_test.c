@@ -15,6 +15,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Authors: DengLei <denglei@eswincomputing.com>
  */
 
 #include <common.h>
@@ -1461,15 +1463,19 @@ int dc_reg_test_read(void *regs)
 	regVal = eswin_dc_read_reg(regs, 0x24C0);
 	if(regVal != 0x0)
 		printf("dc_reg_test_read: dcregThreedLutOffset0[0x24c0, 0x0, 0x%x]\n", regVal);
-	
+
 	regVal = eswin_dc_read_reg(regs, 0x24C8);
 	if(regVal != 0x0)
 		printf("dc_reg_test_read: dcregThreedLutOffsetEx0[0x24c8, 0x0, 0x%x]\n", regVal);
-	
+
 	regVal = eswin_dc_read_reg(regs, 0x24D0);
 	if(regVal != 0x0)
 		printf("dc_reg_test_read: dcregThreedLutEnlarge0[0x24d0, 0x0, 0x%x]\n", regVal);
-	
+
+	regVal = eswin_dc_read_reg((void *)0x51828000, 0x1b8);
+	if(regVal != 0x0)
+		printf("vo clk reg(0x518281b8): 0x%x\n", regVal);
+
 	return 0;
 }
 
@@ -2682,7 +2688,7 @@ int dc_test_writeback(void *regs, unsigned int scaler)
 	printf("dc_test_writeback: before writeback => *src_overlay_buf = 0x%x, *dst_buf = 0x%x.\n", *src_overlay_buf, *dst_buf);
 #endif
 	//sysconfig
-    eswin_syscrg_config(0);
+    eswin_vo_clk_init(0);
 	//reset dc8000
 	eswin_dc8k_reset(regs);
 

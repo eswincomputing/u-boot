@@ -1,31 +1,28 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * Copyright (c) 2006 Luc Verhaegen (quirks list)
- * Copyright (c) 2007-2008 Intel Corporation
- *   Jesse Barnes <jesse.barnes@intel.com>
- * Copyright 2010 Red Hat, Inc.
+ * DesignWare High-Definition Multimedia Interface (HDMI) driver
  *
- * DDC probing routines (drm_ddc_read & drm_do_probe_ddc_edid) originally from
- * FB layer.
- *   Copyright (C) 2006 Dennis Munsie <dmunsie@cecropia.com>
+ * Copyright (C) 2013-2015 Mentor Graphics Inc.
+ * Copyright (C) 2011-2013 Freescale Semiconductor, Inc.
+ * Copyright (C) 2010, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+ *****************************************************************************
+ * ESWIN hdmi driver
  *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sub license,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
+ * Copyright 2024, Beijing ESWIN Computing Technology Co., Ltd.. All rights reserved.
  *
- * The above copyright notice and this permission notice (including the
- * next paragraph) shall be included in all copies or substantial portions
- * of the Software.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 2.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Authors: DengLei <denglei@eswincomputing.com>
  */
 
 #include <common.h>
@@ -1217,167 +1214,6 @@ static const struct drm_display_mode edid_est_modes[] = {
            1344, 1600, 864, 865, 868, 900, 0,
            DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC) },
 };
-
-#define DRM_BASE_MODE(c, hd, hss, hse, ht, vd, vss, vse, vt, vs, f) \
-    .clock = (c), \
-    .hdisplay = (hd), .hsync_start = (hss), .hsync_end = (hse), \
-    .htotal = (ht), .vdisplay = (vd), \
-    .vsync_start = (vss), .vsync_end = (vse), .vtotal = (vt), \
-    .vscan = (vs), .flags = (f)
-
-static const struct base_drm_display_mode resolution_white[] = {
-    /* 0. vic:2 - 720x480@60Hz */
-    { DRM_BASE_MODE(27000, 720, 736,
-            798, 858, 480, 489, 495, 525, 0,
-            DRM_MODE_FLAG_NHSYNC | DRM_MODE_FLAG_NVSYNC),
-      .vrefresh = 60, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_4_3, },
-    /* 1. vic:3 - 720x480@60Hz */
-    { DRM_BASE_MODE(27000, 720, 736,
-            798, 858, 480, 489, 495, 525, 0,
-            DRM_MODE_FLAG_NHSYNC | DRM_MODE_FLAG_NVSYNC),
-      .vrefresh = 60, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_16_9, },
-    /* 2. vic:4 - 1280x720@60Hz */
-    { DRM_BASE_MODE(74250, 1280, 1390,
-            1430, 1650, 720, 725, 730, 750, 0,
-            DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC),
-      .vrefresh = 60, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_16_9, },
-    /* 3. vic:5 - 1920x1080i@60Hz */
-    { DRM_BASE_MODE(74250, 1920, 2008,
-            2052, 2200, 1080, 1084, 1094, 1125, 0,
-            DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC |
-            DRM_MODE_FLAG_INTERLACE),
-      .vrefresh = 60, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_16_9, },
-    /* 4. vic:6 - 720(1440)x480i@60Hz */
-    { DRM_BASE_MODE(13500, 720, 739,
-            801, 858, 480, 488, 494, 525, 0,
-            DRM_MODE_FLAG_NHSYNC | DRM_MODE_FLAG_NVSYNC |
-            DRM_MODE_FLAG_INTERLACE | DRM_MODE_FLAG_DBLCLK),
-      .vrefresh = 60, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_4_3, },
-    /* 5. vic:16 - 1920x1080@60Hz */
-    { DRM_BASE_MODE(148500, 1920, 2008,
-            2052, 2200, 1080, 1084, 1089, 1125, 0,
-            DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC),
-      .vrefresh = 60, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_16_9, },
-    /* 6. vic:17 - 720x576@50Hz */
-    { DRM_BASE_MODE(27000, 720, 732,
-            796, 864, 576, 581, 586, 625, 0,
-            DRM_MODE_FLAG_NHSYNC | DRM_MODE_FLAG_NVSYNC),
-      .vrefresh = 50, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_4_3, },
-    /* 7. vic:18 - 720x576@50Hz */
-    { DRM_BASE_MODE(27000, 720, 732,
-            796, 864, 576, 581, 586, 625, 0,
-            DRM_MODE_FLAG_NHSYNC | DRM_MODE_FLAG_NVSYNC),
-      .vrefresh = 50, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_16_9, },
-    /* 8. vic:19 - 1280x720@50Hz */
-    { DRM_BASE_MODE(74250, 1280, 1720,
-            1760, 1980, 720, 725, 730, 750, 0,
-            DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC),
-      .vrefresh = 50, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_16_9, },
-    /* 9. vic:20 - 1920x1080i@50Hz */
-    { DRM_BASE_MODE(74250, 1920, 2448,
-            2492, 2640, 1080, 1084, 1094, 1125, 0,
-            DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC |
-            DRM_MODE_FLAG_INTERLACE),
-      .vrefresh = 50, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_16_9, },
-    /* 10. vic:21 - 720(1440)x576i@50Hz */
-    { DRM_BASE_MODE(13500, 720, 732,
-            795, 864, 576, 580, 586, 625, 0,
-            DRM_MODE_FLAG_NHSYNC | DRM_MODE_FLAG_NVSYNC |
-            DRM_MODE_FLAG_INTERLACE | DRM_MODE_FLAG_DBLCLK),
-      .vrefresh = 50, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_4_3, },
-    /* 11. vic:31 - 1920x1080@50Hz */
-    { DRM_BASE_MODE(148500, 1920, 2448,
-            2492, 2640, 1080, 1084, 1089, 1125, 0,
-            DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC),
-      .vrefresh = 50, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_16_9, },
-    /* 12. vic:32 - 1920x1080@24Hz */
-    { DRM_BASE_MODE(74250, 1920, 2558,
-            2602, 2750, 1080, 1084, 1089, 1125, 0,
-            DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC),
-      .vrefresh = 24, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_16_9, },
-    /* 13. vic:33 - 1920x1080@25Hz */
-    { DRM_BASE_MODE(74250, 1920, 2448,
-            2492, 2640, 1080, 1084, 1089, 1125, 0,
-            DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC),
-      .vrefresh = 25, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_16_9, },
-    /* 14. vic:34 - 1920x1080@30Hz */
-    { DRM_BASE_MODE(74250, 1920, 2008,
-            2052, 2200, 1080, 1084, 1089, 1125, 0,
-            DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC),
-      .vrefresh = 30, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_16_9, },
-    /* 15. vic:39 - 1920x1080i@50Hz */
-    { DRM_BASE_MODE(72000, 1920, 1952,
-            2120, 2304, 1080, 1126, 1136, 1250, 0,
-            DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_NVSYNC |
-            DRM_MODE_FLAG_INTERLACE),
-      .vrefresh = 50, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_16_9, },
-    /* 16. vic:60 - 1280x720@24Hz */
-    { DRM_BASE_MODE(59400, 1280, 3040,
-            3080, 3300, 720, 725, 730, 750, 0,
-            DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC),
-      .vrefresh = 24, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_16_9, },
-    /* 17. vic:61 - 1280x720@25Hz */
-    { DRM_BASE_MODE(74250, 1280, 3700,
-            3740, 3960, 720, 725, 730, 750, 0,
-            DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC),
-      .vrefresh = 25, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_16_9, },
-    /* 18. vic:62 - 1280x720@30Hz */
-    { DRM_BASE_MODE(74250, 1280, 3040,
-            3080, 3300, 720, 725, 730, 750, 0,
-            DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC),
-      .vrefresh = 30, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_16_9, },
-    /* 19. vic:93 - 3840x2160p@24Hz 16:9 */
-    { DRM_BASE_MODE(297000, 3840, 5116,
-            5204, 5500, 2160, 2168, 2178, 2250, 0,
-            DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC),
-    .vrefresh = 24, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_16_9, },
-    /* 20. vic:94 - 3840x2160p@25Hz 16:9 */
-    { DRM_BASE_MODE(297000, 3840, 4896,
-            4984, 5280, 2160, 2168, 2178, 2250, 0,
-            DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC),
-    .vrefresh = 25, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_16_9, },
-    /* 21. vic:95 - 3840x2160p@30Hz 16:9 */
-    { DRM_BASE_MODE(297000, 3840, 4016,
-            4104, 4400, 2160, 2168, 2178, 2250, 0,
-            DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC),
-    .vrefresh = 30, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_16_9, },
-    /* 22. vic:96 - 3840x2160p@50Hz 16:9 */
-    { DRM_BASE_MODE(594000, 3840, 4896,
-            4984, 5280, 2160, 2168, 2178, 2250, 0,
-            DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC),
-    .vrefresh = 50, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_16_9, },
-    /* 23. vic:97 - 3840x2160p@60Hz 16:9 */
-    { DRM_BASE_MODE(594000, 3840, 4016,
-            4104, 4400, 2160, 2168, 2178, 2250, 0,
-            DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC),
-    .vrefresh = 60, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_16_9, },
-    /* 24. vic:98 - 4096x2160p@24Hz 256:135 */
-    { DRM_BASE_MODE(297000, 4096, 5116,
-            5204, 5500, 2160, 2168, 2178, 2250, 0,
-            DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC),
-    .vrefresh = 24, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_256_135, },
-    /* 25. vic:99 - 4096x2160p@25Hz 256:135 */
-    { DRM_BASE_MODE(297000, 4096, 5064,
-            5152, 5280, 2160, 2168, 2178, 2250, 0,
-            DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC),
-    .vrefresh = 25, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_256_135, },
-    /* 26. vic:100 - 4096x2160p@30Hz 256:135 */
-    { DRM_BASE_MODE(297000, 4096, 4184,
-            4272, 4400, 2160, 2168, 2178, 2250, 0,
-            DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC),
-    .vrefresh = 30, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_256_135, },
-    /* 27. vic:101 - 4096x2160p@50Hz 256:135 */
-    { DRM_BASE_MODE(594000, 4096, 5064,
-            5152, 5280, 2160, 2168, 2178, 2250, 0,
-            DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC),
-    .vrefresh = 50, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_256_135, },
-    /* 28. vic:102 - 4096x2160p@60Hz 256:135 */
-    { DRM_BASE_MODE(594000, 4096, 4184,
-            4272, 4400, 2160, 2168, 2178, 2250, 0,
-            DRM_MODE_FLAG_PHSYNC | DRM_MODE_FLAG_PVSYNC),
-    .vrefresh = 60, .picture_aspect_ratio = HDMI_PICTURE_ASPECT_256_135, },
-};
-
 struct minimode {
     short w;
     short h;
@@ -2403,7 +2239,7 @@ bool drm_detect_monitor_audio(struct edid *edid)
     has_audio = ((edid_ext[3] & EDID_BASIC_AUDIO) != 0);
 
     if (has_audio) {
-        printf("Monitor has basic audio support\n");
+        debug("Monitor has basic audio support\n");
         goto end;
     }
 
@@ -5342,51 +5178,6 @@ int drm_mode_prune_invalid(struct hdmi_edid_data *edid_data)
 
     edid_data->modes = num;
     return num;
-}
-
-/**
- * drm_rk_filter_whitelist - mark modes out of white list from mode list
- * @edid_data: structure store mode list
- */
-void drm_rk_filter_whitelist(struct hdmi_edid_data *edid_data)
-{
-    int i, j, white_len;
-
-    if (sizeof(resolution_white)) {
-        white_len = sizeof(resolution_white) /
-            sizeof(resolution_white[0]);
-        for (i = 0; i < edid_data->modes; i++) {
-            for (j = 0; j < white_len; j++) {
-                if (drm_mode_equal(&resolution_white[j],
-                           &edid_data->mode_buf[i]))
-                    break;
-            }
-
-            if (j == white_len)
-                edid_data->mode_buf[i].invalid = true;
-        }
-    }
-}
-
-void drm_rk_select_mode(struct hdmi_edid_data *edid_data,
-            struct base_screen_info *screen_info)
-{
-    int i;
-    const struct base_drm_display_mode *base_mode;
-
-    if (!screen_info) {
-        /* define init resolution here */
-    } else {
-        base_mode = &screen_info->mode;
-        for (i = 0; i < edid_data->modes; i++) {
-            if (drm_mode_equal(base_mode,
-                       &edid_data->mode_buf[i])) {
-                edid_data->preferred_mode =
-                    &edid_data->mode_buf[i];
-                break;
-            }
-        }
-    }
 }
 
 /**

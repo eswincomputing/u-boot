@@ -42,14 +42,6 @@ config DRM_ESWIN_PANEL
 	depends on DRM_ESWIN_DW_MIPI_DSI
 	select DRM_MIPI_DSI
 
-config DRM_ESWIN_RGB
-	bool "Eswin RGB Support"
-	depends on DRM_ESWIN
-	select DRM_ESWIN_PANEL
-	help
-	  Choose this option to enable support for Eswin RGB driver.
-	  say Y to enable its driver.
-
 config ESWIN_LOGO_DISPLAY
 	bool "Display ESWIN logo instead of vidconsole"
 	depends on DRM_ESWIN
@@ -57,3 +49,8 @@ config ESWIN_LOGO_DISPLAY
 	  Choose this option to display ESWIN logo instead of
 	  vidconsole even if the stdout been set to vidconsole.
 	  say Y to enable it.
+
+config DRM_ESWIN_VO_DEBUG
+    bool "VO printf debug messages"
+    default n
+    depends on DRM_ESWIN

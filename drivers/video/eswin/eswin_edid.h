@@ -1,24 +1,28 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * Copyright © 2007-2008 Intel Corporation
- *   Jesse Barnes <jesse.barnes@intel.com>
+ * DesignWare High-Definition Multimedia Interface (HDMI) driver
  *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
+ * Copyright (C) 2013-2015 Mentor Graphics Inc.
+ * Copyright (C) 2011-2013 Freescale Semiconductor, Inc.
+ * Copyright (C) 2010, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+ *****************************************************************************
+ * ESWIN hdmi driver
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * Copyright 2024, Beijing ESWIN Computing Technology Co., Ltd.. All rights reserved.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
- * THE COPYRIGHT HOLDER(S) OR AUTHOR(S) BE LIABLE FOR ANY CLAIM, DAMAGES OR
- * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
- * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- * OTHER DEALINGS IN THE SOFTWARE.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 2.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Authors: DengLei <denglei@eswincomputing.com>
  */
 
 #ifndef __ES_EDID_H_
@@ -348,8 +352,5 @@ u8 drm_scdc_writeb(struct ddc_adapter *adap, u8 offset,
            u8 value);
 void drm_mode_sort(struct hdmi_edid_data *edid_data);
 int drm_mode_prune_invalid(struct hdmi_edid_data *edid_data);
-void drm_rk_filter_whitelist(struct hdmi_edid_data *edid_data);
-void drm_rk_select_mode(struct hdmi_edid_data *edid_data,
-            struct base_screen_info *screen_info);
 
 #endif /* __EDID_H_ */

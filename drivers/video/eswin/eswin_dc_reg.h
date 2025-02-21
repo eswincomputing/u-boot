@@ -15,6 +15,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Authors: DengLei <denglei@eswincomputing.com>
  */
 
 #ifndef _ESWIN_DC_REG_H
@@ -8613,6 +8615,8 @@ NOTE: This register is double buffered. */
 #define DCREG_THREED_LUT_ENLARGE_VALUE_Start                                   0
 #define DCREG_THREED_LUT_ENLARGE_VALUE_Type                                  U04
 
+#define DEFAULT_PIXEL_CLK 148500
+
 gctUINT eswin_dc_read_reg(void *regs, gctUINT addr);
 gctVOID eswin_dc_write_reg(void *regs, gctUINT addr, gctUINT data);
 
@@ -8711,6 +8715,6 @@ gctVOID eswin_hw_set_three_lut_enlarge(struct dc8000_dc *dc, gctUINT enlarge);
 gctVOID eswin_hw_set_tsc_prefetch(struct dc8000_dc *dc, gctUINT prefetch);
 gctVOID eswin_hw_set_display_dither_tablelow(struct dc8000_dc *dc, gctUINT table);
 gctVOID eswin_hw_set_display_dither_tablehigh(struct dc8000_dc *dc, gctUINT table);
-void eswin_syscrg_config(int pclk);
+void eswin_vo_clk_init(int pclk);
 
 #endif /* _ESWIN_DC_REG_H */

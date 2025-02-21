@@ -1,8 +1,14 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
+ * DesignWare High-Definition Multimedia Interface (HDMI) driver
+ *
+ * Copyright (C) 2013-2015 Mentor Graphics Inc.
+ * Copyright (C) 2011-2013 Freescale Semiconductor, Inc.
+ * Copyright (C) 2010, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+ *****************************************************************************
+ * ESWIN hdmi driver
  *
  * Copyright 2024, Beijing ESWIN Computing Technology Co., Ltd.. All rights reserved.
- * SPDX-License-Identifier: GPL-2.0
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,6 +21,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Authors: DengLei <denglei@eswincomputing.com>
  */
 
 #include <common.h>
@@ -34,7 +42,7 @@
 #include "eswin_crtc.h"
 #include "eswin_connector.h"
 #include "dw_hdmi.h"
-#include "eswin_phy.h"
+#include "eswin_vo_log.h"
 
 /*1280*720@30*/
 #define HDMI_DISPLAY            62
@@ -42,6 +50,10 @@
 #define HDCP_PRIVATE_KEY_SIZE   280
 #define HDCP_KEY_SHA_SIZE       20
 #define HDMI_HDCP1X_ID          5
+
+#define CUS_SCREEN_2_2K_CLK 235690
+#define CUS_SCREEN_2_8K_CLK 371370
+
 /*
  * Unless otherwise noted, entries in this table are 100% optimization.
  * Values can be obtained from hdmi_compute_n() but that function is
@@ -423,7 +435,7 @@ static int dw_hdmi_i2c_read(struct dw_hdmi *hdmi,
     int interrupt = 0, i = 20;
 
     if (!i2c->is_regaddr) {
-        printf("set read register address to 0\n");
+        vo_info("set read register address to 0\n");
         i2c->slave_reg = 0x00;
         i2c->is_regaddr = true;
     }
@@ -449,15 +461,14 @@ static int dw_hdmi_i2c_read(struct dw_hdmi *hdmi,
         }
 
         if (!interrupt) {
-            printf("[%s] i2c read reg[0x%02x] no interrupt\n",
-                   __func__, i2c->slave_reg);
+            vo_info("i2c read reg[0x%02x] no interrupt\n", i2c->slave_reg);
             return -EAGAIN;
         }
 
         /* Check for error condition on the bus */
         if (interrupt & HDMI_IH_I2CM_STAT0_ERROR) {
-            printf("[%s] read reg[0x%02x] data error:0x%02x\n",
-                   __func__, i2c->slave_reg, interrupt);
+            vo_info("read reg[0x%02x] data error:0x%02x\n",
+                    i2c->slave_reg, interrupt);
             return -EIO;
         }
 
@@ -503,11 +514,10 @@ static int dw_hdmi_i2c_write(struct dw_hdmi *hdmi,
         }
 
         if ((interrupt & m_I2CM_ERROR) || (i == -1)) {
-            printf("[%s] write data error\n", __func__);
+            vo_err("write data error\n");
             return -EIO;
         } else if (interrupt & m_I2CM_DONE) {
-            printf("[%s] write offset %02x success\n",
-                   __func__, i2c->slave_reg);
+            vo_debug("write offset %02x success\n", i2c->slave_reg);
             return -EAGAIN;
         }
 
@@ -525,10 +535,10 @@ static int dw_hdmi_i2c_xfer(struct ddc_adapter *adap,
     u8 addr = msgs[0].addr;
     int i, ret = 0;
 
-    printf("xfer: num: %d, addr: %#x\n", num, addr);
+    vo_debug("xfer: num: %d, addr: %#x\n", num, addr);
     for (i = 0; i < num; i++) {
         if (msgs[i].len == 0) {
-            printf("unsupported transfer %d/%d, no data\n",
+            vo_err("unsupported transfer %d/%d, no data\n",
                    i + 1, num);
             return -EOPNOTSUPP;
         }
@@ -548,8 +558,8 @@ static int dw_hdmi_i2c_xfer(struct ddc_adapter *adap,
     i2c->is_segment = false;
 
     for (i = 0; i < num; i++) {
-        debug("xfer: num: %d/%d, len: %d, flags: %#x\n",
-              i + 1, num, msgs[i].len, msgs[i].flags);
+        vo_debug("xfer: num: %d/%d, len: %d, flags: %#x\n",
+                 i + 1, num, msgs[i].len, msgs[i].flags);
         if (msgs[i].addr == DDC_SEGMENT_ADDR && msgs[i].len == 1) {
             i2c->is_segment = true;
             hdmi_writeb(hdmi, DDC_SEGMENT_ADDR, HDMI_I2CM_SEGADDR);
@@ -602,6 +612,23 @@ static void dw_hdmi_phy_i2c_write(struct dw_hdmi *hdmi, unsigned short data,
     hdmi_writeb(hdmi, HDMI_PHY_I2CM_OPERATION_ADDR_WRITE,
             HDMI_PHY_I2CM_OPERATION_ADDR);
     hdmi_phy_wait_i2c_done(hdmi, 1000);
+}
+
+static int dw_hdmi_phy_i2c_read(struct dw_hdmi *hdmi, unsigned char addr)
+{
+	int val;
+
+	hdmi_writeb(hdmi, 0xFF, HDMI_IH_I2CMPHY_STAT0);
+	hdmi_writeb(hdmi, addr, HDMI_PHY_I2CM_ADDRESS_ADDR);
+	hdmi_writeb(hdmi, 0, HDMI_PHY_I2CM_DATAI_1_ADDR);
+	hdmi_writeb(hdmi, 0, HDMI_PHY_I2CM_DATAI_0_ADDR);
+	hdmi_writeb(hdmi, HDMI_PHY_I2CM_OPERATION_ADDR_READ,
+		    HDMI_PHY_I2CM_OPERATION_ADDR);
+	hdmi_phy_wait_i2c_done(hdmi, 1000);
+	val = hdmi_readb(hdmi, HDMI_PHY_I2CM_DATAI_1_ADDR);
+	val = (val & 0xff) << 8;
+	val += hdmi_readb(hdmi, HDMI_PHY_I2CM_DATAI_0_ADDR) & 0xff;
+	return val;
 }
 
 static void dw_hdmi_phy_enable_powerdown(struct dw_hdmi *hdmi, bool enable)
@@ -679,10 +706,11 @@ static void dw_hdmi_phy_power_off(struct dw_hdmi *hdmi)
         udelay(2000);
     }
 
-    if (val & HDMI_PHY_TX_PHY_LOCK)
-        printf("PHY failed to power down\n");
-    else
-        printf("PHY powered down in %u iterations\n", i);
+    if (val & HDMI_PHY_TX_PHY_LOCK) {
+        vo_warn("PHY failed to power down\n");
+    } else {
+        vo_debug("PHY powered down in %u iterations\n", i);
+    }
 
     dw_hdmi_phy_gen2_pddq(hdmi, 1);
 }
@@ -715,10 +743,10 @@ static int dw_hdmi_phy_power_on(struct dw_hdmi *hdmi)
     }
 
     if (!val) {
-        printf("PHY PLL failed to lock\n");
+        vo_warn("PHY PLL failed to lock\n");
         return -ETIMEDOUT;
     }
-    printf("PHY PLL locked %u iterations\n", i);
+    vo_debug("PHY PLL locked %u iterations\n", i);
 
     return 0;
 }
@@ -832,41 +860,6 @@ static const struct dw_hdmi_phy_data dw_hdmi_phys[] = {
     }
 };
 
-static int eswin_dw_hdmi_scrambling_enable(struct dw_hdmi *hdmi,
-                          int enable)
-{
-    u8 stat;
-
-    drm_scdc_readb(&hdmi->adap, SCDC_TMDS_CONFIG, &stat);
-
-    if (stat < 0) {
-        debug("Failed to read tmds config\n");
-        return false;
-    }
-
-    if (enable == 1) {
-        /* Write on Rx the bit Scrambling_Enable, register 0x20 */
-        stat |= SCDC_SCRAMBLING_ENABLE;
-        drm_scdc_writeb(&hdmi->adap, SCDC_TMDS_CONFIG, stat);
-        /* TMDS software reset request */
-        hdmi_writeb(hdmi, (u8)~HDMI_MC_SWRSTZ_TMDSSWRST_REQ,
-                HDMI_MC_SWRSTZ);
-        /* Enable/Disable Scrambling */
-        hdmi_writeb(hdmi, 1, HDMI_FC_SCRAMBLER_CTRL);
-    } else {
-        /* Enable/Disable Scrambling */
-        hdmi_writeb(hdmi, 0, HDMI_FC_SCRAMBLER_CTRL);
-        /* TMDS software reset request */
-        hdmi_writeb(hdmi, (u8)~HDMI_MC_SWRSTZ_TMDSSWRST_REQ,
-                HDMI_MC_SWRSTZ);
-        /* Write on Rx the bit Scrambling_Enable, register 0x20 */
-        stat &= ~SCDC_SCRAMBLING_ENABLE;
-        drm_scdc_writeb(&hdmi->adap, SCDC_TMDS_CONFIG, stat);
-    }
-
-    return 0;
-}
-
 static void eswin_dw_hdmi_scdc_set_tmds_rate(struct dw_hdmi *hdmi)
 {
     u8 stat;
@@ -916,7 +909,7 @@ static int hdmi_phy_configure(struct dw_hdmi *hdmi)
     else
         ret = phy->configure(hdmi, pdata, mpixelclock);
     if (ret) {
-        printf("PHY configuration failed (clock %lu)\n",
+        vo_err("PHY configuration failed (clock %lu)\n",
                mpixelclock);
         return ret;
     }
@@ -979,7 +972,7 @@ static int dw_hdmi_detect_phy(struct dw_hdmi *hdmi)
 
             if (!dw_hdmi_phys[i].configure &&
                 !hdmi->plat_data->configure_phy) {
-                printf("%s requires platform support\n",
+                vo_info("%s requires platform support\n",
                        hdmi->phy.name);
                 return -ENODEV;
             }
@@ -988,7 +981,7 @@ static int dw_hdmi_detect_phy(struct dw_hdmi *hdmi)
         }
     }
 
-    printf("Unsupported HDMI PHY type (%02x)\n", phy_type);
+    vo_info("Unsupported HDMI PHY type (%02x)\n", phy_type);
     return -ENODEV;
 }
 
@@ -1021,7 +1014,7 @@ hdmi_get_tmdsclock(struct dw_hdmi *hdmi, unsigned long mpixelclock)
 static void hdmi_av_composer(struct dw_hdmi *hdmi,
                  const struct drm_display_mode *mode)
 {
-    u8 bytes = 0, inv_val = 0;
+    u8 inv_val = 0;
     struct hdmi_vmode *vmode = &hdmi->hdmi_data.video_mode;
     struct drm_hdmi_info *hdmi_info = &hdmi->edid_data.display_info.hdmi;
     int hblank, vblank, h_de_hs, v_de_vs, hsync_len, vsync_len;
@@ -1034,8 +1027,8 @@ static void hdmi_av_composer(struct dw_hdmi *hdmi,
     vmode->mtmdsclock = hdmi_get_tmdsclock(hdmi, vmode->mpixelclock);
     if (hdmi_bus_fmt_is_yuv420(hdmi->hdmi_data.enc_out_bus_format))
         vmode->mtmdsclock /= 2;
-    printf("final pixclk = %d tmdsclk = %d\n",
-           vmode->mpixelclock, vmode->mtmdsclock);
+    vo_debug("final pixclk = %d tmdsclk = %d\n",
+             vmode->mpixelclock, vmode->mtmdsclock);
 
     /* Set up HDMI_FC_INVIDCONF
      * fc_invidconf.HDCP_keepout must be set (1'b1)
@@ -1109,20 +1102,6 @@ static void hdmi_av_composer(struct dw_hdmi *hdmi,
     } else if ((mode->flags & DRM_MODE_FLAG_3D_MASK) ==
         DRM_MODE_FLAG_3D_FRAME_PACKING) {
         vdisplay += mode->vtotal;
-    }
-
-    /* Scrambling Control */
-    if (hdmi_info->scdc.supported) {
-        if (vmode->mtmdsclock > 340000000 ||
-            (hdmi_info->scdc.scrambling.low_rates &&
-             hdmi->scramble_low_rates)) {
-            drm_scdc_readb(&hdmi->adap, SCDC_SINK_VERSION, &bytes);
-            drm_scdc_writeb(&hdmi->adap, SCDC_SOURCE_VERSION,
-                    bytes);
-            eswin_dw_hdmi_scrambling_enable(hdmi, 1);
-        } else {
-            eswin_dw_hdmi_scrambling_enable(hdmi, 0);
-        }
     }
 
     /* Set up horizontal active pixel width */
@@ -1680,7 +1659,7 @@ static void hdmi_config_vendor_specific_infoframe(struct dw_hdmi *hdmi,
 
     err = hdmi_vendor_infoframe_pack(&frame, buffer, sizeof(buffer));
     if (err < 0) {
-        printf("Failed to pack vendor infoframe: %ld\n", err);
+        vo_warn("Failed to pack vendor infoframe: %ld\n", err);
         return;
     }
 
@@ -1836,7 +1815,7 @@ static unsigned int hdmi_find_n(struct dw_hdmi *hdmi, unsigned long pixel_clk,
     if (n > 0)
         return n;
 
-    printf("Rate %lu missing; compute N dynamically\n",
+    vo_debug("Rate %lu missing; compute N dynamically\n",
            pixel_clk);
 
     return hdmi_compute_n(hdmi, pixel_clk, sample_rate);
@@ -1863,7 +1842,7 @@ void hdmi_set_clk_regenerator(struct dw_hdmi *hdmi, unsigned long pixel_clk,
     do_div(tmp, 128 * sample_rate);
     cts = tmp;
 
-    printf("%s: fs=%uHz ftdms=%lu.%03luMHz N=%d cts=%d\n", __func__,
+    vo_debug("%s: fs=%uHz ftdms=%lu.%03luMHz N=%d cts=%d\n", __func__,
            sample_rate, ftdms / 1000000, (ftdms / 1000) % 1000, n, cts);
 
     hdmi->audio_n = n;
@@ -1957,7 +1936,7 @@ static void hdmi_tx_hdcp_config(struct dw_hdmi *hdmi,
     hdmi_modb(hdmi, HDMI_MC_CLKDIS_HDCPCLK_ENABLE,
           HDMI_MC_CLKDIS_HDCPCLK_MASK, HDMI_MC_CLKDIS);
 
-    printf("%s success\n", __func__);
+    vo_debug("%s success\n", __func__);
 }
 
 static int dw_hdmi_setup(struct dw_hdmi *hdmi,
@@ -1968,10 +1947,11 @@ static int dw_hdmi_setup(struct dw_hdmi *hdmi,
     void *data = hdmi->plat_data->phy_data;
 
     hdmi_disable_overflow_interrupts(hdmi);
-    if (!hdmi->vic)
-        printf("Non-CEA mode used in HDMI\n");
-    else
-        printf("CEA mode used vic=%d\n", hdmi->vic);
+    if (!hdmi->vic) {
+        vo_debug("Non-CEA mode used in HDMI\n");
+    } else {
+        vo_debug("CEA mode used vic=%d\n", hdmi->vic);
+    }
 
     if (hdmi->plat_data->get_enc_out_encoding)
         hdmi->hdmi_data.enc_out_encoding =
@@ -2033,7 +2013,7 @@ static int dw_hdmi_setup(struct dw_hdmi *hdmi,
 
     /* HDMI Initialization Step E - Configure audio */
     if (hdmi->sink_has_audio) {
-        printf("sink has audio support\n");
+        vo_debug("sink has audio support\n");
         hdmi_clk_regenerator_update_pixel_clock(hdmi);
         hdmi_enable_audio_clk(hdmi);
     }
@@ -2044,7 +2024,7 @@ static int dw_hdmi_setup(struct dw_hdmi *hdmi,
         hdmi_config_AVI(hdmi, mode);
         hdmi_config_vendor_specific_infoframe(hdmi, mode);
     } else {
-        printf("%s DVI mode\n", __func__);
+        vo_info("%s DVI mode\n", __func__);
     }
 
     hdmi_video_packetize(hdmi);
@@ -2076,7 +2056,7 @@ static int dw_hdmi_set_reg_wr(struct dw_hdmi *hdmi)
         hdmi->read = dw_hdmi_readb;
         break;
     default:
-        printf("reg-io-width must be 1 or 4\n");
+        vo_err("reg-io-width must be 1 or 4\n");
         return -EINVAL;
     }
 
@@ -2304,6 +2284,35 @@ int eswin_dw_hdmi_disable(struct display_state *state)
     return 0;
 }
 
+static void eswin_dw_hdmi_mode_valid(struct display_state *state)
+{
+    struct connector_state *conn_state = &state->conn_state;
+    struct dw_hdmi_plat_data *drv_data = 
+            (struct dw_hdmi_plat_data *)conn_state->connector->data;
+     struct dw_hdmi *hdmi = conn_state->private;
+    struct hdmi_edid_data *edid_data = &hdmi->edid_data;
+
+    const struct dw_hdmi_mpll_config *mpll_cfg = drv_data->mpll_cfg;
+	int i, j;
+    bool valid;
+
+    for (i = 0; i < edid_data->modes; i++) {
+        valid = false;
+        for (j = 0; mpll_cfg[j].mpixelclock != (~0UL); j++) {
+            if (edid_data->mode_buf[i].clock * 1000 == mpll_cfg[j].mpixelclock) {
+                valid = true;
+                break;
+            }
+        }
+
+        if (!valid) {
+            vo_debug("mode[%d]:%dx%d,pixel clk:%d not support\n", i, edid_data->mode_buf[i].hdisplay,
+                    edid_data->mode_buf[i].vdisplay, edid_data->mode_buf[i].clock);
+            edid_data->mode_buf[i].invalid = true;
+        }
+    }
+}
+
 int eswin_dw_hdmi_get_timing(struct display_state *state)
 {
     int ret, i;
@@ -2331,17 +2340,15 @@ int eswin_dw_hdmi_get_timing(struct display_state *state)
         do_cea_modes(&hdmi->edid_data, def_modes_vic,
                  sizeof(def_modes_vic));
         hdmi->edid_data.preferred_mode = &hdmi->edid_data.mode_buf[0];
-        printf("failed to get edid\n");
+        vo_err("failed to get edid\n");
     }
 
-    drm_rk_filter_whitelist(&hdmi->edid_data);
-    if (hdmi->phy.ops->mode_valid)
-        hdmi->phy.ops->mode_valid(hdmi, state);
+    eswin_dw_hdmi_mode_valid(state);
 
     drm_mode_max_resolution_filter(&hdmi->edid_data,
                        &state->crtc_state.max_output);
     if (!drm_mode_prune_invalid(&hdmi->edid_data)) {
-        printf("can't find valid hdmi mode\n");
+        vo_err("can't find valid hdmi mode\n");
         return -EINVAL;
     }
 
@@ -2351,13 +2358,16 @@ int eswin_dw_hdmi_get_timing(struct display_state *state)
 
     drm_mode_sort(&hdmi->edid_data);
     drm_eswin_selete_output(&hdmi->edid_data, &bus_format,
-                 overscan, hdmi->dev_type);
+                            overscan, hdmi->dev_type);
 
-    if (hdmi->edid_data.preferred_mode->clock > 148500) {
-        for (i = 1; i < hdmi->edid_data.modes; i++) {
-            if ((&hdmi->edid_data.mode_buf[i])->clock <= 148500) {
-                hdmi->edid_data.preferred_mode = &hdmi->edid_data.mode_buf[i];
-                break;
+    if (hdmi->edid_data.preferred_mode->clock != CUS_SCREEN_2_2K_CLK &&
+        hdmi->edid_data.preferred_mode->clock != CUS_SCREEN_2_8K_CLK) {
+        if (hdmi->edid_data.preferred_mode->clock > 148500) {
+            for (i = 1; i < hdmi->edid_data.modes; i++) {
+                if ((&hdmi->edid_data.mode_buf[i])->clock <= 148500) {
+                    hdmi->edid_data.preferred_mode = &hdmi->edid_data.mode_buf[i];
+                    break;
+                }
             }
         }
     }
@@ -2365,7 +2375,7 @@ int eswin_dw_hdmi_get_timing(struct display_state *state)
     *mode = *hdmi->edid_data.preferred_mode;
     hdmi->vic = drm_match_cea_mode(mode);
 
-    printf("mode:%dx%d\n", mode->hdisplay, mode->vdisplay);
+    vo_debug("mode:%dx%d\n", mode->hdisplay, mode->vdisplay);
     conn_state->bus_format = bus_format;
     hdmi->hdmi_data.enc_in_bus_format = bus_format;
     hdmi->hdmi_data.enc_out_bus_format = bus_format;
@@ -2404,14 +2414,17 @@ int eswin_dw_hdmi_detect(struct display_state *state)
     return ret;
 }
 
-int eswin_dw_hdmi_get_edid(struct display_state *state)
+int eswin_dw_hdmi_dump_phy(struct display_state *state)
 {
-    int ret;
+    int i, val;
     struct connector_state *conn_state = &state->conn_state;
     struct dw_hdmi *hdmi = conn_state->private;
 
-    ret = drm_do_get_edid(&hdmi->adap, conn_state->edid);
+    for (i = 0; i < 0x28; i++) {
+		val = dw_hdmi_phy_i2c_read(hdmi, i);
+		vo_info("regs %02x val %04x\n", i, val);
+	}
 
-    return ret;
+    return 0;
 }
 

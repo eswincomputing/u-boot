@@ -15,6 +15,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Authors: DengLei <denglei@eswincomputing.com>
  */
 
 #include <config.h>
@@ -38,6 +40,7 @@
 #include "eswin_connector.h"
 #include "eswin_dc.h"
 #include "eswin_dc_reg.h"
+#include "eswin_vo_log.h"
 
 static gctUINT32 lut[] = {
 0x00000000, 0x00800000, 0x00008000, 0x00808000, 0x00000080, 0x00800080, 0x00008080, 0x00c0c0c0,
@@ -132,8 +135,6 @@ static gctINT eswin_dc_init(struct display_state *state)
 	const struct eswin_crtc *crtc = crtc_state->crtc;
 	const struct dc8000_data *dc_data = crtc->data;
 	struct dc8000_dc *dc;
-	//struct clk dclk;
-	gctINT ret;
 	gctINT layer = state->layer;
 	gctUINT scale_factorX = 0;
 	gctUINT scale_factorY = 0;
@@ -147,10 +148,10 @@ static gctINT eswin_dc_init(struct display_state *state)
     gctUINT16 vtotal = mode->crtc_vtotal;
     gctUINT16 vsync_st = mode->crtc_vsync_start;
     gctUINT16 vsync_end = mode->crtc_vsync_end;
-	
+
 	dc = malloc(sizeof(*dc));
 	if (!dc) {
-		printf("[%s] malloc dc mem failed.\n", __FUNCTION__);
+		vo_err("malloc dc mem failed.\n");
 		return -ENOMEM;
 	}
 	memset(dc, 0, sizeof(*dc));
@@ -169,27 +170,16 @@ static gctINT eswin_dc_init(struct display_state *state)
 	dc->dest_ctrl = *dc_data->dest_ctrl;
 	dc->version = dc_data->version;
 
-	printf("[%s]regs=0x%px, regsbak=0x%px\n", __FUNCTION__, dc->regs, dc->regsbak);
-
-	/* Process 'assigned-{clocks/clock-parents/clock-rates}' properties */
-	ret = clk_set_defaults(crtc_state->dev, 0);
-	if (ret)
-		printf("[%s]clk_set_defaults failed %d\n", __FUNCTION__, ret);
-
-	//ret = clk_get_by_name(crtc_state->dev, "dclk_osd", &dclk);
-	//if (!ret)
-	//	ret = clk_set_rate(&dclk, mode->clock * 1000);
-	//if (IS_ERR_VALUE(ret)) {
-	//	printf("[%s]Failed to set dclk: ret=%d\n", __FUNCTION__, ret);
-	//	return ret;
-	//}
-
-	printf("[%s]:layer:%d hdisplay = %d, htotal = %d.hsync_st:%d.hsync_end:%d\n", __FUNCTION__, layer, hdisplay, htotal,hsync_st,hsync_end);
-	printf("[%s]: vdisplay = %d, vtotal = %d.vsync_st:%d.vsync_end:%d\n", __FUNCTION__, vdisplay, vtotal,vsync_st,vsync_end);
+	vo_debug("regs=0x%px, regsbak=0x%px\n", dc->regs, dc->regsbak);
+	vo_debug("src_width:%d, src_height:%d.\n", src_width, src_height);
+	vo_info("layer:%d hdisplay:%d, htotal:%d, hsync_st:%d, hsync_end:%d\n",
+			layer, hdisplay, htotal,hsync_st,hsync_end);
+	vo_info("vdisplay:%d, vtotal:%d, vsync_st:%d, vsync_end:%d\n",
+			vdisplay, vtotal,vsync_st,vsync_end);
 
 	//need scale
 	if((src_width != hdisplay) || (src_height != vdisplay)) {
-		printf("[%s]: need scaler.\n", __FUNCTION__);
+		vo_info("need scaler.\n");
 		dc->is_scale = 1;
 		scale_factorX = get_stretch_factor(src_width, hdisplay);
 		scale_factorY = get_stretch_factor(src_height, vdisplay);
@@ -227,7 +217,6 @@ static gctINT eswin_dc_init(struct display_state *state)
 	dc->fb_ctrl.dcFBSize0 = (src_height << 15) | src_width;
 	dc->fb_ctrl.dcFBStride0 = src_width * (state->logo.bpp / 8);
 	memcpy(dc->fb_ctrl.dcFBColorTableData0, lut, 256 * 4);
-	printf("[%s]: src_width = %d, src_height = %d.\n", __FUNCTION__, src_width, src_height);
 
 	dc->display_ctrl.dcHDisplay0 = ((htotal & 0x7fff) << 16) | (hdisplay & 0x7fff);
 	dc->display_ctrl.dcVDisplay0 = ((vtotal & 0x7fff) << 16) | (vdisplay & 0x7fff);
@@ -243,7 +232,7 @@ static gctINT eswin_dc_init(struct display_state *state)
 	dc->dest_ctrl.dcMemDestAddr = (gctUINT32 *)DEST_MEM_BUF_ADDR;
 	dc->dest_ctrl.dcPanelDestAddr = (gctUINT32 *)DEST_MEM_BUF_ADDR;
 	memset(dc->dest_ctrl.dcMemDestAddr, 0xff, hdisplay * vdisplay * 4);
-	printf("[%s]: bpp = %d, *dst_buf = 0x%x.\n", __FUNCTION__, state->logo.bpp, *((gctUINT32 *)dc->dest_ctrl.dcMemDestAddr));
+	vo_info("bpp = %d, *dst_buf = 0x%x.\n", state->logo.bpp, *((gctUINT32 *)dc->dest_ctrl.dcMemDestAddr));
 #endif
 	return 0;
 }
@@ -268,7 +257,7 @@ static gctINT eswin_dc_set_plane(struct display_state *state)
 
 	if ((mode->crtc_hdisplay > crtc_state->max_output.width) ||
 	    (mode->crtc_vdisplay > crtc_state->max_output.height)) {
-		printf("[%s]Maximum destination %dx%d exceeded\n", __FUNCTION__,
+		vo_err("Maximum destination %dx%d exceeded\n",
 		       crtc_state->max_output.width, crtc_state->max_output.height);
 		return -EINVAL;
 	}
@@ -291,7 +280,7 @@ static gctINT eswin_dc_set_plane(struct display_state *state)
 		}
 	}
 
-	eswin_syscrg_config(mode->clock);
+	eswin_vo_clk_init(mode->clock);
 	//host interface
 	eswin_dc_reset(dc);
 
@@ -416,19 +405,25 @@ static gctINT eswin_dc_enable(struct display_state *state)
 	if(layer == ESWIN_OVERLAY_LAYER) {
 		eswin_hw_set_overlay_config(dc, dc->overlay_ctrl.dcOverlayConfig0 | 0x1000000); //overlay0 configuration register
 	}
-	eswin_hw_set_framebuffer_config(dc, dc->fb_ctrl.dcFBConfig0 | 0x11);    		//Framebuffer0 configuration register
+	eswin_hw_set_framebuffer_config(dc, dc->fb_ctrl.dcFBConfig0 | 0x11); //Framebuffer0 configuration register
 #ifdef CONFIG_DRM_ESWIN_WRITEBACK
 	if(layer == ESWIN_OVERLAY_LAYER) {
 		if(state->logo.bpp == 32) {
-	    	printf("[%s]: after writeback => *src_buf = 0x%x, *dst_buf = 0x%x.\n", __FUNCTION__, *((gctUINT32 *)dc->overlay_ctrl.dcOverlayAddr0), *((gctUINT32 *)dc->dest_ctrl.dcMemDestAddr));
+	    	vo_info("after writeback => *src_buf = 0x%x, *dst_buf = 0x%x.\n",
+					*((gctUINT32 *)dc->overlay_ctrl.dcOverlayAddr0),
+					*((gctUINT32 *)dc->dest_ctrl.dcMemDestAddr));
 		} else if(state->logo.bpp == 16) {
-	    	printf("[%s]: after writeback => *src_buf = 0x%x, *dst_buf = 0x%x.\n", __FUNCTION__, *((gctUINT16 *)dc->overlay_ctrl.dcOverlayAddr0), *((gctUINT32 *)dc->dest_ctrl.dcMemDestAddr));
+	    	vo_info("after writeback => *src_buf = 0x%x, *dst_buf = 0x%x.\n",
+					*((gctUINT16 *)dc->overlay_ctrl.dcOverlayAddr0),
+					*((gctUINT32 *)dc->dest_ctrl.dcMemDestAddr));
 		}
 	} else {
 		if(state->logo.bpp == 32) {
-	    	printf("[%s]: after writeback => *src_buf = 0x%x, *dst_buf = 0x%x.\n", __FUNCTION__, *((gctUINT32 *)dc->fb_ctrl.dcFBAddr0), *((gctUINT32 *)dc->dest_ctrl.dcMemDestAddr));
+	    	vo_info("after writeback => *src_buf = 0x%x, *dst_buf = 0x%x.\n",
+					*((gctUINT32 *)dc->fb_ctrl.dcFBAddr0), *((gctUINT32 *)dc->dest_ctrl.dcMemDestAddr));
 		} else if(state->logo.bpp == 16) {
-	    	printf("[%s]: after writeback => *src_buf = 0x%x, *dst_buf = 0x%x.\n", __FUNCTION__, *((gctUINT16 *)dc->fb_ctrl.dcFBAddr0), *((gctUINT32 *)dc->dest_ctrl.dcMemDestAddr));
+	    	vo_info("after writeback => *src_buf = 0x%x, *dst_buf = 0x%x.\n",
+					*((gctUINT16 *)dc->fb_ctrl.dcFBAddr0), *((gctUINT32 *)dc->dest_ctrl.dcMemDestAddr));
 		}
 	}
 #endif
