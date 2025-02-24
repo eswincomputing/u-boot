@@ -460,8 +460,10 @@ static int do_bootchain_write(int argc, char *const argv[])
 
 	fw_addr = simple_strtoul(argv[1], NULL, 16);
 	debug_printf("fw_addr 0x%llx\r\n", fw_addr);
-
-	if (strcmp(argv[2], "emmc") == 0) {
+	if(argc < 3) {
+		printf("arguments : flash_stg type error!\r\n");
+		return -ENOENT;
+	} else if (strcmp(argv[2], "emmc") == 0) {
 		flash_stg = 1;
 		ret = emmc_dev_get();
 		if(ret < 0)

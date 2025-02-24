@@ -1,8 +1,22 @@
-// SPDX-License-Identifier: GPL-2.0-only
+// SPDX-License-Identifier: GPL-2.0
 /*
- * Copyright 2024 Beijing ESWIN Computing Technology Co., Ltd.
+ * ESWIN write filesystem image file CMD driver
  *
- * Author: Xiang Xu <xuxiang@eswincomputing.com>
+ * Copyright 2024, Beijing ESWIN Computing Technology Co., Ltd.. All rights reserved.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 2.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Authors: Xiang Xu <xuxiang@eswincomputing.com>
  */
 #include <stdlib.h>
 #include <common.h>
@@ -208,8 +222,10 @@ static int do_image_update(int argc, char *const argv[])
 	filename = argv[3];
 	w_ifname = argv[4];
 	w_dev_part_str = argv[5];
-	if(!strstr(w_dev_part_str, ":") && !strstr(w_dev_part_str, "#"))
+	if(!strstr(w_dev_part_str, ":") && !strstr(w_dev_part_str, "#")) {
+		printf("Error:w_dev_part_str %s not found\n", w_dev_part_str);
 		return CMD_RET_FAILURE;
+	}
 	if(get_size(r_ifname, r_dev_part_str, filename, &file_size)) {
 		printf("Error: %s not found\n", filename);
 		return CMD_RET_FAILURE;
