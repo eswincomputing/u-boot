@@ -1,0 +1,6 @@
+EIC7700 OSM BOARD
+M:  Xiang Xu <xuxiang@eswincomputing.com>
+S:  Maintained
+F:  board/eswin/eic7700_osm/
+F:  include/configs/eic7700_osm.h
+F:  configs/eic7700_osm_defconfig

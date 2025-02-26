@@ -57,6 +57,9 @@ config TARGET_ESWIN_EIC7700_D314
 config TARGET_ESWIN_EIC7700_SBC
 	bool "Support Eswin EIC7700 SBC Board"
 
+config TARGET_ESWIN_EIC7700_OSM
+	bool "Support Eswin EIC7700 OSM Board"
+
 endchoice
 
 config SYS_ICACHE_OFF
@@ -106,6 +109,7 @@ source "board/eswin/hifive_premier_p550/Kconfig"
 source "board/eswin/eic7700_z530/Kconfig"
 source "board/eswin/eic7700_d314/Kconfig"
 source "board/eswin/eic7700_sbc/Kconfig"
+source "board/eswin/eic7700_osm/Kconfig"
 
 # platform-specific options below
 source "arch/riscv/cpu/andesv5/Kconfig"

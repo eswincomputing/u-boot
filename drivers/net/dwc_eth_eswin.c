@@ -919,11 +919,12 @@ static int eqos_start(struct udevice *dev)
         int addr = -1;
         char *s = NULL;
         unsigned long eth_speed = 0;
-#ifdef CONFIG_DM_ETH_PHY
-        addr = eth_phy_get_addr(dev);
-#endif
+
 #ifdef DWC_NET_PHYADDR
         addr = DWC_NET_PHYADDR;
+#endif
+#ifdef CONFIG_DM_ETH_PHY
+        addr = eth_phy_get_addr(dev);
 #endif
         eqos->phy = phy_connect(eqos->mii, addr, dev,
                     eqos->config->interface(dev));

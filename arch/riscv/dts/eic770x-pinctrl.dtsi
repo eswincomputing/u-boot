@@ -1073,18 +1073,18 @@
 			// 		function = "gpio78_func";
 			// 	};
 			// };
-			// pinctrl_gpio79_default: gpio79-default{
-			// 	mux {
-			// 		groups = "gpio79_group";
-			// 		function = "gpio79_func";
-			// 	};
-			// };
-			// pinctrl_gpio80_default: gpio80-default{
-			// 	mux {
-			// 		groups = "gpio80_group";
-			// 		function = "gpio80_func";
-			// 	};
-			// };
+			pinctrl_gpio79_default: gpio79-default{
+				mux {
+					groups = "gpio79_group";
+					function = "gpio79_func";
+				};
+			};
+			pinctrl_gpio80_default: gpio80-default{
+				mux {
+					groups = "gpio80_group";
+					function = "gpio80_func";
+				};
+			};
 			// pinctrl_gpio81_default: gpio81-default{
 			// 	mux {
 			// 		groups = "gpio81_group";
@@ -1144,12 +1144,12 @@
 			// 		function = "gpio89_func";
 			// 	};
 			// };
-			// pinctrl_gpio90_default: gpio90-default{
-			// 	mux {
-			// 		groups = "gpio90_group";
-			// 		function = "gpio90_func";
-			// 	};
-			// };
+			 pinctrl_gpio90_default: gpio90-default{
+			 	mux {
+			 		groups = "gpio90_group";
+			 		function = "gpio90_func";
+			 	};
+			};
 			// pinctrl_gpio91_default: gpio91-default{
 			// 	mux {
 			// 		groups = "gpio91_group";
