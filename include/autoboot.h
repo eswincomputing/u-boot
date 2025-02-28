@@ -79,4 +79,8 @@ static inline void autoboot_command(const char *s)
 }
 #endif
 
+#ifdef CONFIG_BOOT_ESWIN_VPU7702
+int get_die_ordinary(void);
+#endif
+
 #endif
