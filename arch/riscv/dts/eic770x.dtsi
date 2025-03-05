@@ -248,6 +248,7 @@
 		compatible = "eswin,display-subsystem";
 		ports = <&osd_out>;
 		status = "disabled";
+		numa-node-id = <0>;
 		route {
 			route_mipi: route-dsi {
 				status = "disabled";
@@ -269,24 +270,33 @@
 		};
 	};
 
-	osd: osd@502c0000 {
-		compatible = "eswin,dc8000-osd";
-		reg = <0x0 0x502c0000 0x0 0x40000>;
+	d1_display_subsystem: d1_display-subsystem {
+		u-boot,dm-pre-proper;
+		compatible = "eswin,display-subsystem";
+		ports = <&d1_osd_out>;
 		status = "disabled";
-		osd_out: port {
-			#address-cells = <1>;
-			#size-cells = <0>;
-			osd_out_mipi: endpoint@0 {
-				reg = <0>;
-				remote-endpoint = <&mipi_in_osd>;
+		numa-node-id = <1>;
+		route {
+			d1_route_mipi: route-dsi {
+				status = "disabled";
+				logo,uboot = "logo.bmp";
+				logo,kernel = "logo_kernel.bmp";
+				logo,mode = "center";
+				charge_logo,mode = "center";
+				connect = <&d1_osd_out_mipi>;
 			};
 
-			osd_out_hdmi: endpoint@1 {
-				reg = <1>;
-				remote-endpoint = <&hdmi_in_osd>;
+			d1_route_hdmi: route-hdmi {
+				status = "disabled";
+				logo,uboot = "logo.bmp";
+				logo,kernel = "logo_kernel.bmp";
+				logo,mode = "center";
+				charge_logo,mode = "center";
+				connect = <&d1_osd_out_hdmi>;
 			};
 		};
 	};
+
 	soc {
 		#address-cells = <2>;
 		#size-cells = <2>;
@@ -730,11 +740,53 @@
 				snps,dis-u2-freeclk-exists-quirk;
 				snps,dis-u2-susphy-quirk;
 		};
+
+		osd: osd@502c0000 {
+			compatible = "eswin,dc8000-osd";
+			reg = <0x0 0x502c0000 0x0 0x40000>;
+			status = "disabled";
+			numa-node-id = <0>;
+			osd_out: port {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				osd_out_mipi: endpoint@0 {
+					reg = <0>;
+					remote-endpoint = <&mipi_in_osd>;
+				};
+
+				osd_out_hdmi: endpoint@1 {
+					reg = <1>;
+					remote-endpoint = <&hdmi_in_osd>;
+				};
+			};
+		};
+
+		d1_osd: osd@702c0000 {
+			compatible = "eswin,dc8000-osd";
+			reg = <0x0 0x702c0000 0x0 0x40000>;
+			status = "disabled";
+			numa-node-id = <1>;
+			d1_osd_out: port {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				d1_osd_out_mipi: endpoint@0 {
+					reg = <0>;
+					remote-endpoint = <&d1_mipi_in_osd>;
+				};
+
+				d1_osd_out_hdmi: endpoint@1 {
+					reg = <1>;
+					remote-endpoint = <&d1_hdmi_in_osd>;
+				};
+			};
+		};
+
 		hdmi: hdmi@502a0000 {
 			compatible = "eswin,eswin-dw-hdmi";
 			reg = <0x0 0x502a0000 0x0 0x20000>;
 			reg-io-width = <4>;
 			status = "disabled";
+			numa-node-id = <0>;
 			ports {
 				hdmi_in: port {
 					#address-cells = <1>;
@@ -746,6 +798,69 @@
 				};
 			};
 		};
+
+		d1_hdmi: hdmi@702a0000 {
+			compatible = "eswin,eswin-dw-hdmi";
+			reg = <0x0 0x702a0000 0x0 0x20000>;
+			reg-io-width = <4>;
+			status = "disabled";
+			numa-node-id = <1>;
+			ports {
+				d1_hdmi_in: port {
+					#address-cells = <1>;
+					#size-cells = <0>;
+					d1_hdmi_in_osd: endpoint@0 {
+						reg = <0>;
+						remote-endpoint = <&d1_osd_out_hdmi>;
+					};
+				};
+			};
+		};
+
+		mipi_dsi: dsi@50270000 {
+			status = "disabled";
+			compatible = "eswin,mipi-dsi";
+			reg = <0x0 0x50270000 0x0 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			numa-node-id = <0>;
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				mipi_in: port {
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <1>;
+					mipi_in_osd: endpoint@0 {
+						reg = <0>;
+						remote-endpoint = <&osd_out_mipi>;
+					};
+				};
+			};
+		};
+
+		d1_mipi_dsi: dsi@70270000 {
+			status = "disabled";
+			compatible = "eswin,mipi-dsi";
+			reg = <0x0 0x70270000 0x0 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			numa-node-id = <1>;
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				d1_mipi_in: port {
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <1>;
+					d1_mipi_in_osd: endpoint@0 {
+						reg = <0>;
+						remote-endpoint = <&d1_osd_out_mipi>;
+					};
+				};
+			};
+		};
+
 		spiclk: cfgclk_200mhz {
 			#clock-cells = <0>;
 			compatible = "fixed-clock";
@@ -798,27 +913,6 @@
 			spi-max-frequency = <4800000>;
 			num-cs = <1>;
 			reg-io-width = <4>;
-		};
-
-		mipi_dsi: dsi@50270000 {
-			status = "disabled";
-			compatible = "eswin,mipi-dsi";
-			reg = <0x0 0x50270000 0x0 0x10000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			ports {
-				#address-cells = <1>;
-				#size-cells = <0>;
-				mipi_in: port {
-					#address-cells = <1>;
-					#size-cells = <0>;
-					reg = <1>;
-					mipi_in_osd: endpoint@0 {
-						reg = <0>;
-						remote-endpoint = <&osd_out_mipi>;
-					};
-				};
-			};
 		};
 
 		i2c0: i2c@50950000{

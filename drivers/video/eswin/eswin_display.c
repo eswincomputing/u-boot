@@ -99,7 +99,7 @@ static int argb8888_to_rgb565(unsigned char *argb8888, unsigned short *rgb565, u
 
     if((argb8888 == NULL) || (rgb565 == NULL) || (size == 0))
     {
-        printf("valide pointer or size.\n");
+        vo_err("valide pointer or size.\n");
         return -1;
     }
 
@@ -122,7 +122,7 @@ void *get_display_buffer(int size)
 	void *buf;
 
 	if (roundup_memory + size > memory_start + MEMORY_POOL_SIZE) {
-		printf("[%s]failed to alloc %dbyte memory to display\n", __FUNCTION__, size);
+		vo_err("failed to alloc %dbyte memory to display\n", size);
 		return NULL;
 	}
 	buf = (void *)roundup_memory;
@@ -151,7 +151,7 @@ static int connector_panel_init(struct display_state *state)
 
 	dsp_lut_node = dev_read_subnode(panel->dev, "dsp-lut");
 	if (!ofnode_valid(dsp_lut_node)) {
-		printf("[%s]can not find dsp-lut node\n", __FUNCTION__);
+		vo_err("can not find dsp-lut node\n");
 		return 0;
 	}
 
@@ -160,14 +160,14 @@ static int connector_panel_init(struct display_state *state)
 		conn_state->gamma.size = len / sizeof(u32);
 		conn_state->gamma.lut = malloc(len);
 		if (!conn_state->gamma.lut) {
-			printf("[%s]malloc gamma lut failed\n", __FUNCTION__);
+			vo_err("malloc gamma lut failed\n");
 			return -ENOMEM;
 		}
 		ret = ofnode_read_u32_array(dsp_lut_node, "gamma-lut",
 					    conn_state->gamma.lut,
 					    conn_state->gamma.size);
 		if (ret) {
-			printf("[%s]Cannot decode gamma_lut\n", __FUNCTION__);
+			vo_err("Cannot decode gamma_lut\n");
 			conn_state->gamma.lut = NULL;
 			return -EINVAL;
 		}
@@ -223,7 +223,7 @@ static int display_get_timing_from_dts(struct panel_state *panel_state,
 		phandle = ofnode_read_u32_default(timing, "native-mode", -1);
 		native_mode = np_to_ofnode(of_find_node_by_phandle(NULL, phandle));
 		if (!ofnode_valid(native_mode)) {
-			printf("[%s]failed to get display timings from DT\n", __FUNCTION__);
+			vo_err("failed to get display timings from DT\n");
 			return -ENXIO;
 		}
 	}
@@ -231,7 +231,7 @@ static int display_get_timing_from_dts(struct panel_state *panel_state,
 #define FDT_GET_INT(val, name) \
 	val = ofnode_read_s32_default(native_mode, name, -1); \
 	if (val < 0) { \
-		printf("Can't get %s\n", name); \
+		vo_err("Can't get %s\n", name); \
 		return -ENXIO; \
 	}
 
@@ -477,7 +477,7 @@ static int display_init(struct display_state *state)
 	struct drm_display_mode *mode = &conn_state->mode;
 	int ret = 0;
 
-	vo_info("Eswin UBOOT DRM driver version: %s\n", DRIVER_VERSION);
+	vo_info("Die[%d] Eswin UBOOT DRM driver version: %s\n", state->numa_id, DRIVER_VERSION);
 
 	if (state->is_init) {
 		vo_warn("display init already.\n");
@@ -486,17 +486,6 @@ static int display_init(struct display_state *state)
 	if (!conn_funcs || !crtc_funcs) {
 		vo_err("failed to find connector or crtc functions\n");
 		return -ENXIO;
-	}
-	if (crtc_state->crtc->active &&
-	    memcmp(&crtc_state->crtc->active_mode, &conn_state->mode,
-		   sizeof(struct drm_display_mode))) {
-			vo_info("%s has been used for output type: %d, mode: %dx%dp%d\n",
-					crtc_state->dev->name,
-					crtc_state->crtc->active_mode.type,
-					crtc_state->crtc->active_mode.hdisplay,
-					crtc_state->crtc->active_mode.vdisplay,
-					crtc_state->crtc->active_mode.vrefresh);
-		return -ENODEV;
 	}
 
 	if (crtc_funcs->preinit) {
@@ -516,7 +505,7 @@ static int display_init(struct display_state *state)
 	}
 
 	if (panel_state->panel) {
-		vo_debug("panel_state->panel is not null.\n");
+		vo_info("start panel init.\n");
 		eswin_panel_init(panel_state->panel);
 	}
 
@@ -526,7 +515,7 @@ static int display_init(struct display_state *state)
 	if (conn_funcs->detect) {
 		ret = conn_funcs->detect(state);
 		if (!ret) {
-			vo_debug("no display connected!\n");
+			vo_info("no display connected!\n");
 			goto deinit;
 		}
 	}
@@ -567,9 +556,6 @@ static int display_init(struct display_state *state)
 		}
 	}
 	state->is_init = 1;
-	crtc_state->crtc->active = true;
-	memcpy(&crtc_state->crtc->active_mode,
-	       &conn_state->mode, sizeof(struct drm_display_mode));
 
 	return 0;
 
@@ -627,7 +613,7 @@ static int display_enable(struct display_state *state)
 	const struct eswin_crtc_funcs *crtc_funcs = crtc->funcs;
 	struct panel_state *panel_state = &state->panel_state;
 
-	debug("[%s]: enter.\n", __FUNCTION__);
+	vo_debug("enter.\n");
 	if (!state->is_init)
 		return -EINVAL;
 
@@ -653,7 +639,7 @@ static int display_enable(struct display_state *state)
 		eswin_panel_enable(panel_state->panel);
 #endif
 	state->is_enable = true;
-	debug("[%s]: leave.\n", __FUNCTION__);
+	vo_debug("leave.\n");
 
 	return 0;
 }
@@ -707,7 +693,7 @@ static int display_logo(struct display_state *state)
 
 	if (state->is_init && crtc_state->dma_addr != 0)
 	{
-		sifive_l3_flush64_range((unsigned long)crtc_state->dma_addr, DRM_ESWIN_FB_SIZE);
+		sifive_l3_flush64_range(crtc_state->dma_addr, DRM_ESWIN_FB_SIZE);
 		return 0;
 	}
 
@@ -723,7 +709,7 @@ static int display_logo(struct display_state *state)
 		crtc_state->format = ESWIN_FMT_ARGB8888;
 		break;
 	default:
-		printf("can't support bmp bits[%d]\n", logo->bpp);
+		vo_err("can't support bmp bits[%d]\n", logo->bpp);
 		return -EINVAL;
 	}
 
@@ -737,10 +723,11 @@ static int display_logo(struct display_state *state)
 
 	crtc_state->xvir = ALIGN(crtc_state->src_w * logo->bpp, 32) >> 5;
 #ifdef CONFIG_ESWIN_LOGO_DISPLAY
-	memcpy((u32 *)(u64)crtc_state->dma_addr, logo->mem, DRM_ESWIN_FB_SIZE);
+	memcpy((char *)crtc_state->dma_addr, logo->mem, DRM_ESWIN_FB_SIZE);
 #endif
-	sifive_l3_flush64_range((unsigned long)crtc_state->dma_addr, DRM_ESWIN_FB_SIZE);
-	vo_debug("crtc_state->dma_addr=0x%x,logo->mem=0x%s\n", crtc_state->dma_addr, logo->mem);
+	sifive_l3_flush64_range(crtc_state->dma_addr, DRM_ESWIN_FB_SIZE);
+	vo_debug("crtc_state->dma_addr=0x%llx,logo->mem=0x%llx, logo size:%d\n",
+			crtc_state->dma_addr, (u64)logo->mem, DRM_ESWIN_FB_SIZE);
 
 	if (logo->mode == ESWIN_DISPLAY_FULLSCREEN) {
 		crtc_state->crtc_x = 0;
@@ -787,40 +774,7 @@ static int get_crtc_id(ofnode connect)
 
 	return val;
 err:
-	printf("Can't get crtc id, default set to id = 0\n");
-	return 0;
-}
-
-static int get_crtc_mcu_mode(struct crtc_state *crtc_state)
-{
-	ofnode mcu_node;
-	int total_pixel, cs_pst, cs_pend, rw_pst, rw_pend;
-
-	mcu_node = dev_read_subnode(crtc_state->dev, "mcu-timing");
-	if (!ofnode_valid(mcu_node))
-		return -ENODEV;
-
-#define FDT_GET_MCU_INT(val, name) \
-	do { \
-		val = ofnode_read_s32_default(mcu_node, name, -1); \
-		if (val < 0) { \
-			printf("Can't get %s\n", name); \
-			return -ENXIO; \
-		} \
-	} while (0)
-
-	FDT_GET_MCU_INT(total_pixel, "mcu-pix-total");
-	FDT_GET_MCU_INT(cs_pst, "mcu-cs-pst");
-	FDT_GET_MCU_INT(cs_pend, "mcu-cs-pend");
-	FDT_GET_MCU_INT(rw_pst, "mcu-rw-pst");
-	FDT_GET_MCU_INT(rw_pend, "mcu-rw-pend");
-
-	crtc_state->mcu_timing.mcu_pix_total = total_pixel;
-	crtc_state->mcu_timing.mcu_cs_pst = cs_pst;
-	crtc_state->mcu_timing.mcu_cs_pend = cs_pend;
-	crtc_state->mcu_timing.mcu_rw_pst = rw_pst;
-	crtc_state->mcu_timing.mcu_rw_pend = rw_pend;
-
+	vo_err("Can't get crtc id, default set to id = 0\n");
 	return 0;
 }
 
@@ -839,7 +793,7 @@ struct eswin_logo_cache *find_or_alloc_logo_cache(const char *bmp)
 	if (!logo_cache) {
 		logo_cache = malloc(sizeof(*logo_cache));
 		if (!logo_cache) {
-			printf("failed to alloc memory for logo cache\n");
+			vo_err("failed to alloc memory for logo cache\n");
 			return NULL;
 		}
 		memset(logo_cache, 0, sizeof(*logo_cache));
@@ -903,12 +857,12 @@ static int load_bmp_logo(struct logo_info *logo, const char *bmp_name)
 		if (gunzip(logo_bmp, LOGO_MAX_SIZE,
 			(uchar *) logo_bmp_gzip,
 			   &lenp) != 0) {
-			printf("Error: error uncompressed logo_bmp !\n");
+			vo_err("Error: error uncompressed logo_bmp !\n");
 			free(logo_bmp);
 			return 1;
 		}
 		else {
-			printf("logo_bmp uncompressed size=%ld\n", lenp);
+			vo_err("logo_bmp uncompressed size=%ld\n", lenp);
 			//logo_bmp = (struct bmp_header *)(logo_bmp);
 		}
 
@@ -925,7 +879,7 @@ static int load_bmp_logo(struct logo_info *logo, const char *bmp_name)
 	size = get_unaligned_le32(&header->file_size);
 	if (!can_direct_logo(logo->bpp)) {
 		if (size > MEMORY_POOL_SIZE) {
-			printf("failed to use boot buf as temp bmp buffer\n");
+			vo_err("failed to use boot buf as temp bmp buffer\n");
 			ret = -ENOMEM;
 			goto free_header;
 		}
@@ -939,7 +893,7 @@ static int load_bmp_logo(struct logo_info *logo, const char *bmp_name)
     if (logo_source == FROM_RESOURCE) {
         len = eswin_read_resource_file(pdst, bmp_name, 0, size);
         if (len != size) {
-            printf("failed to load bmp %s\n", bmp_name);
+            vo_err("failed to load bmp %s\n", bmp_name);
             ret = -ENOENT;
             goto free_header;
         }
@@ -963,7 +917,7 @@ static int load_bmp_logo(struct logo_info *logo, const char *bmp_name)
 			goto free_header;
 		}
 		if (bmpdecoder(pdst, dst, logo->bpp)) {
-			printf("failed to decode bmp %s\n", bmp_name);
+			vo_err("failed to decode bmp %s\n", bmp_name);
 			ret = -EINVAL;
 			goto free_header;
 		}
@@ -1022,10 +976,10 @@ int eswin_show_logo(int layer)
 		s->logo.mode = s->logo_mode;
 		s->layer = layer;
 		if (load_bmp_logo(&s->logo, s->ulogo_name)) {
-		    printf("failed to display uboot bmp logo\n");
+		    vo_err("failed to display uboot bmp logo\n");
 		}
 		else {
-		    debug("display uboot logo\n");
+		    vo_debug("display uboot logo\n");
 		    ret = display_logo(s);
 		}
 		/* Load kernel bmp in eswin_display_fixup() later */
@@ -1150,7 +1104,15 @@ static int eswin_display_probe(struct udevice *dev)
 	ofnode route_node;
 	ofnode node = {0};
 	struct device_node *port_node, *dc_node, *ep_node;
+	u32 node_id;
 
+	ret = dev_read_u32(dev, "numa-node-id", &node_id);
+	if (ret) {
+		vo_err("failed to get node id, ret %d\n", ret);
+		return ret;
+	}
+
+	vo_debug("node id:%d\n", node_id);
 	/* Before relocation we don't need to do anything */
 	if (!(gd->flags & GD_FLG_RELOC))
 		return 0;
@@ -1176,36 +1138,36 @@ static int eswin_display_probe(struct udevice *dev)
 			continue;
 		phandle = ofnode_read_u32_default(node, "connect", -1);
 		if (phandle < 0) {
-			printf("[%s]Warn: can't find connect node's handle\n", __FUNCTION__);
+			vo_warn("can't find connect node's handle\n");
 			continue;
 		}
 		ep_node = of_find_node_by_phandle(NULL, phandle);
 		if (!ofnode_valid(np_to_ofnode(ep_node))) {
-			printf("[%s]Warn: can't find endpoint node from phandle\n", __FUNCTION__);
+			vo_warn("can't find endpoint node from phandle\n");
 			continue;
 		}
 		port_node = of_get_parent(ep_node);
 		if (!ofnode_valid(np_to_ofnode(port_node))) {
-			printf("[%s]Warn: can't find port node from phandle\n", __FUNCTION__);
+			vo_warn("can't find port node from phandle\n");
 			continue;
 		}
 		dc_node = of_get_parent(port_node);
 		if (!ofnode_valid(np_to_ofnode(dc_node))) {
-			printf("[%s]Warn: can't find crtc node from phandle\n", __FUNCTION__);
+			vo_warn("can't find crtc node from phandle\n");
 			continue;
 		}
 		ret = uclass_get_device_by_ofnode(UCLASS_VIDEO_OSD,
 						  np_to_ofnode(dc_node),
 						  &crtc_dev);
 		if (ret) {
-			printf("[%s]Warn: can't find crtc driver %d\n", __FUNCTION__, ret);
+			vo_warn("can't find crtc driver %d\n", ret);
 			continue;
 		}
 		crtc = (struct eswin_crtc *)dev_get_driver_data(crtc_dev);
 
 		conn_dev = eswin_of_find_connector(np_to_ofnode(ep_node));
 		if (!conn_dev) {
-			printf("[%s]Warn: can't find connect driver\n", __FUNCTION__);
+			vo_warn("can't find connect driver\n");
 			continue;
 		}
 
@@ -1255,10 +1217,15 @@ static int eswin_display_probe(struct udevice *dev)
 		s->conn_state.overscan.bottom_margin = 100;
 		s->crtc_state.node = np_to_ofnode(dc_node);
 #ifdef CONFIG_ESWIN_LOGO_DISPLAY
-		s->crtc_state.dma_addr = (u32)DRM_ESWIN_FB_BUF;
+		s->crtc_state.dma_addr = DRM_ESWIN_FB_BUF;
 #else
-		s->crtc_state.dma_addr = (u32)plat->base;
+		s->crtc_state.dma_addr = plat->base;
 #endif
+		s->crtc_state.buf_size = DRM_ESWIN_FB_SIZE;
+		if (node_id == 1) {
+			s->crtc_state.dma_addr = DRM_ESWIN_FB_BUF_DIE1;
+		}
+		s->numa_id = node_id;
 		s->crtc_state.dev = crtc_dev;
 		s->crtc_state.crtc = crtc;
 		s->crtc_state.crtc_id = get_crtc_id(np_to_ofnode(ep_node));
@@ -1267,12 +1234,10 @@ static int eswin_display_probe(struct udevice *dev)
 		if (panel)
 			panel->state = s;
 
-		get_crtc_mcu_mode(&s->crtc_state);
-
 		ret = ofnode_read_u32_default(s->crtc_state.node, "eswin,dual-channel-swap", 0);
 		s->crtc_state.dual_channel_swap = ret;
 		if (connector_panel_init(s)) {
-			printf("[%s]Warn: Failed to init panel drivers\n", __FUNCTION__);
+			vo_warn("Failed to init panel drivers\n");
 			free(s);
 			continue;
 		}
@@ -1281,7 +1246,7 @@ static int eswin_display_probe(struct udevice *dev)
 	}
 
 	if (list_empty(&eswin_display_list)) {
-		printf("[%s]Failed to found available display route\n", __FUNCTION__);
+		vo_err("Failed to found available display route\n");
 		return -ENODEV;
 	}
 
@@ -1294,7 +1259,6 @@ static int eswin_display_probe(struct udevice *dev)
 
 	s->logo.mode = ESWIN_DISPLAY_FULLSCREEN;
 	s->layer = ESWIN_VIDEO_LAYER;
-//#ifdef CONFIG_DRM_ESWIN_VIDEO_FRAMEBUFFER
 	s->logo.mem = (char *)logo_buf;
 	s->logo.width = DRM_ESWIN_FB_WIDTH;
 	s->logo.height = DRM_ESWIN_FB_HEIGHT;
@@ -1302,7 +1266,6 @@ static int eswin_display_probe(struct udevice *dev)
 	s->logo.ymirror = 0;
 	display_logo(s);
 	video_set_flush_dcache(dev, true);
-//#endif
 
 	return 0;
 }
@@ -1321,7 +1284,7 @@ static int eswin_display_sync(struct udevice *dev)
 {
 	struct video_uc_plat *plat = dev_get_uclass_plat(dev);
 
-	sifive_l3_flush64_range((unsigned long)plat->base, DRM_ESWIN_FB_SIZE);
+	sifive_l3_flush64_range(plat->base, DRM_ESWIN_FB_SIZE);
 
 	return 0;
 }

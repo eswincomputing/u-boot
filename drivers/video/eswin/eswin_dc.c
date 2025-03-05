@@ -159,6 +159,7 @@ static gctINT eswin_dc_init(struct display_state *state)
 	crtc_state->private = dc;
 	dc->regs = dev_read_addr_ptr(crtc_state->dev);
 	dc->reg_len = dc_data->reg_len;
+	dc->dev = crtc_state->dev;
 	dc->regsbak = malloc(dc->reg_len);
 	dc->win_offset = dc_data->win_offset;
 	dc->host_ctrl = *dc_data->host_ctrl;
@@ -171,7 +172,7 @@ static gctINT eswin_dc_init(struct display_state *state)
 	dc->version = dc_data->version;
 
 	vo_debug("regs=0x%px, regsbak=0x%px\n", dc->regs, dc->regsbak);
-	vo_debug("src_width:%d, src_height:%d.\n", src_width, src_height);
+	vo_info("src_width:%d, src_height:%d.\n", src_width, src_height);
 	vo_info("layer:%d hdisplay:%d, htotal:%d, hsync_st:%d, hsync_end:%d\n",
 			layer, hdisplay, htotal,hsync_st,hsync_end);
 	vo_info("vdisplay:%d, vtotal:%d, vsync_st:%d, vsync_end:%d\n",
@@ -254,6 +255,9 @@ static gctINT eswin_dc_set_plane(struct display_state *state)
 	struct dc8000_dc *dc = crtc_state->private;
 	gctUINT i = 0;
 	gctINT layer = state->layer;
+	int ret;
+	u32 iova_addr;
+	u32 nr_pages;
 
 	if ((mode->crtc_hdisplay > crtc_state->max_output.width) ||
 	    (mode->crtc_vdisplay > crtc_state->max_output.height)) {
@@ -261,14 +265,6 @@ static gctINT eswin_dc_set_plane(struct display_state *state)
 		       crtc_state->max_output.width, crtc_state->max_output.height);
 		return -EINVAL;
 	}
-
-	if(layer == ESWIN_OVERLAY_LAYER) {
-		dc->overlay_ctrl.dcOverlayAddr0 = crtc_state->dma_addr;
-		dc->overlay_ctrl.dcOverlayConfig0 = (crtc_state->format << DCREG_OVERLAY_CONFIG_FORMAT_Start) | (YUV_STANDARD_BT709 << DCREG_OVERLAY_CONFIG_YUV_Start);
-	} else {
-		dc->fb_ctrl.dcFBAddr0 = crtc_state->dma_addr;
-	}
-	dc->fb_ctrl.dcFBConfig0 = (crtc_state->format << DCREG_FRAME_BUFFER_CONFIG_FORMAT_Start) | (YUV_STANDARD_BT709 << DCREG_FRAME_BUFFER_CONFIG_YUV_Start);
 
 	if(dc->is_scale) {
 		if(layer == ESWIN_OVERLAY_LAYER) {
@@ -280,18 +276,37 @@ static gctINT eswin_dc_set_plane(struct display_state *state)
 		}
 	}
 
-	eswin_vo_clk_init(mode->clock);
+	eswin_vo_clk_init(mode->clock, state->numa_id);
 	//host interface
 	eswin_dc_reset(dc);
 
+	//memory control
+	eswin_hw_mmu_enable(dc, 1);
+
+	nr_pages = crtc_state->buf_size >> 12;
+	ret = dc_mmu_map_memory(dc->mmu, crtc_state->dma_addr, nr_pages, &iova_addr);
+	if (ret) {
+		vo_err("mmu map(0x%llx) error, ret:%d\n", crtc_state->dma_addr, ret);
+	}
+	vo_debug("mmu map dma addr:0x%llx, iova addr:0x%x, page count:%d\n",
+			 crtc_state->dma_addr, iova_addr, nr_pages);
+
+	flush_mmu_cache(dc->dev);
+
+	if(layer == ESWIN_OVERLAY_LAYER) {
+		dc->overlay_ctrl.dcOverlayAddr0 = iova_addr;
+		dc->overlay_ctrl.dcOverlayConfig0 =
+			(crtc_state->format << DCREG_OVERLAY_CONFIG_FORMAT_Start) |
+			(YUV_STANDARD_BT709 << DCREG_OVERLAY_CONFIG_YUV_Start);
+	} else {
+		dc->fb_ctrl.dcFBAddr0 = iova_addr;
+	}
+	dc->fb_ctrl.dcFBConfig0 =
+		(crtc_state->format << DCREG_FRAME_BUFFER_CONFIG_FORMAT_Start) |
+		(YUV_STANDARD_BT709 << DCREG_FRAME_BUFFER_CONFIG_YUV_Start);
+
 	eswin_hw_set_framebuffer_config(dc, 0x10);		//dc8000 display control reset
 	eswin_hw_set_framebuffer_config(dc, 0x0);
-
-	//memory control
-	eswin_hw_mmu_enable(dc, 0);
-
-	//dec control
-	eswin_hw_dec_disable(dc, 1);
 
 	if(layer == ESWIN_OVERLAY_LAYER) {
 		//overlay control
@@ -381,6 +396,8 @@ static gctINT eswin_dc_set_plane(struct display_state *state)
 	eswin_hw_set_tsc_prefetch(dc, 0x1);
 	eswin_hw_set_display_dither_tablelow(dc, dc->display_ctrl.dcDitherTabLow0);
 	eswin_hw_set_display_dither_tablehigh(dc, dc->display_ctrl.dcDitherTabhigh0);
+
+	dc_mmu_flush(dc);
 
 	//memcpy(dc->regsbak, dc->regs, dc->reg_len);
 	return 0;

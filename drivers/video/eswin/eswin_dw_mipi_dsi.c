@@ -26,6 +26,7 @@
 #include <errno.h>
 #include <asm/unaligned.h>
 #include <asm/io.h>
+#include <dm.h>
 #include <dm/device.h>
 #include <dm/read.h>
 #include <dm/of_access.h>
@@ -44,6 +45,7 @@
 #include "linux/delay.h"
 // #include "linux/unaligned/le_byteshift.h"
 #include "eswin_dc_reg.h"
+#include "eswin_vo_log.h"
 
 #define __HAPS
 
@@ -1216,7 +1218,14 @@ static int eswin_dw_mipi_dsi_probe(struct udevice *dev) {
     struct eswin_dw_mipi_dsi *dsi = dev_get_priv(dev);
     const struct eswin_connector *connector = (const struct eswin_connector *)dev_get_driver_data(dev);
     const struct eswin_dw_mipi_dsi_plat_data *pdata = connector->data;
-    int id;
+    int id, ret;
+    u32 node_id;
+
+    ret = dev_read_u32(dev, "numa-node-id", &node_id);
+	if (ret) {
+		vo_err("failed to get node id, ret %d\n", ret);
+		return ret;
+	}
 
     dsi->base = dev_read_addr_ptr(dev);
 
@@ -1227,7 +1236,7 @@ static int eswin_dw_mipi_dsi_probe(struct udevice *dev) {
     dsi->pdata = pdata;
     dsi->id = id;
 
-    eswin_vo_clk_init(DEFAULT_PIXEL_CLK);
+    eswin_vo_clk_init(DEFAULT_PIXEL_CLK, node_id);
     eswin_dw_mipi_dsi_bind(dev);
     return 0;
 }

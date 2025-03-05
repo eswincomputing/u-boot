@@ -2688,7 +2688,7 @@ int dc_test_writeback(void *regs, unsigned int scaler)
 	printf("dc_test_writeback: before writeback => *src_overlay_buf = 0x%x, *dst_buf = 0x%x.\n", *src_overlay_buf, *dst_buf);
 #endif
 	//sysconfig
-    eswin_vo_clk_init(0);
+    eswin_vo_clk_init(DEFAULT_PIXEL_CLK, 0);
 	//reset dc8000
 	eswin_dc8k_reset(regs);
 

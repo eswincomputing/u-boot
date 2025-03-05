@@ -30,6 +30,7 @@
 
 #include "eswin_dc_reg.h"
 #include "eswin_vo_log.h"
+#include "eswin_dc_mmu.h"
 
 /*******************************************************************************
 ** Register access.
@@ -175,62 +176,106 @@ gctVOID eswin_dc_reset(struct dc8000_dc *dc)
 	} while ((idle & (1 << 16)) == 0);
 }
 
+static void mmu_set_clear(struct dc8000_dc *dc, u32 reg, u32 set, u32 clear)
+{
+	u32 value = eswin_dc_read_reg(dc->regs, reg);
+
+	value &= ~clear;
+	value |= set;
+
+	eswin_dc_write_reg(dc->regs, reg, value);
+}
+
+int dc_hw_mmu_init(struct dc8000_dc *dc)
+{
+	u32 mtlb = 0, ext_mtlb = 0;
+	u32 safe_addr = 0, ext_safe_addr = 0;
+	u32 config = 0;
+
+	mtlb = (u32)(dc->mmu->mtlb_physical & 0xFFFFFFFF);
+	ext_mtlb = (u32)(dc->mmu->mtlb_physical >> 32);
+
+	/* more than 40bit physical address */
+	if (ext_mtlb & 0xFFFFFF00) {
+		pr_err("Mtlb address out of range.\n");
+		return -EFAULT;
+	}
+
+	config = (ext_mtlb << 20) | (mtlb >> 12);
+	if (dc->mmu->mode == MMU_MODE_1K)
+		mmu_set_clear(dc, MMU_REG_CONTEXT_PD, (config << 4) | BIT(0),
+			      (0xFFFFFFF << 4) | (0x03));
+	else
+		mmu_set_clear(dc, MMU_REG_CONTEXT_PD, (config << 4),
+			      (0xFFFFFFF << 4) | (0x03));
+
+	safe_addr = (u32)(dc->mmu->safe_page_physical & 0xFFFFFFFF);
+	ext_safe_addr = (u32)(dc->mmu->safe_page_physical >> 32);
+
+	if ((safe_addr & 0x3F) || (ext_safe_addr & 0xFFFFFF00)) {
+		pr_err("Invalid safe_address.\n");
+		return -EFAULT;
+	}
+
+	eswin_dc_write_reg(dc->regs, MMU_REG_TABLE_ARRAY_SIZE, 1);
+	eswin_dc_write_reg(dc->regs, MMU_REG_SAFE_SECURE, safe_addr);
+	eswin_dc_write_reg(dc->regs, MMU_REG_SAFE_NON_SECURE, safe_addr);
+
+	mmu_set_clear(dc, MMU_REG_SAFE_EXT_ADDRESS,
+		      (ext_safe_addr << 16) | ext_safe_addr,
+		      BIT(31) | (0xFF << 16) | BIT(15) | 0xFF);
+
+	eswin_dc_write_reg(dc->regs, MMU_REG_CONTROL, BIT(5) | BIT(0));
+
+	eswin_dc_write_reg(dc->regs, DEC_REG_CONTROL, DEC_REG_CONTROL_VALUE);
+
+	return 0;
+}
+
+void dc_hw_enable_mmu_prefetch(struct dc8000_dc *dc, bool enable)
+{
+	if (enable)
+		eswin_dc_write_reg(dc->regs, DC_MMU_PREFETCH, BIT(0));
+	else
+		eswin_dc_write_reg(dc->regs, DC_MMU_PREFETCH, 0);
+}
+
+void dc_mmu_flush(struct dc8000_dc *dc)
+{
+	u32 config, read;
+
+	read = eswin_dc_read_reg(dc->regs, MMU_REG_CONFIG);
+	config = read | BIT(4);
+
+	eswin_dc_write_reg(dc->regs, MMU_REG_CONFIG, config);
+	eswin_dc_write_reg(dc->regs, MMU_REG_CONFIG, read);
+}
+
 /* dc memory operation */
 gctVOID eswin_hw_mmu_enable(struct dc8000_dc *dc, gctBOOL enable)
 {
 	gctUINT config = 0;
+	int ret;
 
-	config = eswin_dc_read_reg(dc->regs, GCREG_MMUAHB_CONTROL_Address);
-	if (enable) {
-		config |= GCREG_MMUAHB_CONTROL_MMU_ENABLE;
+	if (!enable) {
+		config = eswin_dc_read_reg(dc->regs, MMU_REG_CONTROL);
+		config &= ~MMU_REG_CONTROL_MMU_ENABLE;
+		eswin_dc_write_reg(dc->regs, MMU_REG_CONTROL, config);
 	} else {
-		config &= ~GCREG_MMUAHB_CONTROL_MMU_ENABLE;
+		if (dc->mmu_constructed == false) {
+			ret = dc_mmu_construct(dc);
+			if (ret) {
+				vo_err("failed to construct DC MMU\n");
+				return;
+			}
+			dc->mmu_constructed = true;
+		}
+		ret = dc_hw_mmu_init(dc);
+		if (ret) {
+			vo_err("failed to init DC MMU\n");
+			return;
+		}
 	}
-	eswin_dc_write_reg(dc->regs, GCREG_MMUAHB_CONTROL_Address, config);
-}
-
-/* dc dec operation */
-gctVOID eswin_hw_dec_disable(struct dc8000_dc *dc, gctBOOL disable)
-{
-	gctUINT config = 0;
-
-	config = eswin_dc_read_reg(dc->regs, GCREG_AHBDEC_CONTROL_Address);
-	if (disable) {
-		config |= GCREG_AHBDEC_CONTROL_DISABLE_COMPRESSION_DISABLE;
-	} else {
-		config &= ~GCREG_AHBDEC_CONTROL_DISABLE_COMPRESSION_DISABLE;
-	}
-	eswin_dc_write_reg(dc->regs, GCREG_AHBDEC_CONTROL_Address, config);
-}
-
-gctVOID eswin_hw_dec_inter_enable(struct dc8000_dc *dc, gctUINT inter)
-{
-	eswin_dc_write_reg(dc->regs, GCREG_AHBDEC_INTRENBL_Address, inter);
-}
-
-gctVOID eswin_hw_dec_inter_enable_ex(struct dc8000_dc *dc, gctUINT inter)
-{
-	eswin_dc_write_reg(dc->regs, GCREG_AHBDEC_INTRENBLEX_Address, inter);
-}
-
-gctVOID eswin_hw_dec_inter_enable_ex2(struct dc8000_dc *dc, gctUINT inter)
-{
-	eswin_dc_write_reg(dc->regs, GCREG_AHBDEC_INTRENBLEX2_Address, inter);
-}
-
-gctVOID eswin_hw_dec_control(struct dc8000_dc *dc, gctUINT control)
-{
-	eswin_dc_write_reg(dc->regs, GCREG_AHBDEC_CONTROL_Address, control);
-}
-
-gctVOID eswin_hw_dec_control_ex(struct dc8000_dc *dc, gctUINT control)
-{
-	eswin_dc_write_reg(dc->regs, GCREG_AHBDEC_CONTROLEX_Address, control);
-}
-
-gctVOID eswin_hw_dec_control_ex2(struct dc8000_dc *dc, gctUINT control)
-{
-	eswin_dc_write_reg(dc->regs, GCREG_AHBDEC_CONTROLEX2_Address, control);
 }
 
 /* dc Framebuffer Operation */
@@ -695,9 +740,9 @@ gctVOID eswin_hw_set_display_dither_tablehigh(struct dc8000_dc *dc,
 }
 
 /* system config */
-void eswin_vo_clk_init(int pclk)
+void eswin_vo_clk_init(int pclk, u32 numa_id)
 {
-	void *syscrg_reg_base = (void *)(0x51828000);
+	void *syscrg_reg_base = (void *)(uintptr_t)(0x51828000 + 0x20000000 * numa_id);
 	int div;
 	int clk_reg_val;
 

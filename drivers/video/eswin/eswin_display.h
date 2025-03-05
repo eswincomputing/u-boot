@@ -115,7 +115,8 @@ struct crtc_state {
 	int crtc_id;
 
 	int format;
-	u32 dma_addr;
+	u64 dma_addr;
+	u32 buf_size;
 	int ymirror;
 	int rb_swap;
 	int xvir;
@@ -128,7 +129,6 @@ struct crtc_state {
 	int crtc_w;
 	int crtc_h;
 	bool yuv_overlay;
-	struct eswin_mcu_timing mcu_timing;
 	u32 dual_channel_swap;
 	struct eswin_rect max_output;
 };
@@ -185,6 +185,7 @@ struct eswin_logo_cache {
 };
 
 struct display_state {
+	u32 numa_id;
 	struct list_head head;
 
 	const void *blob;

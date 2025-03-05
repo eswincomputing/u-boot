@@ -22,6 +22,7 @@
 #include <common.h>
 #include <asm/cache.h>
 #include <asm/io.h>
+#include <dm.h>
 #include <dm/device.h>
 #include <part.h>
 #include <linux/dw_hdmi.h>
@@ -33,6 +34,7 @@
 #include "dw_hdmi.h"
 #include "eswin_dw_hdmi.h"
 #include "eswin_dc_reg.h"
+#include "eswin_vo_log.h"
 
 #define ESWIN_BLK_SIZE 512
 
@@ -176,7 +178,16 @@ const struct dw_hdmi_plat_data eswin_hdmi_drv_data = {
 
 static int eswin_dw_hdmi_probe(struct udevice *dev)
 {
-    eswin_vo_clk_init(DEFAULT_PIXEL_CLK);
+    int ret;
+    u32 node_id;
+
+    ret = dev_read_u32(dev, "numa-node-id", &node_id);
+	if (ret) {
+		vo_err("failed to get node id, ret %d\n", ret);
+		return ret;
+	}
+
+    eswin_vo_clk_init(DEFAULT_PIXEL_CLK, node_id);
     return 0;
 }
 

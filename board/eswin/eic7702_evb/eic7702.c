@@ -158,6 +158,7 @@ int misc_init_r(void)
 #endif
 
 	uclass_get_device_by_name(UCLASS_VIDEO, "display-subsystem", &dev);
+	uclass_get_device_by_name(UCLASS_VIDEO, "d1_display-subsystem", &dev);
 	hardware_info_env_set();
 
 	if (NULL == env_get("fdtfile")) {

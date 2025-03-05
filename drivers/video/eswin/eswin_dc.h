@@ -24,6 +24,7 @@
 
 #include <drm/eswin_dc_type.h>
 #include "eswin_display.h"
+#include "eswin_dc_mmu.h"
 
 /*
  * major: IP major vertion, used for IP structure
@@ -155,6 +156,7 @@ struct dc8000_data {
 struct dc8000_dc {
 	gctUINT32 *regsbak;
 	void *regs;
+	struct udevice *dev;
 
 	gctUINT32 version;
 	struct dc8000_host_ctrl host_ctrl;
@@ -167,6 +169,13 @@ struct dc8000_dc {
 	gctUINT32 reg_len;
 	gctINT win_offset;
 	gctUINT32 is_scale;
+
+	dc_mmu *mmu;
+	bool mmu_constructed;
 };
+
+int dc_mmu_construct(struct dc8000_dc *dc);
+void eswin_vo_clk_init(int pclk, u32 numa_id);
+void dc_mmu_flush(struct dc8000_dc *dc);
 
 #endif

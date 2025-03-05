@@ -15,6 +15,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Authors: DengLei <denglei@eswincomputing.com>
  */
 
 #ifndef _ESWIN_CRTC_H_
@@ -23,9 +25,6 @@
 struct eswin_crtc {
 	const struct eswin_crtc_funcs *funcs;
 	const void *data;
-	struct drm_display_mode active_mode;
-	bool hdmi_hpd : 1;
-	bool active : 1;
 };
 
 struct eswin_crtc_funcs {

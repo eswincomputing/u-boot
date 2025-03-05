@@ -63,12 +63,17 @@
 		ranges;
 
 		display_reserved: region@E0000000 {
-			reg = <0x0 0xE0000000 0x0 0x1000000>;
+			reg = <0x0 0xE0000000 0x0 0x2000000>;
 			no-map;
 		};
 
 		lpcpu_reserved: lpcpures@DFFF0000 {
 			reg = <0x00 0xDFFF0000 0x00 0x00010000>;
+			no-map;
+		};
+
+		d1_display_reserved: region@20e0000000 {
+			reg = <0x20 0xE0000000 0x0 0x2000000>;
 			no-map;
 		};
 	};
@@ -317,6 +322,9 @@
 		};
 	};
 };
+&d1_mipi_dsi {
+	status = "disabled";
+};
 &dwc3_typec0 {
 		status = "okay";
 		dr_mode = "peripheral";
@@ -338,16 +346,31 @@
 &hdmi {
 	status = "okay";
 };
+&d1_hdmi {
+	status = "okay";
+};
 &display_subsystem {
+	status = "okay";
+};
+&d1_display_subsystem {
 	status = "okay";
 };
 &route_hdmi {
 	status = "okay";
 };
+&d1_route_hdmi {
+	status = "okay";
+};
 &route_mipi {
 	status = "disabled";
 };
+&d1_route_mipi {
+	status = "disabled";
+};
 &osd {
+	status = "okay";
+};
+&d1_osd {
 	status = "okay";
 };
 &i2c0 {
