@@ -50,7 +50,7 @@ struct eswin_xhci {
     struct xhci_hccr *hcd;
     struct dwc3 *dwc3_reg;
 };
-
+static int dwc_usb_clk_init(fdt_addr_t hcd_base);
 static int xhci_usb_of_to_plat(struct udevice *dev)
 {
     struct eswin_xhci_platdata *plat = dev_get_plat(dev);
@@ -61,6 +61,7 @@ static int xhci_usb_of_to_plat(struct udevice *dev)
      * Get the base address for XHCI controller from the device node
      */
     plat->hcd_base = dev_read_addr(dev);
+    dwc_usb_clk_init(plat->hcd_base);
     if (plat->hcd_base == FDT_ADDR_T_NONE) {
         pr_err("Can't get the XHCI register base address\n");
         return -ENXIO;
@@ -75,14 +76,14 @@ static int xhci_usb_of_to_plat(struct udevice *dev)
         break;
     }
 
-   // if (plat->phy_base == FDT_ADDR_T_NONE) {
-   //     pr_err("Can't get the usbphy register address\n");
-   //     return -ENXIO;
-   // }
+    // if (plat->phy_base == FDT_ADDR_T_NONE) {
+    //     pr_err("Can't get the usbphy register address\n");
+    //     return -ENXIO;
+    // }
 
     /* Vbus regulator */
     ret = device_get_supply_regulator(dev, "vbus-supply",
-                      &plat->vbus_supply);
+                                      &plat->vbus_supply);
     if (ret)
         debug("Can't get VBus regulator!\n");
 
@@ -95,7 +96,7 @@ static int xhci_usb_of_to_plat(struct udevice *dev)
  * @dev: Pointer to ulcass device
  */
 static void eswin_dwc3_phy_setup(struct dwc3 *dwc3_reg,
-                    struct udevice *dev)
+                                 struct udevice *dev)
 {
     u32 reg;
     u32 utmi_bits;
@@ -127,12 +128,13 @@ static void eswin_dwc3_phy_setup(struct dwc3 *dwc3_reg,
 }
 
 static int eswin_xhci_core_init(struct eswin_xhci *eswxhci,
-                   struct udevice *dev)
+                                struct udevice *dev)
 {
     int ret;
 
     ret = dwc3_core_init(eswxhci->dwc3_reg);
-    if (ret) {
+    if (ret)
+    {
         pr_err("failed to initialize core\n");
         return ret;
     }
@@ -151,14 +153,16 @@ static int eswin_xhci_core_exit(struct eswin_xhci *eswxhci)
 {
     return 0;
 }
-static int dwc_usb_clk_init(void)
+static int dwc_usb_clk_init(fdt_addr_t hcd_base)
 {
     void __iomem *crg_regs;
     void __iomem *hsp_regs;
     u32 val = 0;
+    fdt_addr_t die_reg_base = hcd_base & 0xf0000000;
+
     /*Use clk framework instead*/
-    hsp_regs = ioremap(0x50440000, 0x200);
-    crg_regs = ioremap(0x51828000, 0x1000);
+    hsp_regs = ioremap(die_reg_base + 0x0440000, 0x200);
+    crg_regs = ioremap(die_reg_base + 0x1828000, 0x1000);
 
     //reset hsp_por
     val = readl(crg_regs + 0x41c);
@@ -168,25 +172,32 @@ static int dwc_usb_clk_init(void)
     //enable scu_hsp_pclk
     writel(0x80000020, crg_regs + 0x148);
     writel(0xc0000000, crg_regs + 0x14c);
+    if (0x8 == ((hcd_base & 0xf0000)>>16))
+    {
+        //usb0 clk init
+        //ref clk is 24M, below need to be set to satisfy usb phy requirement(125M)
+        writel(0x0000002a, hsp_regs + 0x83c);
+        writel(0x00000000, hsp_regs + 0x840);
 
-    //usb0 clk init
-    //ref clk is 24M, below need to be set to satisfy usb phy requirement(125M)
-    writel(0x0000002a, hsp_regs + 0x83c);
-    writel(0x00000000, hsp_regs + 0x840);
+        //reset usb core and usb phy
+        writel(0x11010201, hsp_regs + 0x800);
+        writel(0x00010001, hsp_regs + 0x808);
+    }
+    else if (0x9 == ((hcd_base & 0xf0000)>>16))
+    {
+        //usb1 clk init
+        //ref clk is 24M, below need to be set to satisfy usb phy requirement(125M)
+        writel(0x0000002a, hsp_regs + 0x93c);
+        writel(0x00000000, hsp_regs + 0x940);
 
-    //reset usb core and usb phy
-    writel(0x11010201, hsp_regs + 0x800);
-    writel(0x00010001, hsp_regs + 0x808);
-
-    //usb1 clk init
-    //ref clk is 24M, below need to be set to satisfy usb phy requirement(125M)
-    writel(0x0000002a, hsp_regs + 0x93c);
-    writel(0x00000000, hsp_regs + 0x940);
-
-    //reset usb core and usb phy
-    writel(0x11010201, hsp_regs + 0x900);
-    writel(0x00010001, hsp_regs + 0x908);
-
+        //reset usb core and usb phy
+        writel(0x11010201, hsp_regs + 0x900);
+        writel(0x00010001, hsp_regs + 0x908);
+    }
+    else
+    {
+        pr_err("XHCI: can't find controller in 0x%llx\n",hcd_base);
+    }
     return 0;
 }
 static int xhci_usb_probe(struct udevice *dev)
@@ -197,12 +208,11 @@ static int xhci_usb_probe(struct udevice *dev)
     int ret;
     struct gpio_desc *hub_reset_gpio;
 
-    dwc_usb_clk_init();
     ctx->hcd = (struct xhci_hccr *)plat->hcd_base;
     ctx->dwc3_reg = (struct dwc3 *)((char *)(ctx->hcd) + DWC3_REG_OFFSET);
     xhci_readl(&ctx->hcd->cr_capbase);
     hcor = (struct xhci_hcor *)((uint64_t)ctx->hcd +
-            HC_LENGTH(xhci_readl(&ctx->hcd->cr_capbase)));
+                                HC_LENGTH(xhci_readl(&ctx->hcd->cr_capbase)));
     if (plat->vbus_supply) {
         ret = regulator_set_enable(plat->vbus_supply, true);
         if (ret) {

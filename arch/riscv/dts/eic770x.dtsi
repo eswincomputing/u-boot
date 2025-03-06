@@ -712,6 +712,24 @@
 				snps,dis-u2-freeclk-exists-quirk;
 				snps,dis-u2-susphy-quirk;
 		};
+		d1_usb0: d1_usb0@70480000 {
+				compatible = "eswin,eic7700-dwc3-host";
+				reg = <0x0 0x70480000 0x0 0x10000>;
+				status = "disabled";
+				snps,dis-enblslpm-quirk;
+				snps,phyif-utmi-bits = <16>;
+				snps,dis-u2-freeclk-exists-quirk;
+				snps,dis-u2-susphy-quirk;
+		};
+		d1_usb1: d1_usb1@70490000 {
+				compatible = "eswin,eic7700-dwc3-host";
+				reg = <0x0 0x70490000 0x0 0x10000>;
+				status = "disabled";
+				snps,dis-enblslpm-quirk;
+				snps,phyif-utmi-bits = <16>;
+				snps,dis-u2-freeclk-exists-quirk;
+				snps,dis-u2-susphy-quirk;
+		};
 		hdmi: hdmi@502a0000 {
 			compatible = "eswin,eswin-dw-hdmi";
 			reg = <0x0 0x502a0000 0x0 0x20000>;

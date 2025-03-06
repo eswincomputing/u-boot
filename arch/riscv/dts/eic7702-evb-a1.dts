@@ -328,6 +328,13 @@
 &usb1 {
 	status = "okay";
 };
+&d1_usb0 {
+	status = "okay";
+};
+&d1_usb1 {
+	status = "okay";
+};
+
 &hdmi {
 	status = "okay";
 };
