@@ -1305,13 +1305,8 @@ static int eqos_send(struct udevice *dev, void *packet, int length)
         &eqos->dma_regs->ch0_txdesc_tail_pointer);
 
     for (i = 0; i < 100000; i++) {
-#ifdef SYSPORT_OFFSET
-        if (!(readl((void *)(&tx_desc->des3) + SYSPORT_OFFSET) & EQOS_DESC3_OWN))
-#else
-//        eqos->config->ops->eqos_inval_desc(tx_desc);
         if (!((readl(&tx_desc->des3)) & EQOS_DESC3_OWN))
-#endif
-        return 0;
+            return 0;
         udelay(1);
     }
 
