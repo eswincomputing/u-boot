@@ -249,6 +249,7 @@
 		ports = <&osd_out>;
 		status = "disabled";
 		numa-node-id = <0>;
+		double-screen = <0>;
 		route {
 			route_mipi: route-dsi {
 				status = "disabled";

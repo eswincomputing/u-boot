@@ -351,6 +351,7 @@
 };
 &display_subsystem {
 	status = "okay";
+	double-screen = <1>;
 };
 &d1_display_subsystem {
 	status = "okay";
