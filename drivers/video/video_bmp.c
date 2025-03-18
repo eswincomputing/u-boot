@@ -491,9 +491,9 @@ int video_bmp_display(struct udevice *dev, ulong bmp_image, int x, int y,
 	}
 
 	if (double_screen == 1) {
-		memcpy((void *)DRM_ESWIN_FB_BUF_DIE1 , (void *)fb, height * width * 4);
+		memcpy((void *)DRM_ESWIN_FB_BUF_DIE1 , (void *)priv->fb, priv->xsize * priv->ysize * 4);
 
-		sifive_l3_flush64_range(DRM_ESWIN_FB_BUF_DIE1, height * width * 4);
+		sifive_l3_flush64_range(DRM_ESWIN_FB_BUF_DIE1, priv->xsize * priv->ysize * 4);
 	}
 	ret = video_sync_copy(dev, start, fb);
 	if (ret)
