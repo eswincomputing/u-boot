@@ -291,12 +291,14 @@ ifeq ($(LOGO_BMP),)
 LOGO_BMP= $(srctree)/$(src)/logos/denx.bmp
 
 # Use board logo and fallback to vendor
-ifneq ($(wildcard $(srctree)/$(src)/logos/$(BOARD).bmp),)
-LOGO_BMP= $(srctree)/$(src)/logos/$(BOARD).bmp
+ifneq ($(wildcard $(srctree)/$(src)/logos/$(BOARD).bmp.gz),)
+	LOGO_BMP= $(srctree)/$(src)/logos/$(BOARD).bmp.gz
 else
-ifneq ($(wildcard $(srctree)/$(src)/logos/$(VENDOR).bmp),)
-LOGO_BMP= $(srctree)/$(src)/logos/$(VENDOR).bmp
-endif
+	ifneq ($(wildcard $(srctree)/$(src)/logos/$(BOARD).bmp),)
+		LOGO_BMP= $(srctree)/$(src)/logos/$(BOARD).bmp
+	else
+		LOGO_BMP= $(srctree)/$(src)/logos/$(VENDOR).bmp
+	endif
 endif
 
 endif # !LOGO_BMP
@@ -315,13 +317,19 @@ HOST_EXTRACFLAGS += -include $(srctree)/include/compiler.h \
 		-D_GNU_SOURCE
 
 __build:	$(LOGO-y)
-
 $(LOGO_H):	$(obj)/bmp_logo $(LOGO_BMP)
 	$(obj)/bmp_logo --gen-info $(LOGO_BMP) > $@
 
+
 ifeq ($(CONFIG_VIDEO),y)
+LOGO_IS_GZ := $(filter .gz,$(suffix $(LOGO_BMP)))
+ifneq ($(LOGO_IS_GZ),)
+$(LOGO_DATA_H):	$(obj)/bmp_logo $(LOGO_BMP)
+	$(obj)/bmp_logo --gen-bmp-gz $(LOGO_BMP) > $@
+else
 $(LOGO_DATA_H):	$(obj)/bmp_logo $(LOGO_BMP)
 	$(obj)/bmp_logo --gen-bmp $(LOGO_BMP) > $@
+endif
 else
 $(LOGO_DATA_H):	$(obj)/bmp_logo $(LOGO_BMP)
 	$(obj)/bmp_logo --gen-data $(LOGO_BMP) > $@

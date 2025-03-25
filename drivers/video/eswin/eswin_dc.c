@@ -301,7 +301,7 @@ static gctINT eswin_dc_set_plane(struct display_state *state)
 	} else {
 		dc->fb_ctrl.dcFBAddr0 = iova_addr;
 	}
-	dc->fb_ctrl.dcFBConfig0 =
+	dc->fb_ctrl.dcFBConfig0 |=
 		(crtc_state->format << DCREG_FRAME_BUFFER_CONFIG_FORMAT_Start) |
 		(YUV_STANDARD_BT709 << DCREG_FRAME_BUFFER_CONFIG_YUV_Start);
 

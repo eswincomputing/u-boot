@@ -24,8 +24,13 @@
 #include <display_options.h>
 #include <env.h>
 #include <splash.h>
+#include <mapmem.h>
 #include <video.h>
-
+#include <gzip.h>
+#define BMP_GZ_WIDTH 1920
+#define BMP_GZ_HEIGHT 1080
+#define BMP_HEAD_LEN 138
+#define BMP_COLOR_LEN 3
 static struct splash_location default_splash_locations[] = {
 	{
 		.name = "sf",
@@ -78,9 +83,17 @@ static int splash_video_logo_load(void)
 		return -EFAULT;
 	}
 
-	memcpy((void *)bmp_load_addr, bmp_logo_bitmap,
-	       ARRAY_SIZE(bmp_logo_bitmap));
-
+	char *splash_file = env_get("splashfile");
+	if (splash_file) {
+		ulong src_len = ARRAY_SIZE(bmp_logo_bitmap);
+		uint dst_len = BMP_GZ_WIDTH * BMP_GZ_HEIGHT * BMP_COLOR_LEN + BMP_HEAD_LEN;
+		int ret = gunzip(map_sysmem(bmp_load_addr, 0), dst_len, bmp_logo_bitmap, &src_len);
+		if (ret != 0) {
+			printf("logo.bmp.gz file gunzip failed\n");
+		}
+	} else {
+		memcpy((void *)bmp_load_addr, bmp_logo_bitmap, ARRAY_SIZE(bmp_logo_bitmap));
+	}
 	return 0;
 }
 #else
