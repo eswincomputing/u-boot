@@ -167,6 +167,7 @@ static const struct eswin_connector_funcs eswin_dw_hdmi_funcs = {
     .get_timing = eswin_dw_hdmi_get_timing,
     .detect = eswin_dw_hdmi_detect,
     .dump_hdmi_phy_regs = eswin_dw_hdmi_dump_phy,
+    .dump_hdmi_regs = eswin_dw_hdmi_dump_regs,
 };
 
 const struct dw_hdmi_plat_data eswin_hdmi_drv_data = {

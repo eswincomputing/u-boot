@@ -38,6 +38,7 @@ struct eswin_connector_funcs {
 	int (*disable)(struct display_state *state);
 	void (*unprepare)(struct display_state *state);
 	int (*dump_hdmi_phy_regs)(struct display_state *state);
+	int (*dump_hdmi_regs)(struct display_state *state);
 };
 
 const struct eswin_connector *
