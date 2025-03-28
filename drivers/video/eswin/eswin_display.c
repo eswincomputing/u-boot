@@ -1469,24 +1469,25 @@ static int do_writeback_to_mem(struct cmd_tbl *cmdtp, int flag, int argc,
 	return 0;
 }
 
-static int do_read_hdmi_regs(struct cmd_tbl *cmdtp, int flag, int argc,
-	char *const argv[])
+static int do_read_hdmi_phy_regs(struct cmd_tbl *cmdtp, int flag, int argc,
+			char *const argv[])
 {
 	struct udevice *dev;
 	struct display_state *s = NULL;
 	struct connector_state *conn_state;
 
-	printf("do read hdmi regs: enter.\n");
+	printf("do read hdmi phy: enter.\n");
 
 	uclass_get_device_by_name(UCLASS_VIDEO, "display-subsystem", &dev);
 
 	list_for_each_entry(s, &eswin_display_list, head) {
 		conn_state = &s->conn_state;
-		conn_state->connector->funcs->dump_hdmi_regs(s);
+		conn_state->connector->funcs->dump_hdmi_phy_regs(s);
 	}
 
 	return 0;
 }
+
 
 #ifdef CONFIG_ESWIN_LOGO_DISPLAY
 U_BOOT_CMD(show_logo, 2, 1, do_eswin_logo_show,
@@ -1515,8 +1516,8 @@ U_BOOT_CMD(write_back, 1, 1, do_writeback_to_mem,
 	NULL
 );
 
-U_BOOT_CMD(read_hdmi_regs, 1, 1, do_read_hdmi_regs,
-	"read and print the hdmi regs value",
+U_BOOT_CMD(read_hdmi_phy, 1, 1, do_read_hdmi_phy_regs,
+	"read and print the hdmi phy regs value",
 	NULL
 );
 
