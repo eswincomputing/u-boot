@@ -22,6 +22,8 @@
 #ifndef VIDEO_ESWIN_H
 #define VIDEO_ESWIN_H
 
+#include <dm/device.h>
+
 #ifndef CONFIG_ESWIN_LOGO_DISPLAY
 #ifdef CONFIG_DRM_ESWIN_DW_HDMI
  #define DRM_ESWIN_FB_WIDTH             1920
@@ -44,7 +46,7 @@
 #endif
 #endif
 
-#define MEMORY_POOL_SIZE        32 * 1024 * 1024
+#define MEMORY_POOL_SIZE        16 * 1024 * 1024
 #define DRM_ESWIN_FB_BUF        (0xe0000000)
 #define DRM_ESWIN_FB_BUF_DIE1   (0x20e0000000)
 #define DRM_ESWIN_FB_SIZE \
@@ -59,4 +61,7 @@ unsigned int eswin_get_fbheight(int layer);
 unsigned int eswin_get_fbbpp(int layer);
 int eswin_show_fbbase(int layer);
 int eswin_display_disable(void);
+
+int eswin_bmp_display(struct udevice *dev, ulong addr, int x, int y);
+
 #endif

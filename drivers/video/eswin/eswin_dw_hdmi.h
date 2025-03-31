@@ -34,6 +34,7 @@ int eswin_dw_hdmi_disable(struct display_state *state);
 int eswin_dw_hdmi_get_timing(struct display_state *state);
 int eswin_dw_hdmi_detect(struct display_state *state);
 int eswin_dw_hdmi_dump_phy(struct display_state *state);
+int eswin_dw_hdmi_dump_regs(struct display_state *state);
 
 enum drm_connector_status
 inno_dw_hdmi_phy_read_hpd(struct dw_hdmi *hdmi,

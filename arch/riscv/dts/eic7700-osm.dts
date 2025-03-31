@@ -65,7 +65,7 @@
 		ranges;
 
 		display_reserved: region@E0000000 {
-			reg = <0x0 0xE0000000 0x0 0x1000000>;
+			reg = <0x0 0xE0000000 0x0 0x2000000>;
 			no-map;
 		};
 

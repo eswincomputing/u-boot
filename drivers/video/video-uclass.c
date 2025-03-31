@@ -26,6 +26,9 @@
 #ifdef CONFIG_SANDBOX
 #include <asm/sdl.h>
 #endif
+#include <video_eswin.h>
+#include <splash.h>
+#include <env.h>
 
 /*
  * Theory of operation:
@@ -529,6 +532,27 @@ int video_default_font_height(struct udevice *dev)
 	return vc_priv->y_charsize;
 }
 
+int die1_bmp_display(struct udevice *dev)
+{
+	int x = 0, y = 0, ret;
+	char *s;
+	ulong addr;
+
+	s = env_get("splashimage");
+	if (!s)
+		return -EINVAL;
+	addr = hextoul(s, NULL);
+
+	splash_get_pos(&x, &y);
+
+	if (CONFIG_IS_ENABLED(BMP))
+		ret = eswin_bmp_display(dev, addr, x, y);
+	else
+		return -ENOSYS;
+
+	return ret;
+}
+
 /* Set up the display ready for use */
 static int video_post_probe(struct udevice *dev)
 {
@@ -538,6 +562,7 @@ static int video_post_probe(struct udevice *dev)
 	const char *drv_name = drv;
 	struct udevice *cons;
 	int ret;
+	u32 double_screen = 0;
 
 	/* Set up the line and display size */
 	priv->fb = map_sysmem(plat->base, plat->size);
@@ -601,6 +626,16 @@ static int video_post_probe(struct udevice *dev)
 			log_debug("Cannot show splash screen\n");
 			return ret;
 		}
+	}
+
+	ret = dev_read_u32(dev, "double-screen", &double_screen);
+	if (ret) {
+		printf("failed to get double-screen, ret %d\n", ret);
+		return 0;
+	}
+
+	if (double_screen == 1) {
+		ret = die1_bmp_display(dev);
 	}
 
 	return 0;
