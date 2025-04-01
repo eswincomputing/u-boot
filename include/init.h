@@ -289,7 +289,6 @@ int set_cpu_clk_info(void);
 int update_flash_size(int flash_size);
 int arch_early_init_r(void);
 int misc_init_r(void);
-int arch_misc_init(void);
 int eswin_pmp_init(void);
 
 #include <spi_flash.h>
