@@ -15,8 +15,7 @@ typedef struct bitmap_s {		/* bitmap description */
 } bitmap_t;
 
 #define DEFAULT_CMAP_SIZE	16	/* size of default color map	*/
-#define BMP_GZ_WIDTH 1920	/*Only 1080p bmp.gz are supported*/
-#define BMP_GZ_HEIGHT 1080
+
 void usage(const char *prog)
 {
 	fprintf(stderr, "Usage: %s [--gen-info|--gen-data|--gen-bmp] file\n",
@@ -153,16 +152,8 @@ int main (int argc, char *argv[])
 	}
 
 	if (fgetc (fp) != 'B' || fgetc (fp) != 'M') {
-		if (mode == MODE_GEN_INFO) {
-			b->width = BMP_GZ_WIDTH;
-			b->height = BMP_GZ_HEIGHT;
-			n_colors = 1;
-			gen_info(b, n_colors);
-			return 0;
-		}
 		error ("Input file is not a bitmap", fp);
 	}
-
 
 	/*
 	 * read width and height of the image, and the number of colors used;

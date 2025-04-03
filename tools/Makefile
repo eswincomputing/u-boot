@@ -317,9 +317,12 @@ HOST_EXTRACFLAGS += -include $(srctree)/include/compiler.h \
 		-D_GNU_SOURCE
 
 __build:	$(LOGO-y)
-$(LOGO_H):	$(obj)/bmp_logo $(LOGO_BMP)
-	$(obj)/bmp_logo --gen-info $(LOGO_BMP) > $@
 
+IS_BMP := $(if $(filter .bmp,$(suffix $(LOGO_BMP))),yes,no)
+$(LOGO_H):	$(obj)/bmp_logo $(LOGO_BMP)
+ifeq ($(IS_BMP),yes)
+	$(obj)/bmp_logo --gen-info $(LOGO_BMP) > $@
+endif
 
 ifeq ($(CONFIG_VIDEO),y)
 LOGO_IS_GZ := $(filter .gz,$(suffix $(LOGO_BMP)))
