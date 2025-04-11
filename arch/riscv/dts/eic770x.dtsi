@@ -316,7 +316,9 @@
 			status = "disabled";
 			compatible = "eswin,lpcpu";
 			memory-region = <&lpcpu_reserved>;
+			memory-offset = <0x0>;
 			#mbox-cells = <1>;
+			numa-node-id = <0>;
 			reg = <0 0x50a20000 0 0x10000>,<0 0x50a30000 0 0x10000>;
 			interrupt-parent = <&plic0>;
 			interrupts = <8>;
@@ -409,10 +411,27 @@
 			interrupt-parent = <&plic1>;
 			interrupts = <8>;
 		};
+		d1_mbox1: mbox@0x70a20000 {
+			status = "disabled";
+			compatible = "eswin,lpcpu";
+			memory-region = <&lpcpu_reserved>;
+			memory-offset = <0x10000>;
+			#mbox-cells = <1>;
+			numa-node-id = <1>;
+			reg = <0 0x70a20000 0 0x10000>,<0 0x70a30000 0 0x10000>;
+			interrupt-parent = <&plic1>;
+			interrupts = <8>;
+		};
 		d1_mbox_srvc:mbox_srvc@d1 {
 			status = "disabled";
 			compatible = "eswin,mbox-srvc";
 			mboxes = <&d1_mbox 0>, <&d1_mbox 1>;
+			mbox-names = "tx", "rx";
+		};
+		d1_mbox_srvc1: mbox_srvc1@d1 {
+			status = "disabled";
+			compatible = "eswin,mbox-srvc";
+			mboxes = <&d1_mbox1 0>, <&d1_mbox1 1>;
 			mbox-names = "tx", "rx";
 		};
 		d1_pmp:pmp@71b48000 {

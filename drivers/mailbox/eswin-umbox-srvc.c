@@ -62,8 +62,12 @@ int eswin_umbox_service_send_lpcpu(struct udevice* dev, u8* data)
 int lpcpu_misc_func(void)
 {
 	struct udevice *dev;
+	struct udevice *dev1;
+	// d2d pmix
 	uclass_get_device_by_name(UCLASS_MISC, "mbox_srvc1@d0", &dev);
 	eswin_umbox_service_get(dev);
+	uclass_get_device_by_name(UCLASS_MISC, "mbox_srvc1@d1", &dev1);
+	eswin_umbox_service_get(dev1);
 
 	return 0;
 }

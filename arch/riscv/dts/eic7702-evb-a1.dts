@@ -67,8 +67,8 @@
 			no-map;
 		};
 
-		lpcpu_reserved: lpcpures@DFFF0000 {
-			reg = <0x00 0xDFFF0000 0x00 0x00010000>;
+		lpcpu_reserved: lpcpures@DFFE0000 {
+			reg = <0x00 0xDFFE0000 0x00 0x00020000>;
 			no-map;
 		};
 
@@ -152,6 +152,12 @@
 	status = "okay";
 };
 &d0_mbox_srvc1 {
+	status = "okay";
+};
+&d1_mbox1 {
+	status = "okay";
+};
+&d1_mbox_srvc1 {
 	status = "okay";
 };
 &d0_pmp {

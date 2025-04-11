@@ -1,13 +1,25 @@
-// SPDX-License-Identifier: GPL-2.0-only
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Transfer the som uart console through telenet
  *
- * Copyright 2024 Beijing ESWIN Computing Technology Co., Ltd.
- *   Authors:
- *    HuJiamiao<hujiamiao@eswincomputing.com>
+ * Copyright 2024, Beijing ESWIN Computing Technology Co., Ltd.. All rights reserved.
+ * SPDX-License-Identifier: GPL-2.0
  *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 2.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Authors: HuJiamiao<hujiamiao@eswincomputing.com>
  */
-
+#define CONFIG_LOGLEVEL 8
 #include <asm/io.h>
 #include <asm/mbox.h>
 #include <common.h>
@@ -31,10 +43,15 @@
 #include <fs.h>
 #include <update_init.h>
 #include <linux/math64.h>
+#include <linux/mtd/spi-nor.h>
+#include <spi_flash.h>
 
 #define FW_FILE_IMG   "/lib/firmware/eic7x/lpcpu_fw.bin"
 #define LPCPU_BOOT_FILE_IMG   "/lib/firmware/eic7x/lpcpu_boot.bin"
-#define LPCPU_FW_LOAD_ADDR  0xDFFF0000
+#define FW_FILE_IMG_DIE1   "/lib/firmware/eic7x/lpcpu_fw_d1.bin"
+#define LPCPU_BOOT_FILE_IMG_DIE1   "/lib/firmware/eic7x/lpcpu_boot_d1.bin"
+#define LPCPU_FW_LOAD_ADDR  0xDFFE0000
+
 /*
  * Cause emmc dma cannot access address 0x58800000, so load fw to ddr fist,
  * then copy fw to 0x58800000
@@ -47,6 +64,9 @@
 #define SYSTEM_PORT_ADDR(mem_port_addr)		(mem_port_addr - DDR_BASE + SYSTEM_PORT_BASE)
 
 #define MBOX_MSG_LEN 4  // unit 4bytes,total=4*4bytes
+
+static struct spi_flash *flash = NULL;
+static u32 die_offset = 0;
 
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
@@ -272,13 +292,13 @@ static void eswin_lpcpu_coreclk_ctrl(uint8_t divisor)
 {
     u32 val = 0;
     // close gate
-    writel(0x0, (void __iomem*)(syscrg_csr_base + lpcpu_coreclk_ctrl));
+    writel(0x0, (void __iomem*)(syscrg_csr_base + lpcpu_coreclk_ctrl + die_offset));
     // set divisor & selected clk source
     val = (divisor & 0xfu) << 4;
-    writel(val, (void __iomem*)(syscrg_csr_base + lpcpu_coreclk_ctrl));
+    writel(val, (void __iomem*)(syscrg_csr_base + lpcpu_coreclk_ctrl + die_offset));
     // enable gate
     val |=  0x1u << 31;
-    writel(val, (void __iomem*)(syscrg_csr_base + lpcpu_coreclk_ctrl));
+    writel(val, (void __iomem*)(syscrg_csr_base + lpcpu_coreclk_ctrl + die_offset));
 }
 
 /*
@@ -288,18 +308,18 @@ static void eswin_lpcpu_busclk_ctrl(uint8_t ratio)
 {
     u32 val = 0;
     // close gate
-    writel(0x0, (void __iomem*)(syscrg_csr_base + lpcpu_busclk_ctrl));
+    writel(0x0, (void __iomem*)(syscrg_csr_base + lpcpu_busclk_ctrl + die_offset));
     // set divisor & selected clk source
     val = (ratio & 0x1u) << 16;
-    writel(val, (void __iomem*)(syscrg_csr_base + lpcpu_busclk_ctrl));
+    writel(val, (void __iomem*)(syscrg_csr_base + lpcpu_busclk_ctrl + die_offset));
     // enable gate
     val =  0x1u << 31;
-    writel(val, (void __iomem*)(syscrg_csr_base + lpcpu_busclk_ctrl));
+    writel(val, (void __iomem*)(syscrg_csr_base + lpcpu_busclk_ctrl + die_offset));
 }
 
 static void eswin_lpcpu_rst_ctrl(unsigned int val)
 {
-    writel(val, (void __iomem*)(syscrg_csr_base + lpcpu_rst_ctrl));
+    writel(val, (void __iomem*)(syscrg_csr_base + lpcpu_rst_ctrl + die_offset));
 }
 
 static int eswin_umbox_probe(struct udevice *dev)
@@ -316,6 +336,12 @@ static int eswin_umbox_probe(struct udevice *dev)
     unsigned long fw_ddr_addr;
     uint64_t len_read;
     int32_t ret = 0;
+    int len, numa_node;
+    fdt_addr_t ddr_addr;
+    u32 addr_offset;
+    u64 size, offset, dst_addr;
+    unsigned int *flags;
+    struct ofnode_phandle_args args;
 
     debug("%s(dev=%p)\n", __func__, dev);
     node = (const struct device_node*) dev->node_.np;
@@ -332,9 +358,17 @@ static int eswin_umbox_probe(struct udevice *dev)
     umbox->rx_base = (void __iomem*)rx_addr;
     debug("umbox->rx_base=0x%p, from dts.\r\n", umbox->rx_base);
 
+    ret =  dev_read_u32(dev, "numa-node-id", &numa_node);
+	if (ret < 0){
+        pr_err("Failed to get numa-node-id\n");
+        return ret;
+    }
+    die_offset = numa_node ? 0x20000000 : 0;
+    addr_offset = numa_node ? 0x10000 : 0;
+
     // lpcpu firmware load
-    filename = LPCPU_BOOT_FILE_IMG;
-    fw_addr = LPCPU_FW_LOAD_ADDR;
+    filename = numa_node ? LPCPU_BOOT_FILE_IMG_DIE1 : LPCPU_BOOT_FILE_IMG;
+    fw_addr = LPCPU_FW_LOAD_ADDR + addr_offset;
 
     dev_part_str = UPDATE_ROOT_DEV_PART;
     if(!file_exists(MMC_DEV_IFACE, dev_part_str, filename, FS_TYPE_EXT)) {
@@ -362,27 +396,27 @@ static int eswin_umbox_probe(struct udevice *dev)
     // puts("\n");
 
     // lpcpu bringup from ddr
-    flush_cache(LPCPU_FW_LOAD_ADDR, len_read);
+    flush_cache(LPCPU_FW_LOAD_ADDR + addr_offset, len_read);
     eswin_lpcpu_rst_ctrl(0x0);
     eswin_lpcpu_coreclk_ctrl(0x2);
     eswin_lpcpu_busclk_ctrl(0x0);
 
-	writel(LPCPU_FW_LOAD_ADDR, (void __iomem*)(syscrg_csr_base + lpcpu_boot_address));
+	writel(LPCPU_FW_LOAD_ADDR + addr_offset, (void __iomem*)(syscrg_csr_base + lpcpu_boot_address + die_offset));
     eswin_lpcpu_rst_ctrl(0x7);
     mdelay(5);
 
 	if (fs_set_blk_dev(MMC_DEV_IFACE, dev_part_str, FS_TYPE_EXT)) {
 		return -1;
 	}
-    filename = FW_FILE_IMG;
-    fw_ddr_addr = LPCPU_BOOT_FW_LOAD_DDR_ADDR;
+    filename = numa_node ? FW_FILE_IMG_DIE1 : FW_FILE_IMG;
+    fw_ddr_addr = LPCPU_BOOT_FW_LOAD_DDR_ADDR + addr_offset;
     time = get_timer(0);
 	ret = fs_read(filename, fw_ddr_addr, 0, 0, &len_read);
 	time = get_timer(time);
 	if (ret < 0) {
 		return -1;
 	}
-	fw_addr = LPCPU_BOOT_FW_LOAD_ADDR;
+	fw_addr = LPCPU_BOOT_FW_LOAD_ADDR + die_offset;
 	memcpy((void *)fw_addr, (void *)fw_ddr_addr, len_read);
 
     // printf("Lpcpu firmware read in %lu ms\n", time);
