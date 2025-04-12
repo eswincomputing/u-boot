@@ -389,6 +389,7 @@ static int abortboot_single_key(int bootdelay)
 		printf("WARNING! set test reg failed. value is %d\n", testreg_var);
 	}
 	bootdelay = 5;
+	run_command_list("eswin_die", -1, 0);
 	printf("Hit any key to cmd line, or will autoboot once image is loaded.\n");
 
 	/*
