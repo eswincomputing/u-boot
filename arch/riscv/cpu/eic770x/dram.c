@@ -51,22 +51,3 @@ phys_addr_t board_get_usable_ram_top(phys_size_t total_size)
 	return gd->ram_top;
 }
 
-#if CONFIG_IS_ENABLED(EFI_LOADER)
-/**
- * efi_add_known_memory() - add memory banks to map
- *
- */
-void efi_add_known_memory(void)
-{
-	int i;
-	/* Add RAM */
-	for (i = 0; i < CONFIG_NR_DRAM_BANKS; i++) {
-		u64 ram_end, ram_start, ram_top;
-
-		ram_start = (uintptr_t)gd->ram_base;
-		ram_end = ram_start + gd->ram_size;
-		ram_top = ram_end;
-		efi_add_conventional_memory_map(ram_start, ram_end, ram_top);
-	}
-}
-#endif

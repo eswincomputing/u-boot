@@ -56,7 +56,15 @@
 	memory@80000000 {
 		device_type = "memory";
 		reg = <0x0 0x80000000 0x4 0x00000000>;
+		numa-node-id = <0>;
 	};
+
+	memory@2000000000 {
+		device_type = "memory";
+		reg = <0x20 0x00000000 0x4 0x00000000>;
+		numa-node-id = <1>;
+	};
+
 	reserved-memory {
 		#address-cells = <2>;
 		#size-cells = <2>;
