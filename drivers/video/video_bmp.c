@@ -30,14 +30,12 @@
 #include <video.h>
 #include <watchdog.h>
 #include <asm/unaligned.h>
-#include <video_eswin.h>
 
 #define BMP_RLE8_ESCAPE		0
 #define BMP_RLE8_EOL		0
 #define BMP_RLE8_EOBMP		1
 #define BMP_RLE8_DELTA		2
 
-extern void sifive_l3_flush64_range(unsigned long start, unsigned long len);
 /**
  * get_bmp_col_16bpp() - Convert a colour-table entry into a 16bpp pixel value
  *
@@ -289,7 +287,6 @@ int video_bmp_display(struct udevice *dev, ulong bmp_image, int x, int y,
 	struct bmp_color_table_entry *palette;
 	int hdr_size;
 	int ret;
-	u32 double_screen = 0;
 
 	if (!bmp || !(bmp->header.signature[0] == 'B' &&
 	    bmp->header.signature[1] == 'M')) {
@@ -483,18 +480,6 @@ int video_bmp_display(struct udevice *dev, ulong bmp_image, int x, int y,
 
 	/* Find the position of the top left of the image in the framebuffer */
 	fb = (uchar *)(priv->fb + y * priv->line_length + x * bpix / 8);
-
-	ret = dev_read_u32(dev, "double-screen", &double_screen);
-	if (ret) {
-		printf("failed to get double-screen, ret %d\n", ret);
-		return ret;
-	}
-
-	if (double_screen == 1) {
-		memcpy((void *)DRM_ESWIN_FB_BUF_DIE1 , (void *)priv->fb, priv->xsize * priv->ysize * 4);
-
-		sifive_l3_flush64_range(DRM_ESWIN_FB_BUF_DIE1, priv->xsize * priv->ysize * 4);
-	}
 	ret = video_sync_copy(dev, start, fb);
 	if (ret)
 		return log_ret(ret);

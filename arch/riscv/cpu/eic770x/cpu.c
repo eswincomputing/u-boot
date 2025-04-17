@@ -1,20 +1,8 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright 2024, Beijing ESWIN Computing Technology Co., Ltd.. All rights reserved.
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, version 2.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- *
- * Authors: Xiang Xu <xuxiang@eswincomputing.com>
+ * Copyright 2024 Beijing ESWIN Computing Technology Co., Ltd.
+ * Author: Xiang Xu <xuxiang@eswincomputing.com>
  */
 
 #include <irq_func.h>
@@ -91,13 +79,4 @@ void eswin_update_bootargs(void)
 	}
 	// Set the new bootargs
 	env_set("bootargs", new_bootargs);
-}
-
-int arch_misc_init(void)
-{
-#if defined(CONFIG_BOOTFW0_WRITE) || defined(CONFIG_BOOTFW1_WRITE)
-	extern int do_autoburn(void);
-	do_autoburn();
-#endif
-	return 0;
 }

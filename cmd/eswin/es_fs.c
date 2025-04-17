@@ -110,7 +110,7 @@ static int do_image_write(int argc, char *const argv[])
 	int dev = -1;
 	int32_t ret = 0;
 	enum uclass_id uclass_id;
-	struct blk_desc *desc;
+	struct blk_desc *desc = NULL;
 
 if (argc != 6)
 		return CMD_RET_USAGE;
@@ -131,25 +131,25 @@ if (argc != 6)
 		if (!desc)
 			return CMD_RET_FAILURE;
 	} else if (!strcmp(w_ifname, "sata")) {
-		if (dev == -1) {
-			ret = sata_probe(dev);
-			if (ret) {
-				ret = -CMD_RET_FAILURE;
-				goto out;
-			}
-		}
 		uclass_id = UCLASS_AHCI;
-
-		ret = blk_get_desc(uclass_id, dev, &desc);
-		if (ret) {
-			ret = -CMD_RET_FAILURE;
-			goto out;
-		}
-	// } else if(!strcmp(w_ifname, "usb")) {
+	} else if(!strcmp(w_ifname, "usb")) {
+		uclass_id = UCLASS_USB;
+	} else if(!strcmp(w_ifname, "nvme")) {
+		uclass_id = UCLASS_NVME;
 	} else {
 		printf("Error: device  %s not support\n", w_ifname);
 		return CMD_RET_FAILURE;
 	}
+
+	if (!desc) {
+		ret = blk_get_desc(uclass_id, dev, &desc);
+		if (ret) {
+			printf("Error: Can't not get the block devicedevice  %s %d\n", w_ifname, dev);
+			ret = -CMD_RET_FAILURE;
+			goto out;
+		}
+	}
+
 	if(file_size > desc->blksz * desc->lba) {
 		printf("Error: %s %d too small.\r\n", w_ifname, dev);
 		return CMD_RET_FAILURE;
@@ -231,14 +231,6 @@ static int do_image_update(int argc, char *const argv[])
 		return CMD_RET_FAILURE;
 	}
 
-	if (!strcmp(w_ifname, "sata")) {
-		int dev = (int)dectoul(argv[5], NULL);
-		ret = sata_probe(dev);
-		if (ret) {
-			return -CMD_RET_FAILURE;
-		}
-	}
-
 	if (part_get_info_by_dev_and_name_or_num(w_ifname, w_dev_part_str,
 				&dev_desc, &part_info,true) < 0) {
 		printf("Error: Get information of %s %s partition failed!\r\n", w_ifname, w_dev_part_str);
@@ -315,7 +307,7 @@ usage:
 
 U_BOOT_CMD(
 	es_fs,	7,	0,	do_esfs,
-	"ESWIN write filesystem image file into sata/mmc",
+	"ESWIN write filesystem image file into sata/mmc/nvme/usb",
 	"\nes_fs write rifname  dev_part filename wifname dev_num \n"
 	"  - Write System image file(.wic) from {rifname} {dev_part} to {wifname} {dev_num}\n"
 	"    rifname dev_part : block device and partition\n"

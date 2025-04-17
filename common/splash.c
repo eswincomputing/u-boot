@@ -80,7 +80,6 @@ static int splash_video_logo_load(void)
 
 	memcpy((void *)bmp_load_addr, bmp_logo_bitmap,
 	       ARRAY_SIZE(bmp_logo_bitmap));
-
 	return 0;
 }
 #else

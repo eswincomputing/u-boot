@@ -140,3 +140,32 @@ int bmp_display(ulong addr, int x, int y)
 
 	return ret ? CMD_RET_FAILURE : 0;
 }
+
+int eswin_bmp_display(struct udevice *dev, ulong addr, int x, int y)
+{
+	int ret;
+	struct bmp_image *bmp = map_sysmem(addr, 0);
+	void *bmp_alloc_addr = NULL;
+	unsigned long len;
+	bool align = false;
+
+	if (!((bmp->header.signature[0] == 'B') &&
+	      (bmp->header.signature[1] == 'M')))
+		bmp = gunzip_bmp(addr, &len, &bmp_alloc_addr);
+
+	if (!bmp) {
+		printf("There is no valid bmp file at the given address\n");
+		return 1;
+	}
+	addr = map_to_sysmem(bmp);
+
+	if (x == BMP_ALIGN_CENTER || y == BMP_ALIGN_CENTER)
+		align = true;
+
+	ret = video_bmp_display(dev, addr, x, y, align);
+
+	if (bmp_alloc_addr)
+		free(bmp_alloc_addr);
+
+	return ret ? CMD_RET_FAILURE : 0;
+}

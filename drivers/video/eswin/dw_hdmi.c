@@ -1336,7 +1336,7 @@ static void hdmi_video_packetize(struct dw_hdmi *hdmi)
         switch (hdmi_bus_fmt_color_depth(
                     hdmi->hdmi_data.enc_out_bus_format)) {
         case 8:
-            color_depth = 0;
+            color_depth = 4;
             output_select = HDMI_VP_CONF_OUTPUT_SELECTOR_BYPASS;
             break;
         case 10:
@@ -2077,11 +2077,6 @@ static void initialize_hdmi_mutes(struct dw_hdmi *hdmi)
     hdmi_writeb(hdmi, 0xff, HDMI_IH_MUTE_I2CMPHY_STAT0);
     hdmi_writeb(hdmi, 0xff, HDMI_IH_MUTE_AHBDMAAUD_STAT0);
     hdmi_writeb(hdmi, 0xf1, HDMI_PHY_MASK0);
-
-    /*Force output black*/
-    dw_hdmi_writel(hdmi, 0x00, HDMI_FC_DBGTMDS2);
-    dw_hdmi_writel(hdmi, 0x00, HDMI_FC_DBGTMDS1);
-    dw_hdmi_writel(hdmi, 0x00, HDMI_FC_DBGTMDS0);
 }
 
 static void dw_hdmi_dev_init(struct dw_hdmi *hdmi)
@@ -2193,7 +2188,7 @@ int eswin_dw_hdmi_init(struct display_state *state)
     memset(mode_buf, 0, MODE_LEN * sizeof(struct drm_display_mode));
 
     hdmi->regs = dev_read_addr_ptr(conn_state->dev);
-    hdmi->io_width = ofnode_read_s32_default(hdmi_node, "reg-io-width", -1);
+    hdmi->io_width = 4;
 
     if (ofnode_read_bool(hdmi_node, "scramble-low-rates"))
         hdmi->scramble_low_rates = true;
@@ -2428,3 +2423,91 @@ int eswin_dw_hdmi_dump_phy(struct display_state *state)
     return 0;
 }
 
+struct seq_file {
+    char *buf;
+    size_t size;
+    size_t count;
+};
+
+int seq_printf(struct seq_file *m, const char *fmt, ...)
+{
+    va_list args;
+    int len;
+
+    if (m->count >= m->size)
+        return 0;
+
+    va_start(args, fmt);
+    len = vsnprintf(m->buf + m->count, m->size - m->count, fmt, args);
+    va_end(args);
+
+    if (len >= m->size - m->count) {
+        m->count = m->size;
+        return 0;
+    }
+
+    m->count += len;
+    return len;
+}
+
+struct dw_hdmi_reg_table {
+    int reg_base;
+    int reg_end;
+};
+
+static const struct dw_hdmi_reg_table hdmi_reg_table[] = {
+    { HDMI_DESIGN_ID, HDMI_CONFIG3_ID },
+    { HDMI_IH_FC_STAT0, HDMI_IH_MUTE },
+    { HDMI_TX_INVID0, HDMI_TX_BCBDATA1 },
+    { HDMI_VP_STATUS, HDMI_VP_POL },
+    { HDMI_FC_INVIDCONF, HDMI_FC_PACKET_TX_EN},
+    { HDMI_FC_GMD_STAT, HDMI_FC_GMD_PB27},
+    { HDMI_FC_DBGFORCE, HDMI_FC_DBGTMDS2},
+    { HDMI_PHY_CONF0, HDMI_PHY_POL0 },
+    { HDMI_PHY_I2CM_SLAVE_ADDR, HDMI_PHY_I2CM_FS_SCL_LCNT_0_ADDR },
+    { HDMI_AUD_CONF0, 0x31e0 },
+    { 0x31f0, 0x32e0},
+    { 0x32f0, 0x33e0},
+    { 0x33f0, 0x34e0},
+    { 0x34f0, 0x35e0},
+    { 0x35f0, 0x3624},
+    { HDMI_MC_SFRDIV, HDMI_MC_HEACPHY_RST },
+    { HDMI_CSC_CFG, HDMI_CSC_COEF_C4_LSB },
+    { HDMI_A_HDCPCFG0, 0x50e0 },
+    { 0x50f0, 0x51e0 },
+    { 0x51f0, 0x52bb },
+    { 0x7800, 0x7818 },
+    { 0x7900, 0x790e },
+    { HDMI_CEC_CTRL, HDMI_CEC_WKUPCTRL },
+    { HDMI_I2CM_SLAVE, HDMI_I2CM_SDA_HOLD },
+};
+
+int eswin_dw_hdmi_dump_regs(struct display_state *state)
+{
+    int i = 0, j = 0, val = 0;
+    struct connector_state *conn_state = &state->conn_state;
+    struct dw_hdmi *hdmi = conn_state->private;
+    struct seq_file seq = {
+        .buf = NULL,
+        .size = 1024,
+        .count = 0
+    };
+
+    seq.buf = malloc(1024);
+
+    for (i = 0; i < ARRAY_SIZE(hdmi_reg_table); i++) {
+        for (j = hdmi_reg_table[i].reg_base;
+            j <= hdmi_reg_table[i].reg_end; j++) {
+            val = hdmi_readb(hdmi, j);
+            if ((j - hdmi_reg_table[i].reg_base) % 16 == 0)
+                seq_printf(&seq, "\n>>>hdmi_ctl %04x:", j);
+            seq_printf(&seq, " %02x", val);
+        }
+        printf("%s\n", seq.buf);
+        seq.count = 0;
+        memset(seq.buf, 0, 1024);
+    }
+
+    free(seq.buf);
+    return 0;
+}
