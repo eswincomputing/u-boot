@@ -1,16 +1,34 @@
-// SPDX-License-Identifier: GPL-2.0-only
+// SPDX-License-Identifier: GPL-2.0
 /*
  *
- * Copyright 2024 Beijing ESWIN Computing Technology Co., Ltd.
- * Author: Xiang Xu <xuxiang@eswincomputing.com>
+ * Copyright 2024, Beijing ESWIN Computing Technology Co., Ltd.. All rights reserved.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 2.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Authors: Xiang Xu <xuxiang@eswincomputing.com>
  */
 
 #include <irq_func.h>
 #include <asm/cache.h>
+#include <asm/sections.h>
+#include <asm/global_data.h>
 #include <env.h>
 #include <stdio.h>
 #include <linux/string.h>
 #include <eswin/es_otp.h>
+#include <init.h>
+#include <linux/io.h>
+#include <fdtdec.h>
 
 #define OTP_FT_FLAG_BIT (3364 * 8)
 #define OTP_FT_1600M_FAIL_BIT (3256 * 8 + 5)
@@ -29,6 +47,18 @@ int cleanup_before_linux(void)
 
 	return 0;
 }
+
+void *board_fdt_blob_setup(int *err)
+{
+	*err = 0;
+	if (IS_ENABLED(CONFIG_OF_SEPARATE) || IS_ENABLED(CONFIG_OF_BOARD)) {
+		if (fdt_magic((uintptr_t)gd->arch.firmware_fdt_addr) == FDT_MAGIC)
+			return (ulong *)(uintptr_t)gd->arch.firmware_fdt_addr;
+	}
+
+	return (ulong *)_end;
+}
+
 
 void eswin_update_bootargs(void)
 {
