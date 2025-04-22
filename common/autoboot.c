@@ -425,6 +425,7 @@ static int abortboot_single_key(int bootdelay)
 			debug_bootkeys("testreg value is %x.\n", testreg_var);
 			if (testreg_var == BOOT_SIGN) {
 				printf("OS image is loaded. Now autobooting ... \n");
+				invalidate_dcache_range(0x100000000, 0x140000000);
 				run_command_list("bootm 0x100000000", -1, 0);
 			}
 
