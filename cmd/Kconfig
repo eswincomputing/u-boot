@@ -1273,6 +1273,11 @@ config CMD_ESBURN
 	help
 	  Enables ESWIN es_burn cmd to write boot/root filesystem file to mmc.
 
+config CMD_ESWIN_FLASH_CHECK
+	bool "eswin flash_check"
+	help
+	  Checks if the ESWIN flash is ready
+
 config CMD_ES_MKFSFAT
 	bool "mkfsfat"
 	select FS_FAT
