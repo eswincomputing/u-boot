@@ -2946,4 +2946,9 @@ config CMD_MESON
 	default y
 	help
 	  Enable useful commands for the Meson Soc family developed by Amlogic Inc.
+
+config CMD_SN_UPDATE
+	bool "sn_update"
+	help
+	  Update the SomSerialNumber in EEPROM.
 endmenu
