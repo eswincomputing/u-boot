@@ -201,7 +201,7 @@ int board_init(void)
 int board_late_init(void)
 {
 #ifdef CONFIG_ESWIN_UMBOX
-	lpcpu_misc_func();
+	/* lpcpu_misc_func(); */
 #endif
 	return 0;
 }
