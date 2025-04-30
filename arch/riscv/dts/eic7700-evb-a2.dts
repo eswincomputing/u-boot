@@ -339,11 +339,6 @@
 
 &gpio0 {
 	status = "okay";
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_gpio58_default
-	&pinctrl_gpio59_default
-	&pinctrl_gpio60_default
-	&pinctrl_gpio61_default>;
 };
 
 &pinctrl {

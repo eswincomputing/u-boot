@@ -197,12 +197,6 @@ config CMD_PMC
 	  changing the state but it is still useful for debugging and seeing
 	  what is going on.
 
-config CMD_ESWIN_DIE
-	bool "eswin_die"
-	help
-	  Provides a command to read GPIO values and determine ESWIN VPU7702 die ordinary.
-	  This is useful for identifying hardware configuration and debugging.
-
 config CMD_REGINFO
 	bool "reginfo"
 	depends on PPC
