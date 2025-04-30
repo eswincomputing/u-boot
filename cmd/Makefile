@@ -69,7 +69,6 @@ obj-$(CONFIG_CMD_EEPROM) += eeprom.o
 obj-$(CONFIG_EFI) += efi.o efi_common.o
 obj-$(CONFIG_CMD_EFIDEBUG) += efidebug.o efi_common.o
 obj-$(CONFIG_CMD_EFICONFIG) += eficonfig.o
-obj-$(CONFIG_CMD_ESWIN_FLASH_CHECK) += eswin_flash_check.o
 obj-$(CONFIG_CMD_ESWIN_DIE) += eswin_die.o
 ifdef CONFIG_CMD_EFICONFIG
 ifdef CONFIG_EFI_MM_COMM_TEE
