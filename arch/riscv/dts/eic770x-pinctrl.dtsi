@@ -922,30 +922,52 @@
 			// 		function = "gpio57_func";
 			// 	};
 			// };
-			// pinctrl_gpio58_default: gpio58-default{
-			// 	mux {
-			// 		groups = "gpio58_group";
-			// 		function = "gpio58_func";
-			// 	};
-			// };
-			// pinctrl_gpio59_default: gpio59-default{
-			// 	mux {
-			// 		groups = "gpio59_group";
-			// 		function = "gpio59_func";
-			// 	};
-			// };
-			// pinctrl_gpio60_default: gpio60-default{
-			// 	mux {
-			// 		groups = "gpio60_group";
-			// 		function = "gpio60_func";
-			// 	};
-			// };
-			// pinctrl_gpio61_default: gpio61-default{
-			// 	mux {
-			// 		groups = "gpio61_group";
-			// 		function = "gpio61_func";
-			// 	};
-			// };
+#ifdef CONFIG_CMD_ESWIN_DIE
+			pinctrl_gpio58_default: gpio58-default{
+				mux {
+					groups = "gpio58_group";
+					function = "gpio58_func";
+				};
+				conf {
+					groups = "gpio58_group";
+					input-enable = <1>;
+					bias-pull-down = <0>;
+				};
+			};
+			pinctrl_gpio59_default: gpio59-default{
+				mux {
+					groups = "gpio59_group";
+					function = "gpio59_func";
+				};
+				conf {
+					groups = "gpio59_group";
+					input-enable = <1>;
+					bias-pull-down = <0>;
+				};
+			};
+			pinctrl_gpio60_default: gpio60-default{
+				mux {
+					groups = "gpio60_group";
+					function = "gpio60_func";
+				};
+				conf {
+					groups = "gpio60_group";
+					input-enable = <1>;
+					bias-pull-down = <0>;
+				};
+			};
+			pinctrl_gpio61_default: gpio61-default{
+				mux {
+					groups = "gpio61_group";
+					function = "gpio61_func";
+				};
+				conf {
+					groups = "gpio61_group";
+					input-enable = <1>;
+					bias-pull-down = <0>;
+				};
+			};
+#endif
 			// pinctrl_gpio62_default: gpio62-default{
 			// 	mux {
 			// 		groups = "gpio62_group";
