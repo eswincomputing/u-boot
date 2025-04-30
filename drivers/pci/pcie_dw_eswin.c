@@ -297,12 +297,18 @@ static int eswin_pcie_init_port(struct udevice *dev)
     eswin_cfg_writel(priv, val, PCIE_CTRL_CFG0);
 
     /* wait pm_sel_aux_clk to 0 */
-    val = eswin_cfg_readl(priv, PCIE_STATUS0);
-    while((val & 0x10000) != 0)
-    {
-        udelay(5000);
+	for (ret = 50; ret > 0; ret--) {
         val = eswin_cfg_readl(priv, PCIE_STATUS0);
-    }
+		if (!(val & 0x10000)) {
+			break;
+		}
+		mdelay(2);
+	}
+
+	if (!ret) {
+		printf("PCIE No clock exist.\n");
+		return -ENODEV;
+	}
 
     /* DW link configurations */
     dw_pcie_dbi_write_enable(&priv->dw, true);
@@ -431,7 +437,6 @@ static int eswin_pcie_probe(struct udevice *dev)
     if (ret) {
         eswin_pcie_power_off(priv);
         eswin_pcie_clk_disable(priv);
-        dm_gpio_free(dev, priv->rst_gpio);
         return ret;
     }
 
