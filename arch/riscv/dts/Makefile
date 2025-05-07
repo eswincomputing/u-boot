@@ -17,6 +17,7 @@ dtb-$(CONFIG_TARGET_ESWIN_EIC7700_Z530) += eic7700-z530.dtb
 dtb-$(CONFIG_TARGET_ESWIN_EIC7700_D314) += eic7700-d314.dtb
 dtb-$(CONFIG_TARGET_ESWIN_EIC7700_SBC) += eic7700-sbc.dtb
 dtb-$(CONFIG_TARGET_ESWIN_EIC7700_OSM) += eic7700-osm.dtb
+dtb-$(CONFIG_TARGET_FML13V03) += eic7702-deepcomputing-fml13v03.dtb
 
 include $(srctree)/scripts/Makefile.dts
 

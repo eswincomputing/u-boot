@@ -1,0 +1,6 @@
+deepcomputing-fml13v03 BOARD
+M:  Xiang Xu <xuxiang@eswincomputing.com>
+S:  Maintained
+F:  board/eswin/eic7702_fml13v03/
+F:  include/configs/deepcomputing-fml13v03.h
+F:  configs/deepcomputing-fml13v03_defconfig

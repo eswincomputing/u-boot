@@ -578,6 +578,9 @@ void autoboot_command(const char *s)
 
 		if (lock)
 			disable_ctrlc(prev);	/* restore Ctrl-C checking */
+	} else {
+		env_set("stdout", "vidconsole,serial");
+		run_command("cls", 0);
 	}
 
 	if (IS_ENABLED(CONFIG_AUTOBOOT_USE_MENUKEY) &&

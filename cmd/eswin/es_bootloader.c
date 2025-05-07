@@ -469,13 +469,11 @@ static int do_bootchain_write(int argc, char *const argv[])
 		if(ret < 0)
 			return -ENOENT;
 	}else if (strcmp(argv[2], "flash") == 0){
-#if defined(CONFIG_TARGET_ESWIN_EVB_EIC7702)
 		if (argc < 4)
 			ret = es_spi_flash_probe(0);
 		else if (strcmp(argv[3], "1") == 0) {
 			ret = es_spi_flash_probe(1);
 		} else
-#endif
 			ret = es_spi_flash_probe(0);
 		if(ret < 0)
 			return -ENOENT;
@@ -1352,7 +1350,7 @@ usage:
 U_BOOT_CMD(
 	es_burn,	5,	0,	do_esburn_bootchain,
 	"ESWIN burn tool",
-#if defined(CONFIG_TARGET_ESWIN_EVB_EIC7702)
+#if defined(CONFIG_TARGET_ESWIN_EVB_EIC7702) || defined(CONFIG_TARGET_FML13V03)
 	"\nes_burn write addr flash_stg die_num	- write binary file from memory at `addr' to die0/die1 mtd(die_num 0:default/1)\n"
 #else
 	"\nes_burn write addr flash_stg	- write binary file from memory at `addr' to mtd\n"

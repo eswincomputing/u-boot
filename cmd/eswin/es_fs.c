@@ -112,7 +112,7 @@ static int do_image_write(int argc, char *const argv[])
 	enum uclass_id uclass_id;
 	struct blk_desc *desc = NULL;
 
-if (argc != 6)
+	if (argc != 6)
 		return CMD_RET_USAGE;
 
 	r_ifname = argv[1];

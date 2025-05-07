@@ -1267,7 +1267,9 @@ static int eswin_display_probe(struct udevice *dev)
 	s->logo.height = DRM_ESWIN_FB_HEIGHT;
 	s->logo.bpp = (1 << DRM_ESWIN_FB_BPP);
 	s->logo.ymirror = 0;
-	display_logo(s);
+	if (0 != display_logo(s))
+		return -ENODEV;
+	
 	video_set_flush_dcache(dev, true);
 
 	return 0;

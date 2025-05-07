@@ -45,6 +45,9 @@ config TARGET_ESWIN_EVB_EIC7700
 config TARGET_ESWIN_EVB_EIC7702
 	bool "Support Eswin EIC7702 EVB Board"
 
+config TARGET_FML13V03
+	bool "Support DeepComputing FML13V03 Board"
+
 config TARGET_HIFIVE_PREMIER_P550
 	bool "Support HiFive Premier P550 Board"
 
@@ -110,6 +113,7 @@ source "board/eswin/eic7700_z530/Kconfig"
 source "board/eswin/eic7700_d314/Kconfig"
 source "board/eswin/eic7700_sbc/Kconfig"
 source "board/eswin/eic7700_osm/Kconfig"
+source "board/eswin/FML13V03/Kconfig"
 
 # platform-specific options below
 source "arch/riscv/cpu/andesv5/Kconfig"
