@@ -177,17 +177,17 @@ void irq_mux_route(void)
 	 * I2C0 bit16
 	 * I2C1 bit15
 	 * RTC  bit14~13
-	 * GPIO bit12
 	 * SPI  bit11~10
 	 * DMA  bit9
 	 * MPMP bit8
-	 * TIMER0 bit7~6
 	 * TIMER1 bit5~4
 	 * TIMER2 bit3~2
 	 * TIMER3 bit1~0
+	 *
+	 * Route GPIO, TIMER0 to LPCPU
 	*/
 
-	val = 0;
+	val = 0x1040;
 	writel(val,(void *)(0x51810000+0x3c0));
 	writel(val,(void *)(0x71810000+0x3c0));
 }
