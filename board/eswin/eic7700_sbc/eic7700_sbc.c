@@ -334,18 +334,18 @@ int request_power_pd(uint busnum, uint chip)
 	/* printf("SRC_PDO_15V:0x%x,is_enable:%d,current:%dmA\n",
 		   cache, SRC_PDO_DETECTED_FLAG(cache),
 		   current_capacitys[cache & 0xf]); */
-	/* if (1 == SRC_PDO_DETECTED_FLAG(cache))
+	if (1 == SRC_PDO_DETECTED_FLAG(cache))
 	{
-		max_volt = 4;
+		max_volt = 8;
 		max_curr = cache & 0xf;
-	} */
+	}
 	/* ret = dm_i2c_read(dev, SRC_PDO_18V, (uchar *)&cache, 1);
 	printf("SRC_PDO_18V:0x%x,is_enable:%d,current:%dmA\n",
 		   cache, SRC_PDO_DETECTED_FLAG(cache),
 		   current_capacitys[cache & 0xf]); */
 	/* if (1 == SRC_PDO_DETECTED_FLAG(cache))
 	{
-		max_volt = 5;
+		max_volt = 9;
 		max_curr = cache & 0xf;
 	} */
 	/* ret = dm_i2c_read(dev, SRC_PDO_20V, (uchar *)&cache, 1);
@@ -354,7 +354,7 @@ int request_power_pd(uint busnum, uint chip)
 		   current_capacitys[cache & 0xf]); */
 	/* if (1 == SRC_PDO_DETECTED_FLAG(cache))
 	{
-		max_volt = 6;
+		max_volt = 10;
 		max_curr = cache & 0xf;
 	} */
 
@@ -382,16 +382,10 @@ int request_power_pd(uint busnum, uint chip)
 	now_volt_index = (cache >> 4) & 0xf;
 	if (0x7 == now_volt_index)
 	{
-		max_volt = 2;
-		max_curr = 6;
-		is_qc = 1;
 		printf("now PD is QC capacity volt:9V,current:2000mA,power:1800mW\n");
 	}
 	else if (0x8 == now_volt_index)
 	{
-		max_volt = 3;
-		max_curr = 4;
-		is_qc = 1;
 		printf("now PD is QC capacity volt:12V,current:1500mA,power:1800mW\n");
 	}
 	else
