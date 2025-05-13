@@ -219,12 +219,195 @@ int board_init(void)
 	irq_mux_route();
 	return 0;
 }
+#define PD_STATUS0 0X0
+#define PD_STATUS1 0X1
+#define SRC_PDO_5V 0X2
+#define SRC_PDO_9V 0X3
+#define SRC_PDO_12V 0X4
+#define SRC_PDO_15V 0X5
+#define SRC_PDO_18V 0X6
+#define SRC_PDO_20V 0X7
+#define SRC_PDO 0X8
+#define PD_COMMAND 0X9
+#define SRC_PDO_DETECTED_FLAG(x) ((x >> 7) & 0x1)
+static int current_capacitys[] = {
+	500,
+	700,
+	1000,
+	1250,
+	1500,
+	1750,
+	2000,
+	2250,
+	2500,
+	2750,
+	3000,
+	3250,
+	3500,
+	4000,
+	4500,
+	5000};
+static int pd_volt_list[] = {
+	0,
+	5,
+	9,
+	12,
+	15,
+	18,
+	20};
+
+int request_power_pd(uint busnum, uint chip)
+{
+	struct udevice *bus;
+	int ret, is_qc = 0;
+	struct udevice *dev;
+	uint cache = 0, max_volt = 0, max_curr = 0, now_volt_index = 0;
+
+	ret = uclass_get_device_by_seq(UCLASS_I2C, busnum, &bus);
+	if (ret)
+	{
+		printf("%s: No bus %d\n", __func__, busnum);
+		return ret;
+	}
+
+	i2c_get_chip(bus, chip, 1, &dev);
+	if (!ret)
+		ret = i2c_set_chip_offset_len(dev, 1);
+	if (ret)
+	{
+		printf("%s.%d busnum:%d no chip:%d\n", __func__, __LINE__, busnum, chip);
+		return -1;
+	}
+
+	ret = dm_i2c_read(dev, PD_STATUS0, (uchar *)&cache, 1);
+	now_volt_index = (cache >> 4) & 0xf;
+	if (0x7 == now_volt_index)
+	{
+		max_volt = 2;
+		max_curr = 6;
+		is_qc = 1;
+		printf("boot PD is QC capacity volt:9V,current:2000mA\n");
+	}
+	else if (0x8 == now_volt_index)
+	{
+		max_volt = 3;
+		max_curr = 4;
+		is_qc = 1;
+		printf("boot PD is QC capacity volt:12V,current:1500mA\n");
+	}
+	else
+	{
+		printf("boot PD capacity volt:%dV,current:%dmA\n",
+			   pd_volt_list[(cache >> 4) & 0xf], current_capacitys[cache & 0xf]);
+	}
+	/* printf("%s.%d PD_STATUS0:0x%x\n", __func__, __LINE__, cache); */
+	/* ret = dm_i2c_read(dev, PD_STATUS1, (uchar *)&cache, 1);
+	printf("%s.%d PD_STATUS1:0x%x\n", __func__, __LINE__, cache); */
+	ret = dm_i2c_read(dev, SRC_PDO_5V, (uchar *)&cache, 1);
+	/* printf("SRC_PDO_5V:0x%x,is_enable:%d,current:%dmA\n",
+		   cache, SRC_PDO_DETECTED_FLAG(cache),
+		   current_capacitys[cache & 0xf]); */
+	if (1 == SRC_PDO_DETECTED_FLAG(cache))
+	{
+		max_volt = 1;
+		max_curr = cache & 0xf;
+	}
+	ret = dm_i2c_read(dev, SRC_PDO_9V, (uchar *)&cache, 1);
+	/* printf("SRC_PDO_9V:0x%x,is_enable:%d,current:%dmA\n",
+		   cache, SRC_PDO_DETECTED_FLAG(cache),
+		   current_capacitys[cache & 0xf]); */
+	if (1 == SRC_PDO_DETECTED_FLAG(cache))
+	{
+		max_volt = 2;
+		max_curr = cache & 0xf;
+	}
+	ret = dm_i2c_read(dev, SRC_PDO_12V, (uchar *)&cache, 1);
+	/* printf("SRC_PDO_12V:0x%x,is_enable:%d,current:%dmA\n",
+		   cache, SRC_PDO_DETECTED_FLAG(cache),
+		   current_capacitys[cache & 0xf]); */
+	if (1 == SRC_PDO_DETECTED_FLAG(cache))
+	{
+		max_volt = 3;
+		max_curr = cache & 0xf;
+	}
+	ret = dm_i2c_read(dev, SRC_PDO_15V, (uchar *)&cache, 1);
+	/* printf("SRC_PDO_15V:0x%x,is_enable:%d,current:%dmA\n",
+		   cache, SRC_PDO_DETECTED_FLAG(cache),
+		   current_capacitys[cache & 0xf]); */
+	/* if (1 == SRC_PDO_DETECTED_FLAG(cache))
+	{
+		max_volt = 4;
+		max_curr = cache & 0xf;
+	} */
+	/* ret = dm_i2c_read(dev, SRC_PDO_18V, (uchar *)&cache, 1);
+	printf("SRC_PDO_18V:0x%x,is_enable:%d,current:%dmA\n",
+		   cache, SRC_PDO_DETECTED_FLAG(cache),
+		   current_capacitys[cache & 0xf]); */
+	/* if (1 == SRC_PDO_DETECTED_FLAG(cache))
+	{
+		max_volt = 5;
+		max_curr = cache & 0xf;
+	} */
+	/* ret = dm_i2c_read(dev, SRC_PDO_20V, (uchar *)&cache, 1);
+	printf("SRC_PDO_20V:0x%x,is_enable:%d,current:%dmA\n",
+		   cache, SRC_PDO_DETECTED_FLAG(cache),
+		   current_capacitys[cache & 0xf]); */
+	/* if (1 == SRC_PDO_DETECTED_FLAG(cache))
+	{
+		max_volt = 6;
+		max_curr = cache & 0xf;
+	} */
+
+	/* printf("%s.%d set volt:%dV,current:%dmA\n",
+		   __func__, __LINE__, max_volt, current_capacitys[max_curr]); */
+	/* if (max_volt < 3)
+	{
+		printf("PD power can't support NPU!!!!!!\n");
+	}
+	else */
+	{
+		if (0 == is_qc)
+		{
+			cache = (max_volt << 4);
+			ret = dm_i2c_write(dev, SRC_PDO, (uchar *)&cache, 1);
+			cache = 1;
+			ret = dm_i2c_write(dev, PD_COMMAND, (uchar *)&cache, 1);
+		}
+	}
+
+	/* ret = dm_i2c_read(dev, SRC_PDO, (uchar *)&cache, 1);
+	printf("%s.%d SRC_PDO:0x%x\n", __func__, __LINE__, cache); */
+
+	ret = dm_i2c_read(dev, PD_STATUS0, (uchar *)&cache, 1);
+	now_volt_index = (cache >> 4) & 0xf;
+	if (0x7 == now_volt_index)
+	{
+		max_volt = 2;
+		max_curr = 6;
+		is_qc = 1;
+		printf("now PD is QC capacity volt:9V,current:2000mA,power:1800mW\n");
+	}
+	else if (0x8 == now_volt_index)
+	{
+		max_volt = 3;
+		max_curr = 4;
+		is_qc = 1;
+		printf("now PD is QC capacity volt:12V,current:1500mA,power:1800mW\n");
+	}
+	else
+	{
+		printf("now PD capacity volt:%dV;current:%dmA;power:%dmW.\n",
+			   pd_volt_list[(cache >> 4) & 0xf], current_capacitys[cache & 0xf],
+			pd_volt_list[(cache >> 4) & 0xf] * current_capacitys[cache & 0xf]);
+	}
+}
 
 int board_late_init(void)
 {
 #ifdef CONFIG_ESWIN_UMBOX
 	lpcpu_misc_func();
 #endif
+	request_power_pd(1, 0x8);
 	return 0;
 }
 

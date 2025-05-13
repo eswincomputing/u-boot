@@ -95,6 +95,9 @@
 &cpu0 {
 	status = "okay";
 };
+&i2c1 {
+	status = "okay";
+};
 &cpu1 {
 	status = "okay";
 };
