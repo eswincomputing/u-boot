@@ -6,6 +6,9 @@ SUBLEVEL =
 EXTRAVERSION =
 NAME =
 
+# Read firmware version from VERSION file (if it exists)
+VPU_FW_VERSION := $(shell if [ -f $(CURDIR)/VPU_FW_VERSION ]; then cat $(CURDIR)/VPU_FW_VERSION; else echo "B1.0.001"; fi)
+
 # *DOCUMENTATION*
 # To see a list of typical targets execute "make help"
 # More info can be located in ./README
@@ -815,6 +818,9 @@ include scripts/Makefile.extrawarn
 
 # Add user supplied CPPFLAGS, AFLAGS and CFLAGS as the last assignments
 KBUILD_CPPFLAGS += $(KCPPFLAGS)
+ifneq ($(CONFIG_BOOT_ESWIN_VPU7702),)
+KBUILD_CPPFLAGS += -DVPU_FW_VERSION=\"$(VPU_FW_VERSION)\"
+endif
 KBUILD_AFLAGS += $(KAFLAGS)
 KBUILD_CFLAGS += $(KCFLAGS)
 

@@ -70,6 +70,34 @@ static int menukey;
 #define TEST_REG3_OFFSET    0x51810674
 #define PCIE_CTRL_CFG14	0x50000034
 
+#define VERSION_TABLE_PHYS_ADDR 0x104413000ULL
+
+#define FIRMWARE_VERSION_OFFSET	 (0)
+#define FIRMWARE_VERSION_MAX_LEN 32 /* Maximum length for firmware version string */
+
+/* Define firmware version */
+#ifndef VPU_FW_VERSION
+#define VPU_FW_VERSION "B1.0.001" /* Default version if not defined in build */
+#endif
+
+/* 
+ * Static string for version identification via strings command
+ * This will be embedded in the binary and searchable via strings command
+ */
+static const char vpu_fw_version_string[] __attribute__((used)) = "VPU_FW_VERSION: " VPU_FW_VERSION;
+
+/**
+ * early_print_vpu_version - Print VPU firmware version early in boot
+ *
+ * This function prints the VPU firmware version before CPU info
+ * to match the required boot sequence.
+ */
+int early_print_vpu_version(void)
+{
+	printf("VPU_FW_VERSION: %s\n", VPU_FW_VERSION);
+	return 0;
+}
+
 /**
  * get_die_ordinary - Get the die ordinary value based on GPIO status
  *
@@ -121,6 +149,25 @@ int get_die_ordinary(void)
 
 	return die_ordinary;
 }
+
+static int save_firmware_version_to_shm()
+{
+	char *firmware_version = VPU_FW_VERSION;
+
+	debug("Saving firmware version %s to shared memory\n", firmware_version);
+	strncpy((char *)VERSION_TABLE_PHYS_ADDR + FIRMWARE_VERSION_OFFSET, firmware_version,
+		FIRMWARE_VERSION_MAX_LEN - 1);
+	// Ensure null termination
+	*((char *)VERSION_TABLE_PHYS_ADDR + FIRMWARE_VERSION_OFFSET + FIRMWARE_VERSION_MAX_LEN -
+	  1) = '\0';
+	// Flush cache to make sure data is written to memory
+	flush_dcache_range((ulong)VERSION_TABLE_PHYS_ADDR + FIRMWARE_VERSION_OFFSET,
+			   (ulong)VERSION_TABLE_PHYS_ADDR + FIRMWARE_VERSION_OFFSET +
+				   FIRMWARE_VERSION_MAX_LEN);
+
+	return 0;
+}
+
 #endif /* CONFIG_BOOT_ESWIN_VPU7702 */
 
 /**
@@ -459,6 +506,10 @@ static int abortboot_single_key(int bootdelay)
 	unsigned long ts;
 	u32 testreg_var = 0;
 	int ret = 0;
+
+	if (save_firmware_version_to_shm()) {
+		printf("Failed to save firmware version to shared memory\n");
+	}
 
 	/*
 	 * set test reg to info host ready for loading image
