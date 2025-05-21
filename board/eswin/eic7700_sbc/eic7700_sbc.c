@@ -372,6 +372,7 @@ int request_power_pd(uint busnum, uint chip)
 			ret = dm_i2c_write(dev, SRC_PDO, (uchar *)&cache, 1);
 			cache = 1;
 			ret = dm_i2c_write(dev, PD_COMMAND, (uchar *)&cache, 1);
+			mdelay(10);
 		}
 	}
 
