@@ -57,14 +57,14 @@ static struct spi_flash *flash = NULL;
 static int flash_stg = 1;  // emmc : 1; flash : 0
 
 enum fw_offset {
-	FW_HEAD_OFFSET	    = 0x0UL,		/* HEAD 4K */
-	PUBKEY_RSA_OFFSET	= 0x1000UL,		/* RSA 4K */
-	PUBKEY_ECC_OFFSET	= 0x2000UL,		/* ECC 4K */
-	D2D_FW_OFFSET		= 0x3000UL,		/* D2D 256K - 12K */
-	DDR_FW_OFFSET		= 0x40000UL,	/* DDR 1M */
-	FIRMWARE_OFFSET		= 0x140000UL,	/* FIRMWARE 512K*/
-	BOOTLOADER_OFFSET	= 0x1c0000UL,	/* BOOTLOADER 5M + 256K*/
-	RESERVE				= 0x700000UL	/* RESERVE to env and boardinfo*/
+	FW_HEAD_OFFSET      = 0x0000UL,       /* HEAD 4K */
+	PUBKEY_RSA_OFFSET   = 0x1000UL,       /* RSA 4K */
+	PUBKEY_ECC_OFFSET   = 0x2000UL,       /* ECC 4K */
+	D2D_FW_OFFSET       = 0x3000UL,       /* D2D 800K */
+	DDR_FW_OFFSET       = 0xCB000UL,      /* DDR (after 800K D2D) */
+	FIRMWARE_OFFSET     = 0x1CB000UL,     /* FIRMWARE 512K */
+	BOOTLOADER_OFFSET   = 0x24B000UL,     /* BOOTLOADER 4.71M */
+	RESERVE             = 0x700000UL      /* RESERVE to env and boardinfo */
 };
 
 enum fw_id {
@@ -294,7 +294,7 @@ retry:
 		es_bootspi_wp_cfg(flash, 1);
 		return ret;
 	}
-	package_blk = DIV_ROUND_UP(size, BOOTCHAIN_PACKAGE_SIZE); 
+	package_blk = DIV_ROUND_UP(size, BOOTCHAIN_PACKAGE_SIZE);
 	total_size = size;
 	printf("\rWrite progress: %3d%%:\r", 0);
 	for(int i = 0;i < package_blk; i++) {
@@ -1275,13 +1275,13 @@ static int do_mmc_write(int argc, char *const argv[])
 	}
 	printf("Write progress: %3d%%:\r", 0);
 	for(int i = 0;i < cycle_index; i++) {
-		n = blk_dwrite(mmc_get_blk_desc(mmc), blk + i * package_blk, package_blk, 
+		n = blk_dwrite(mmc_get_blk_desc(mmc), blk + i * package_blk, package_blk,
 				(void __iomem *)(addr + i * package_blk * mmc->write_bl_len));
 		if(n != package_blk){
 			return CMD_RET_FAILURE;
 		}
 		if ((i == cycle_index -1) && last_blk) {
-			n = blk_dwrite(mmc_get_blk_desc(mmc), blk + (i + 1) * package_blk, last_blk, 
+			n = blk_dwrite(mmc_get_blk_desc(mmc), blk + (i + 1) * package_blk, last_blk,
 							(void __iomem *)(addr + (i + 1) * package_blk * mmc->write_bl_len));
 			if(n != last_blk){
 				return CMD_RET_FAILURE;

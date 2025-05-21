@@ -2951,4 +2951,9 @@ config CMD_SN_UPDATE
 	bool "sn_update"
 	help
 	  Update the SomSerialNumber in EEPROM.
+
+config CMD_D2D
+	bool "d2d"
+	help
+	  D2D related command.
 endmenu
