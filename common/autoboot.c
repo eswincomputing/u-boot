@@ -311,11 +311,13 @@ static int get_board_info(BoardInfo *board_info)
 		return ret;
 	}
 #else
+#ifdef CONFIG_CMD_ESWIN_DIE
 	ret = get_board_info_from_eeprom(board_info);
 	if (ret) {
 		printf("Failed to read board info from EEPROM, ret=%d\n", ret);
 		return ret;
 	}
+#endif /* CONFIG_CMD_ESWIN_DIE */
 #endif /* USE_MOCK_BOARD_INFO */
 
 	return 0;
