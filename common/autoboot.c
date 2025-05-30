@@ -66,7 +66,12 @@ static int menukey;
 #ifdef CONFIG_BOOT_ESWIN_VPU7702
 #define BOOT_SIGN	0xB00C
 #define READY_SIGN	0x2EA1
+#define BAR0_UPDATE 0xC00E
+#define BAR0_UPDATE_DONE 0xDB0A
+
 #define TEST_REG0	0x51810668
+#define TEST_REG3_OFFSET    0x51810674
+#define PCIE_CTRL_CFG14	0x50000034
 
 #define AT24C_ADDR			      (0x50)
 #define CARRIER_BOARD_INFO_EEPROM_MAIN_OFFSET 0
@@ -669,11 +674,31 @@ static int abortboot_key_sequence(int bootdelay)
 }
 
 #ifdef CONFIG_BOOT_ESWIN_VPU7702
+
+static int es_bar0_update()
+{
+	int ret = 0;
+	u32 testreg_var = 0;
+	u32 reg;
+
+	testreg_var = readl((u32 *)TEST_REG3_OFFSET);
+	printf("update bar0 reg val=0x%x.\n", testreg_var);
+	writel(testreg_var, (u32 *)PCIE_CTRL_CFG14);
+
+ 	reg = readl((u32 *)PCIE_CTRL_CFG14);
+	if (reg != testreg_var) {
+        printf("update bar0 reg, write val = 0x%x, but read val = 0x%x.\n", testreg_var, reg);
+        ret = -2;
+    }
+	return ret;
+
+}
 static int abortboot_single_key(int bootdelay)
 {
 	int abort = 0;
 	unsigned long ts;
 	u32 testreg_var = 0;
+	int ret = 0;
 
 	if (save_board_info_to_fdt()) {
 		printf("Failed to save board info to FDT\n");
@@ -723,7 +748,20 @@ static int abortboot_single_key(int bootdelay)
 			 * by checking test reg
 			 */
 			testreg_var = readl((u32 *)TEST_REG0);
-			debug_bootkeys("testreg value is %x.\n", testreg_var);
+			if (testreg_var == BAR0_UPDATE) {
+				printf("update bar0....\n");
+				ret = es_bar0_update();
+				if (ret < 0) {
+					abort = 1;
+					break;
+				}
+				writel(BAR0_UPDATE_DONE, (u32 *)TEST_REG0);
+				testreg_var = readl((u32 *)TEST_REG0);
+				if (testreg_var != BAR0_UPDATE_DONE) {
+					printf("WARNING! set test reg failed. value is %d\n", testreg_var);
+				}
+			}
+		//	printf("testreg value is %x.\n", testreg_var);
 			if (testreg_var == BOOT_SIGN) {
 				printf("OS image is loaded. Now autobooting ... \n");
 				invalidate_dcache_range(0x140000000, 0x180000000);
