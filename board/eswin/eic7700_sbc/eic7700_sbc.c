@@ -166,12 +166,43 @@ int set_voltage_default(void)
 	return 0;
 }
 
+bool i2c_check_mipi_dsi_panel(void){
+	struct udevice *bus;
+	struct udevice *dev;
+	int ret;
+	unsigned int data;
+
+	ret = uclass_get_device_by_seq(UCLASS_I2C, 2, &bus);
+	if (ret) {
+		printf("%s: No bus %d\n", __func__, 2);
+		return false;
+	}
+	/* panel addr 0x45*/
+	ret = i2c_get_chip(bus, 0x45, 1, &dev);
+	if(!ret)
+	{ 
+		ret = i2c_set_chip_offset_len(dev, 1);
+		if(!ret)
+		{
+			/*read raspberry panel id, version 0xde or 0xc3 is right*/
+			ret = dm_i2c_read(dev, 0x80, (uchar *)&data, 1);
+			if(!ret && ((data & 0xff) == 0xc3 || (data & 0xff) == 0xde))
+			{
+				printf("mipi dsi panel get success! ret = %d, data= 0x%x\n",ret, data);
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 int misc_init_r(void)
 {
 	struct udevice *dev;
-
+	bool mipi_dsi_panel_connected;
 	set_voltage_default();
 
+	mipi_dsi_panel_connected = false;
 #ifdef CONFIG_ESWIN_PMP
 	eswin_pmp_init();
 #endif
@@ -182,11 +213,17 @@ int misc_init_r(void)
 
 	uclass_get_device_by_name(UCLASS_VIDEO, "display-subsystem", &dev);
 	hardware_info_env_set();
-
+	mipi_dsi_panel_connected = i2c_check_mipi_dsi_panel();
 	if (NULL == env_get("fdtfile")) {
 		env_set("fdtfile","eswin/eic7700-sbc-a1.dtb");
 	}
-
+	if(mipi_dsi_panel_connected)
+	{
+		env_set("fdtfile","eswin/eic7700-sbc-a1-mipi.dtb");
+	}else
+	{
+		env_set("fdtfile","eswin/eic7700-sbc-a1.dtb");
+	}
 	eswin_update_bootargs();
 	return 0;
 }
@@ -395,6 +432,7 @@ int request_power_pd(uint busnum, uint chip)
 			   pd_volt_list[(cache >> 4) & 0xf], current_capacitys[cache & 0xf],
 			pd_volt_list[(cache >> 4) & 0xf] * current_capacitys[cache & 0xf]);
 	}
+	return ret;
 }
 
 int board_late_init(void)

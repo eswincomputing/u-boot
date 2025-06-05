@@ -205,6 +205,9 @@
 &osd {
 	status = "okay";
 };
+&i2c2 {
+	status = "okay";
+};
 /*
 GPIO USED ON CarrierBoard:
 	gpio0   : FP Audio Jack Sense(I), active low
