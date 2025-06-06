@@ -29,9 +29,6 @@
 #include <stdlib.h>
 #include <linux/io.h>
 #include <net.h>
-#ifdef CONFIG_BOOT_ESWIN_VPU7702
-#include <i2c.h>
-#endif
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -73,39 +70,6 @@ static int menukey;
 #define TEST_REG3_OFFSET    0x51810674
 #define PCIE_CTRL_CFG14	0x50000034
 
-#define AT24C_ADDR			      (0x50)
-#define CARRIER_BOARD_INFO_EEPROM_MAIN_OFFSET 0
-#define BD_TABLE_PHYS_ADDR		      0x104413000ULL
-
-/* Define magic number for BoardInfo structure */
-#define HARDWARE_BOARD_INFO_MAGIC_NUMBER 0x05454943
-
-/* Define this to use mock board info instead of reading from EEPROM */
-// #define USE_MOCK_BOARD_INFO
-
-typedef struct {
-	uint32_t magicNumber;
-	uint8_t formatVersionNumber;
-	uint16_t productIdentifier;
-	uint8_t pcbRevision;
-	uint8_t bomRevision;
-	uint8_t bomVariant;
-	uint8_t SomSerialNumber[18];
-	uint8_t manufacturingTestStatus;
-
-	uint8_t boardSerialNumber[32];
-	uint8_t ethernetMAC1[6];
-	uint8_t ethernetMAC2[6];
-	uint8_t boardName[32];
-	uint8_t productModel[32];
-	uint8_t hardwareVersion[16];
-	uint8_t softwareVersion[16];
-	uint8_t stationIdentifier[32];
-	uint8_t factoryInit[2];
-
-	uint32_t crc32Checksum;
-} BoardInfo;
-
 /**
  * get_die_ordinary - Get the die ordinary value based on GPIO status
  *
@@ -117,21 +81,6 @@ typedef struct {
 int get_die_ordinary(void)
 {
 	int die_ordinary = 0;
-#ifdef USE_MOCK_BOARD_INFO
-	char *die_idx_str;
-
-	die_idx_str = env_get("die_idx");
-
-	if (die_idx_str == NULL) {
-		printf("Error: die_idx environment variable not set.\n");
-		return -1;
-	}
-
-	die_ordinary = simple_strtol(die_idx_str, NULL, 10);
-
-	printf("Current die = %d\n", die_ordinary);
-	return die_ordinary;
-#else
 	// Read die ordinary GPIO values
 	int die_values[4] = { 0 };
 	unsigned int die_gpio_pins[4] = { 58, 59, 60, 61 };
@@ -171,197 +120,6 @@ int get_die_ordinary(void)
 	}
 
 	return die_ordinary;
-#endif /* USE_MOCK_BOARD_INFO */
-}
-
-uint32_t calculate_crc32(const uint8_t *data, int length)
-{
-	uint32_t crc = 0xFFFFFFFF;
-	int i, j;
-
-	for (i = 0; i < length; i++) {
-		crc ^= data[i];
-		for (j = 0; j < 8; j++) {
-			if (crc & 1)
-				crc = (crc >> 1) ^ 0xEDB88320; // Polynomial in reverse bit order
-			else
-				crc = crc >> 1;
-		}
-	}
-
-	return ~crc; // Final XOR value
-}
-
-#ifdef USE_MOCK_BOARD_INFO
-/**
- * get_mock_board_info - Populate BoardInfo with mock data for testing
- *
- * This function creates a BoardInfo structure with predefined values
- * for testing when real EEPROM hardware is not available.
- *
- * @board_info: Pointer to BoardInfo structure to populate
- * Return: 0 on success, -1 on failure
- */
-static int get_mock_board_info(BoardInfo *board_info)
-{
-	if (!board_info) {
-		printf("%s: board_info is NULL\n", __func__);
-		return -1;
-	}
-
-	/* Initialize entire structure to zeros */
-	memset((uint8_t *)board_info, 0, sizeof(BoardInfo));
-
-	/* Fill with required mock data */
-	board_info->magicNumber = HARDWARE_BOARD_INFO_MAGIC_NUMBER; /* 0x05454943 */
-	board_info->formatVersionNumber = 0x1;
-	board_info->productIdentifier = 0x0;
-	board_info->pcbRevision = 0x0; /* Set to 0x0 */
-	board_info->bomRevision = 0x0; /* Set to 0x0 */
-	board_info->bomVariant = 0x0; /* Set to 0x0 */
-
-	/* Update SomSerialNumber to "TELEVPU225150001" */
-	strncpy((char *)board_info->SomSerialNumber, "TELEVPU225150001",
-		sizeof(board_info->SomSerialNumber) - 1);
-
-	board_info->manufacturingTestStatus = 0x1;
-
-	/* Calculate CRC32 checksum for the structure */
-	board_info->crc32Checksum = calculate_crc32((uint8_t *)board_info, sizeof(BoardInfo) - 4);
-
-	printf("Mock BoardInfo created successfully\n");
-	return 0;
-}
-#endif /* USE_MOCK_BOARD_INFO */
-
-static int get_board_info_from_eeprom(BoardInfo *board_info)
-{
-	uint32_t crc32Checksum;
-	struct udevice *bus;
-	struct udevice *dev;
-	int ret;
-
-	if (!board_info) {
-		printf("%s: board_info is NULL\n", __func__);
-		return -1;
-	}
-
-	ret = uclass_get_device_by_seq(UCLASS_I2C, 5, &bus);
-	if (ret) {
-		printf("%s: No bus %d\n", __func__, 5);
-		return ret;
-	}
-
-	/* Use dm_i2c_probe instead of i2c_get_chip for initialization */
-	ret = dm_i2c_probe(bus, AT24C_ADDR, 0, &dev);
-	if (ret) {
-		printf("%s: Failed to probe I2C device at address 0x%x, ret=%d\n", __func__,
-		       AT24C_ADDR, ret);
-		return ret;
-	}
-
-	ret = i2c_set_chip_offset_len(dev, 1);
-	if (ret) {
-		printf("%s: Failed to set chip offset length, ret=%d\n", __func__, ret);
-		return -1;
-	}
-
-	memset((uint8_t *)board_info, 0, sizeof(BoardInfo));
-	ret = dm_i2c_read(dev, CARRIER_BOARD_INFO_EEPROM_MAIN_OFFSET, (uint8_t *)board_info,
-			  sizeof(BoardInfo));
-	if (ret != 0) {
-		printf("WARN: cannot read board info from EEPROM!\n");
-		return -1;
-	}
-	crc32Checksum =
-		calculate_crc32((uint8_t *)board_info, sizeof(BoardInfo) - sizeof(uint32_t));
-
-	if (crc32Checksum != board_info->crc32Checksum) {
-		printf("CRC32 checksum mismatch!\n");
-		return -1;
-	}
-
-	if (board_info->magicNumber != HARDWARE_BOARD_INFO_MAGIC_NUMBER) {
-		printf("Primary EEPROM section invalid...\n");
-		return -1;
-	}
-
-	printf("SomSerialNumber: %s\n", board_info->SomSerialNumber);
-
-	return 0;
-}
-
-/**
- * get_board_info - Get board info either from EEPROM or mock data
- *
- * This is a wrapper function that either gets real data from EEPROM
- * or uses mock data depending on compile-time configuration.
- *
- * @board_info: Pointer to BoardInfo structure to populate
- * Return: 0 on success, negative on failure
- */
-static int get_board_info(BoardInfo *board_info)
-{
-	int ret;
-
-#ifdef USE_MOCK_BOARD_INFO
-	ret = get_mock_board_info(board_info);
-	if (ret) {
-		printf("Failed to get mock board info, ret=%d\n", ret);
-		return ret;
-	}
-#else
-#ifdef CONFIG_CMD_ESWIN_DIE
-	ret = get_board_info_from_eeprom(board_info);
-	if (ret) {
-		printf("Failed to read board info from EEPROM, ret=%d\n", ret);
-		return ret;
-	}
-#endif /* CONFIG_CMD_ESWIN_DIE */
-#endif /* USE_MOCK_BOARD_INFO */
-
-	return 0;
-}
-
-static int save_board_info_to_fdt()
-{
-	BoardInfo board_info;
-	void *bd_table_virt_addr;
-	int ret;
-	int die_ordinary;
-
-	// Get die ordinary value
-	die_ordinary = get_die_ordinary();
-	if (die_ordinary == -1) {
-		printf("Failed to get die ordinary value, ret=%d\n", die_ordinary);
-		return -1;
-	}
-
-	bd_table_virt_addr = (void *)BD_TABLE_PHYS_ADDR;
-
-	// Only DIE0 needs to initialize shared memory
-	if (die_ordinary == 0) {
-		printf("DIE0: Reading board info and initializing shared memory...\n");
-		// Get BoardInfo (either from EEPROM or mock data)
-		ret = get_board_info(&board_info);
-		if (ret) {
-			printf("Failed to get board info, ret=%d\n", ret);
-			return ret;
-		} else {
-			memcpy((uint8_t *)bd_table_virt_addr, &board_info, sizeof(BoardInfo));
-			printf("Successfully wrote BoardInfo to shared memory\n");
-		}
-	} else {
-		printf("Not DIE0, skipping shared memory initialization\n");
-	}
-
-	// Write die_idx
-	*((uint8_t *)bd_table_virt_addr + sizeof(BoardInfo)) = (uint8_t)die_ordinary;
-	// read back check
-	die_ordinary = *((uint8_t *)bd_table_virt_addr + sizeof(BoardInfo));
-	printf("Read back die_ordinary: %d\n", die_ordinary);
-
-	return 0;
 }
 #endif /* CONFIG_BOOT_ESWIN_VPU7702 */
 
@@ -701,10 +459,6 @@ static int abortboot_single_key(int bootdelay)
 	unsigned long ts;
 	u32 testreg_var = 0;
 	int ret = 0;
-
-	if (save_board_info_to_fdt()) {
-		printf("Failed to save board info to FDT\n");
-	}
 
 	/*
 	 * set test reg to info host ready for loading image
