@@ -723,7 +723,7 @@ static int abortboot_single_key(int bootdelay)
 	/*
 	 * Check if key already pressed
 	 */
-	if (tstc()) {	/* we got a key press	*/
+	if (ctrlc()) {	/* we got a ctrl+c press	*/
 		getchar();	/* consume input	*/
 		puts("\b\b\b 0");
 		abort = 1;	/* don't auto boot	*/
@@ -734,14 +734,14 @@ static int abortboot_single_key(int bootdelay)
 		/* delay 1000 ms */
 		ts = get_timer(0);
 		do {
-			if (tstc()) {	/* we got a key press	*/
+			if (ctrlc()) {	/* we got a ctrl+c press	*/
 				int key;
 
 				abort  = 1;	/* don't auto boot	*/
 				bootdelay = 0;	/* no more delay	*/
 				key = getchar();/* consume input	*/
 				if (IS_ENABLED(CONFIG_AUTOBOOT_USE_MENUKEY))
-					menukey = key;
+					menukey = 0x03; /* ctrl+c key code */
 				break;
 			}
 
