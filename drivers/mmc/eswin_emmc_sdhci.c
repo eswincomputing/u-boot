@@ -416,13 +416,13 @@ static int eswin_sdhci_phase_code_tuning(struct sdhci_host *host,
 {
 	int cmd_error = 0;
 	int ret = 0;
-	int phase_code = -1;
-	int code_min = -1;
-	int code_max = -1;
-	int code_range = -1;
 	int i = 0;
+	int phase_code = -1;
+	int phase_range = -1;
+	int phase_min = -1;
+	int phase_max = -1;
 
-	for (i = 0; i <= MAX_PHASE_CODE; i++) {
+	for (i = 0; i <= MAX_PHASE_CODE;i++) {
 		eswin_disable_card_clk(host);
 		sdhci_writew(host, i, VENDOR_AT_SATA_R);
 		eswin_enable_card_clk(host);
@@ -430,36 +430,30 @@ static int eswin_sdhci_phase_code_tuning(struct sdhci_host *host,
 		ret = mmc_send_tuning(host->mmc, opcode, &cmd_error);
 		sdhci_reset(host, SDHCI_RESET_CMD | SDHCI_RESET_DATA);
 		if (ret) {
-			udelay(200);
 			pr_debug("%s: bad phase_code:0x%x!\n", mmc_hostname(host->mmc), i);
-			if (code_min != -1 && code_max != -1) {
-				if (code_max - code_min > code_range) {
-					code_range = code_max - code_min;
-					phase_code = (code_min + code_max) / 2;
-					if (code_range > TUNING_RANGE_THRESHOLD)
+			if (phase_min != -1 && phase_max != -1) {
+				if (phase_max - phase_min > phase_range) {
+					phase_range = phase_max - phase_min;
+					phase_code = (phase_min + phase_max) / 2;
+					if (phase_range > TUNING_RANGE_THRESHOLD)
 						break;
 				}
-				code_min = -1;
-				code_max = -1;
+				phase_min = -1;
+				phase_max = -1;
 			}
 		} else {
 			pr_debug("%s: ok phase_code:0x%x\n", mmc_hostname(host->mmc), i);
-			if (code_min == -1) {
-				code_min = i;
-			}
-			code_max = i;
-			if (i == MAX_PHASE_CODE) {
-				if (code_max - code_min > code_range) {
-					code_range = code_max - code_min;
-					phase_code = (code_min + code_max) / 2;
-				}
-			}
-			continue;
+			if (phase_min == -1)
+				phase_min = i;
+			phase_max = i;
 		}
 	}
 
+	if (phase_max - phase_min > phase_range)
+		phase_code = (phase_min + phase_max) / 2;
+
 	if (phase_code == -1) {
-		pr_err("%s: phase code tuning failed!\n",
+		pr_debug("%s: phase code tuning failed!\n",
 			   mmc_hostname(host->mmc));
 		eswin_disable_card_clk(host);
 		sdhci_writew(host, 0, VENDOR_AT_SATA_R);
@@ -484,6 +478,76 @@ static int eswin_sdhci_phase_code_tuning(struct sdhci_host *host,
 	return 0;
 }
 
+
+static int eswin_sdhci_sdio_delay_tuning(struct sdhci_host *host, u32 opcode)
+{
+	int ret;
+	int delay = -1;
+	int i = 0;
+	int delay_min = -1;
+	int delay_max = -1;
+	int delay_range = -1;
+	int cmd_error = 0;
+	struct udevice *dev = host->mmc->dev;
+	struct eswin_sdhci_data *eswin_sdhci = dev_get_priv(dev);
+	struct eswin_sdhci_phy_data *phy = &eswin_sdhci->phy;
+
+	for (i = 0; i <= PHY_DELAY_CODE_MAX;i++) {
+		eswin_disable_card_clk(host);
+		eswin_sdhci_config_phy_delay(host, i);
+		eswin_enable_card_clk(host);
+		ret = mmc_send_tuning(host->mmc, opcode, &cmd_error);
+		sdhci_reset(host, SDHCI_RESET_CMD | SDHCI_RESET_DATA);
+		if (ret) {
+			pr_debug("%s: ========bad delay:0x%x!==========\n", mmc_hostname(host->mmc), i);
+			if (delay_min != -1 && delay_max != -1) {
+				if (delay_max - delay_min > delay_range) {
+					delay = (delay_min + delay_max) / 2;
+					delay_range = delay_max - delay_min;
+					if (delay_range > TUNING_RANGE_THRESHOLD)
+						break;
+				}
+			}
+			delay_min = -1;
+			delay_max = -1;
+		} else {
+			pr_debug("%s: ==========ok delay:0x%x===========\n", mmc_hostname(host->mmc), i);
+			if (delay_min == -1)
+				delay_min = i;
+
+			delay_max = i;
+		}
+	}
+
+	if (delay_max - delay_min > delay_range)
+		delay = (delay_min + delay_max) / 2;
+
+	if (delay == -1) {
+		pr_debug("%s: delay code tuning failed!\n",
+		       mmc_hostname(host->mmc));
+		eswin_disable_card_clk(host);
+		eswin_sdhci_config_phy_delay(host, phy->delay_code);
+		eswin_enable_card_clk(host);
+		return ret;
+	}
+
+	pr_debug("%s: set delay:0x%x\n", mmc_hostname(host->mmc), delay);
+	eswin_disable_card_clk(host);
+	eswin_sdhci_config_phy_delay(host, delay);
+	eswin_enable_card_clk(host);
+
+	ret = mmc_send_tuning(host->mmc, opcode, &cmd_error);
+	sdhci_reset(host, SDHCI_RESET_CMD | SDHCI_RESET_DATA);
+	if (ret) {
+		pr_err("%s: delay code(0x%x) not work, tuning failed!\n",
+		       mmc_hostname(host->mmc), delay);
+		return ret;
+	}
+	phy->delay_code = delay;
+	return 0;
+}
+
+
 int eswin_sdhci_execute_tuning(struct mmc *mmc, u8 opcode)
 {
 	struct eswin_sdhci_data *eswin_sdhci = dev_get_priv(mmc->dev);
@@ -506,9 +570,10 @@ int eswin_sdhci_execute_tuning(struct mmc *mmc, u8 opcode)
 	eswin_enable_card_clk(host);
 
 	sdhci_writew(host, 0x0, SDHCI_CMD_DATA);
-
 	ret = eswin_sdhci_phase_code_tuning(host, opcode);
-
+	if(ret)
+		return ret;
+	ret = eswin_sdhci_sdio_delay_tuning(host, opcode);
 	return ret;
 }
 
