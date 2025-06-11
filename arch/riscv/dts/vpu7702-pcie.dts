@@ -26,7 +26,7 @@
 / {
 	#address-cells = <2>;
 	#size-cells = <2>;
-	model = "ESWIN EIC7700 EVB";
+	model = "ESWIN EIC7702 VPU A1";
 
 
 	aliases {
@@ -142,7 +142,7 @@
 	status = "okay";
 };
 &uart1 {
-	status = "okay";
+	status = "disabled";
 };
 &bootspi {
 	status = "okay";
@@ -165,7 +165,7 @@
 	};
 };
 &sd {
-	status = "okay";
+	status = "disabled";
 	delay_code = <0x55>;
 	drive-impedance-ohm = <33>;
 	enable-cmd-pullup;
@@ -173,7 +173,7 @@
 };
 
 &sdhci_emmc {
-	status = "okay";
+	status = "disabled";
 	delay_code = <0x55>;
 	drive-impedance-ohm = <50>;
 	enable-cmd-pullup;
@@ -183,11 +183,11 @@
 };
 
 &eswin_sata {
-	status = "okay";
+	status = "disabled";
 };
 
 &eth0 {
-	status = "okay";
+	status = "disabled";
 	phy-mode = "rgmii-id";
 	max-speed = <1000>;
 	phy-handle = <&phy0>;
@@ -268,30 +268,30 @@
 	};
 };
 &dwc3_typec0 {
-		status = "okay";
+		status = "disabled";
 		dr_mode = "peripheral";
 		maximum-speed = "super-speed";
 };
 &usb0 {
-	status = "okay";
+	status = "disabled";
 };
 &usb1 {
-	status = "okay";
+	status = "disabled";
 };
 &hdmi {
-	status = "okay";
+	status = "disabled";
 };
 &display_subsystem {
-	status = "okay";
+	status = "disabled";
 };
 &route_hdmi {
-	status = "okay";
+	status = "disabled";
 };
 &route_mipi {
 	status = "disabled";
 };
 &osd {
-	status = "okay";
+	status = "disabled";
 };
 &i2c0 {
 	status = "disabled";
@@ -311,7 +311,7 @@
 	};
 };
 &i2c11 {
-	status = "okay";
+	status = "disabled";
 	rtc@51 {
 		compatible = "nxp,pcf8563";
 		reg = <0x51>;
