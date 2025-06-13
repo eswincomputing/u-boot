@@ -218,7 +218,9 @@ void irq_mux_route(void)
 
 int board_init(void)
 {
+#ifndef CONFIG_BOOT_ESWIN_VPU7702
 	irq_mux_route();
+#endif
 	return 0;
 }
 
