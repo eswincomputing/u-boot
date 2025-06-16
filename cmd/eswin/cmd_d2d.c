@@ -69,7 +69,7 @@ int d2d_pmix_erase(const char *node_name)
 		printf("D2D PMIX Data erase failed\n");
 	}
 	es_flash_region_wp_cfg(flash, addr, SZ_64K, 1);
-
+	/*
 	addr = (void *)ALIGN_DOWN(PMIX_RECORD_ADDR_ALT, SZ_64K);
 	es_flash_region_wp_cfg(flash, addr, SZ_64K, 0);
 	ret = spi_flash_erase(flash, PMIX_RECORD_ADDR_ALT, SZ_4K);
@@ -77,6 +77,7 @@ int d2d_pmix_erase(const char *node_name)
 		printf("D2D PMIX Data erase failed\n");
 	}
 	es_flash_region_wp_cfg(flash, addr, SZ_64K, 1);
+	*/
 
 	printf("D2D PMIX Data has been invalid\n");
 	return 0;
