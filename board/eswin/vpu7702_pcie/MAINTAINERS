@@ -1,0 +1,6 @@
+ESWIN VPU7702 PCIE CARD
+M:  Zhou Liang <zhouliang1@eswincomputing.com>
+S:  Maintained
+F:  board/eswin/vpu7702_pcie/
+F:  include/configs/eswin_vpu7702_pcie.h
+F:  configs/vpu7702_pcie_defconfig

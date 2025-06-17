@@ -63,6 +63,12 @@ config TARGET_ESWIN_EIC7700_SBC
 config TARGET_ESWIN_EIC7700_OSM
 	bool "Support Eswin EIC7700 OSM Board"
 
+config TARGET_ESWIN_VPU7702_EVB
+        bool "Support Eswin VPU7702 EVB Board"
+
+config TARGET_ESWIN_VPU7702_PCIE
+        bool "Support Eswin VPU7702 PCIE Card"
+
 endchoice
 
 config SYS_ICACHE_OFF
@@ -114,6 +120,8 @@ source "board/eswin/eic7700_d314/Kconfig"
 source "board/eswin/eic7700_sbc/Kconfig"
 source "board/eswin/eic7700_osm/Kconfig"
 source "board/eswin/FML13V03/Kconfig"
+source "board/eswin/vpu7702_evb/Kconfig"
+source "board/eswin/vpu7702_pcie/Kconfig"
 
 # platform-specific options below
 source "arch/riscv/cpu/andesv5/Kconfig"

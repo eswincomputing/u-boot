@@ -1,0 +1,6 @@
+ESWIN VPU7702 EVB BOARD
+M:  Zhou Liang <zhouliang1@eswincomputing.com>
+S:  Maintained
+F:  board/eswin/vpu7702_evb/
+F:  include/configs/eswin_vpu7702_evb.h
+F:  configs/vpu7702_evb_defconfig

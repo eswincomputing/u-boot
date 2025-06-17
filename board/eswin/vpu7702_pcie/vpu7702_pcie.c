@@ -218,7 +218,7 @@ void irq_mux_route(void)
 
 int board_init(void)
 {
-	irq_mux_route();
+	// irq_mux_route();
 	return 0;
 }
 
