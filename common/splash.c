@@ -62,12 +62,21 @@ static struct splash_location default_splash_locations[] = {
 #ifdef CONFIG_VIDEO_LOGO
 
 #include <bmp_logo_data.h>
+#include <dm/uclass.h>
+#include <dm/device.h>
+#include <spi.h>
+#include <spi_flash.h>
 
+#define FLASH_LOGO_ADDR_8M 0x680000 // boot + uboot : 512k
+#define FLASH_LOGO_ADDR_16M 0xd00000 // boot + uboot : 2M
+#define GZIP_HEAD 0x08088b1f
+#define GZIP_MAX_LEN_8M 0x80000 // 512k
+#define GZIP_MAX_LEN_16M 0x200000 // 2M
 static int splash_video_logo_load(void)
 {
 	char *splashimage;
 	ulong bmp_load_addr;
-
+	int ret;
 	splashimage = env_get("splashimage");
 	if (!splashimage)
 		return -ENOENT;
@@ -78,8 +87,34 @@ static int splash_video_logo_load(void)
 		return -EFAULT;
 	}
 
-	memcpy((void *)bmp_load_addr, bmp_logo_bitmap,
-	       ARRAY_SIZE(bmp_logo_bitmap));
+	const char *node_name = "spi@51800000";
+	struct spi_flash *flash = NULL;
+	struct udevice *bus, *dev;
+	ret = uclass_get_device_by_name(UCLASS_SPI, node_name, &bus);
+	if(ret) {
+		return ret;
+	}
+	ret = spi_find_chip_select(bus, 0, &dev);
+	if(ret) {
+		printf("Invalid chip select :%d (err=%d)\n", 0, ret);
+		return ret;
+	}
+	if (!device_active(dev)) {
+		if(device_probe(dev))
+			return -1;
+	}
+	flash = dev_get_uclass_priv(dev);
+
+	int logo_offset = (flash->size == 0x800000) ?  FLASH_LOGO_ADDR_8M : FLASH_LOGO_ADDR_16M;
+	int gzip_max_len = (flash->size == 0x800000) ? GZIP_MAX_LEN_8M : GZIP_MAX_LEN_16M;
+	ret = spi_flash_read(flash, logo_offset, gzip_max_len, (void *)bmp_load_addr);
+	if(ret) {
+		printf("Error: spi_flash_read failed! ret = %d\n", ret);
+		return ret;
+	}
+	if (*((u32 *)bmp_load_addr) == GZIP_HEAD) return 0;
+
+	memcpy((void *)bmp_load_addr, bmp_logo_bitmap, ARRAY_SIZE(bmp_logo_bitmap));
 	return 0;
 }
 #else
