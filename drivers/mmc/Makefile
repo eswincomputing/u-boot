@@ -84,3 +84,4 @@ obj-$(CONFIG_MMC_BCM2835)		+= bcm2835_sdhost.o
 obj-$(CONFIG_MMC_MTK)			+= mtk-sd.o
 obj-$(CONFIG_MMC_SDHCI_F_SDH30)		+= f_sdh30.o
 obj-$(CONFIG_MMC_SDHCI_SD_ESWIN)        += eswin_sd_sdhci.o
+obj-$(CONFIG_MMC_SDHCI_WL_ESWIN)        += eswin_wl_sdhci.o

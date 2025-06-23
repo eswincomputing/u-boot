@@ -251,6 +251,17 @@
 	mmc-hs400-1_8v;
 };
 
+&sdio1 {
+        status = "okay";
+        delay_code = <0x29>;
+        drive-impedance-ohm = <33>;
+        enable-cmd-pullup;
+        enable-data-pullup;
+        pinctrl-names = "default";
+        pinctrl-0 = <&pinctrl_gpio16_default>;
+        rst-gpios = <&porta 16 GPIO_ACTIVE_HIGH>;
+};
+
 &eswin_sata {
 	status = "okay";
 };

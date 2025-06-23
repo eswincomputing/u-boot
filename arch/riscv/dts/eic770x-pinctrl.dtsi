@@ -723,12 +723,12 @@
 			// 		function = "gpio33_func";
 			// 	};
 			// };
-			// pinctrl_gpio34_default: gpio34-default{
-			// 	mux {
-			// 		groups = "gpio34_group";
-			// 		function = "gpio34_func";
-			// 	};
-			// };
+			 pinctrl_gpio34_default: gpio34-default{
+			 	mux {
+			 		groups = "gpio34_group";
+			 		function = "gpio34_func";
+			 	};
+			 };
 			// pinctrl_gpio35_default: gpio35-default{
 			// 	mux {
 			// 		groups = "gpio35_group";

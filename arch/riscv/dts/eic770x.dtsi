@@ -638,6 +638,7 @@
 			numa-node-id = <0>;
 			status = "disabled";
 		};
+
 		sd: sd@50460000 {
 			compatible = "eswin,sd-sdhci";
 			clocks =<&cru EIC7X_CLK_HSP_MSHC1_CORE_CLK>,
@@ -660,6 +661,15 @@
 			numa-node-id = <0>;
 			status = "disabled";
 		};
+
+		sdio1: sdio@50470000 {
+                        compatible = "eswin,wl-sdhci";
+			reg = <0x0 0x50470000 0x0 0x10000>;
+			index = <2>;
+			bus-width = <4>;
+			max-frequency = <208000000>;
+                        status = "disabled";
+                };
 
 		d1_sdhci_emmc: sdhci@70450000 {
 			compatible = "eswin,emmc-sdhci-5.1";
@@ -707,6 +717,15 @@
 			numa-node-id = <1>;
 			status = "disabled";
 		};
+
+		d1_sdio1: sdio@70470000 {
+                        compatible = "eswin,wl-sdhci";
+                        reg = <0x0 0x70470000 0x0 0x10000>;
+                        index = <2>;
+                        bus-width = <4>;
+                        max-frequency = <208000000>;
+                        status = "disabled";
+                };
 
 		display_logo: display_logo {
 			status = "disabled";

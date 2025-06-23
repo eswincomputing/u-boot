@@ -155,6 +155,17 @@
 	enable-data-pullup;
 };
 
+&sdio1 {
+        status = "okay";
+        delay_code = <0x29>;
+        drive-impedance-ohm = <33>;
+        enable-cmd-pullup;
+        enable-data-pullup;
+        pinctrl-names = "default";
+        pinctrl-0 = <&pinctrl_gpio79_default>;
+        rst-gpios = <&portc 15 GPIO_ACTIVE_HIGH>;
+};
+
 &sdhci_emmc {
 	status = "okay";
 	delay_code = <0x55>;

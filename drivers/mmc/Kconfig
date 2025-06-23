@@ -521,6 +521,14 @@ config MMC_SDHCI_SD_ESWIN
         help
           This enables support for the Eswin SDHCI sd controller.
 
+config MMC_SDHCI_WL_ESWIN
+        bool "ESWIN WIFI controller support"
+        select MMC_SDHCI_EMMC_ESWIN
+        default n
+        help
+          This enables support for the Eswin SDHCI sdio wifi controller.
+
+
 config MMC_SDHCI_ASPEED
 	bool "Aspeed SDHCI controller"
 	depends on ARCH_ASPEED
