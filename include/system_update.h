@@ -1,6 +1,19 @@
-// SPDX-License-Identifier: GPL-2.0-only
+// SPDX-License-Identifier: GPL-2.0
 /*
- * Copyright 2024 Beijing ESWIN Computing Technology Co., Ltd.
+ *
+ * Copyright 2024, Beijing ESWIN Computing Technology Co., Ltd.. All rights reserved.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 2.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  */
 
@@ -8,9 +21,9 @@
 #define _SYSTEM_UPDATE_H
 
 #define BTL_HASH_DIG_SIZE 32
-#define SIGNATURE_SIZE    256
+#define SIGNATURE_SIZE    512
 
-typedef struct __attribute__((packed)) firmware_entry_header_t{
+typedef struct __attribute__((packed)) firmware_entry_header{
     uint32_t version;
     uint64_t offset;       /* Signature offset between offset 0 */
     uint64_t size;         /* Signature size + payload size */
@@ -23,7 +36,7 @@ typedef struct __attribute__((packed)) firmware_entry_header_t{
     uint32_t Reserved2;
 }firmware_entry_header_t;
 
-typedef struct __attribute__((packed)) firmware_header_t{
+typedef struct __attribute__((packed)) firmware_header{
     uint32_t magic;
     uint32_t num_entries;  /* Number of entries following this structures */
     firmware_entry_header_t entries[0];

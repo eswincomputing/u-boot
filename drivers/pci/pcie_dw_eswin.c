@@ -172,7 +172,7 @@ static int eswin_pcie_wait_link_up(struct eswin_pcie *priv)
 
     } while (cnt < WAIT_LINKUP_TIMEOUT);
 
-    printf("%s: error: wait linkup timeout\n", __func__);
+    debug("%s: error: wait linkup timeout\n", __func__);
     return -EIO;
 }
 
@@ -340,8 +340,10 @@ static int eswin_pcie_init_port(struct udevice *dev)
 
     pcie_dw_setup_host(&priv->dw);
 
-    eswin_pcie_link_up(priv);
-
+    ret = eswin_pcie_link_up(priv);
+	if (ret) {
+		return -ENODEV;
+	}
     return 0;
 }
 

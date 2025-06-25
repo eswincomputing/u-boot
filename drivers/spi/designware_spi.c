@@ -182,7 +182,7 @@ static int dw_spi_apb_init(struct udevice *bus, struct dw_spi_priv *priv)
 {
 	/* If we read zeros from DFS, then we need to use DFS_32 instead */
 	dw_write(priv, DW_SPI_SSIENR, 0);
-	dw_write(priv, DW_SPI_CTRLR0, 0xffffffff);
+	dw_write(priv, DW_SPI_CTRLR0, 0);
 	if (FIELD_GET(CTRLR0_DFS_MASK, dw_read(priv, DW_SPI_CTRLR0))) {
 		priv->max_xfer = 16;
 		priv->update_cr0 = dw_spi_dw16_update_cr0;

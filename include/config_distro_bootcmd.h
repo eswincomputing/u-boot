@@ -154,7 +154,7 @@
 	BOOTENV_EFI_BOOTMGR                                               \
 	\
 	"boot_efi_binary="                                                \
-		"setenv stdout serial,vidconsole;cls;load ${devtype} ${devnum}:${distro_bootpart} "           \
+		"setenv stdout serial,vidconsole;load ${devtype} ${devnum}:${distro_bootpart} "           \
 			"${kernel_addr_r} efi/boot/"BOOTEFI_NAME"; "      \
 		"if fdt addr -q ${fdt_addr_r}; then "                     \
 			"bootefi ${kernel_addr_r} ${fdt_addr_r};"         \
