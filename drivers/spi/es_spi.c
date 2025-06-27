@@ -41,6 +41,7 @@
 #include <linux/compat.h>
 #include <linux/iopoll.h>
 #include <linux/sizes.h>
+#include <linux/mtd/spi-nor.h>
 #include <command.h>
 #include <asm/cache.h>
 
@@ -620,43 +621,9 @@ typedef enum {
     SPIC_CMD_TYPE_READ_JEDEC_ID
 } SPI_FLASH_COMMAND_TYPE_T;
 
-#undef SPINOR_OP_RDSR2
-#undef SPINOR_OP_WRSR2
-/* Flash opcodes. */
-#define SPINOR_OP_WREN		0x06	/* Write enable */
-#define SPINOR_OP_WRDIS		0x04	/* Write disable */
-#define SPINOR_OP_RDSR		0x05	/* Read status register */
-#define SPINOR_OP_WRSR		0x01	/* Write status register 1 byte */
-#define SPINOR_OP_RDSR2		0x35	/* Read status register 2 */
-#define SPINOR_OP_WRSR2		0x31	/* Write status register 2 */
 #define SPINOR_OP_RDSR3		0x15	/* Read status register 3 */
 #define SPINOR_OP_WRSR3		0x11	/* Write status register 3 */
 
-#define SPINOR_OP_READ		0x03	/* Read data bytes (low frequency) */
-#define SPINOR_OP_READ_FAST	0x0b	/* Read data bytes (high frequency) */
-#define SPINOR_OP_READ_1_1_2	0x3b	/* Read data bytes (Dual Output SPI) */
-#define SPINOR_OP_READ_1_2_2	0xbb	/* Read data bytes (Dual I/O SPI) */
-#define SPINOR_OP_READ_1_1_4	0x6b	/* Read data bytes (Quad Output SPI) */
-#define SPINOR_OP_READ_1_4_4	0xeb	/* Read data bytes (Quad I/O SPI) */
-#define SPINOR_OP_READ_1_1_8	0x8b    /* Read data bytes (Octal Output SPI) */
-#define SPINOR_OP_READ_1_8_8	0xcb    /* Read data bytes (Octal I/O SPI) */
-#define SPINOR_OP_PP		0x02	/* Page program (up to 256 bytes) */
-#define SPINOR_OP_PP_1_1_4	0x32	/* Quad page program */
-#define SPINOR_OP_PP_1_4_4	0x38	/* Quad page program */
-#define SPINOR_OP_PP_1_1_8	0x82    /* Octal page program */
-#define SPINOR_OP_PP_1_8_8	0xc2    /* Octal page program */
-#define SPINOR_OP_BE_4K		0x20	/* Erase 4KiB block */
-#define SPINOR_OP_BE_4K_PMC	0xd7	/* Erase 4KiB block on PMC chips */
-#define SPINOR_OP_BE_32K	0x52	/* Erase 32KiB block */
-#define SPINOR_OP_CHIP_ERASE	0xc7	/* Erase whole flash chip */
-#define SPINOR_OP_SE		0xd8	/* Sector erase (usually 64KiB) */
-#define SPINOR_OP_RDID		0x9f	/* Read JEDEC ID */
-#define SPINOR_OP_RDSFDP	0x5a	/* Read SFDP */
-#define SPINOR_OP_RDCR		0x35	/* Read configuration register */
-#define SPINOR_OP_RDFSR		0x70	/* Read flag status register */
-#define SPINOR_OP_CLFSR		0x50	/* Clear flag status register */
-#define SPINOR_OP_RDEAR		0xc8	/* Read Extended Address Register */
-#define SPINOR_OP_WREAR		0xc5	/* Write Extended Address Register */
 #define SPINOR_BLOCK_LOCK		0x36	/* Individual Block/Sector Lock */
 #define SPINOR_BLOCK_UNLOCK		0x39	/* Individual Block/Sector UnLock */
 #define SPINOR_GLOBAL_BLOCK_LOCK		0x7E	/* global Block/Sector UnLock */
@@ -664,8 +631,6 @@ typedef enum {
 
 #define SPIC_CMD_CODE_POWER_DOWN              0xb9
 #define SPIC_CMD_CODE_RELEASE_POWER_DOWN      0xab
-#define SPIC_CMD_CODE_ENABLE_RESET            0x66
-#define SPIC_CMD_CODE_RESET                   0x99
 
 struct es_spi_plat {
 	s32 frequency;		/* Default clock frequency, -1 for none */
@@ -1253,10 +1218,11 @@ static int es_spi_exec_op(struct spi_slave *slave, const struct spi_mem_op *op)
 	priv->opcode = op->cmd.opcode;
 
 	// dev_err(bus, "addr=%lx opcode=%lx\n", priv->addr, priv->opcode);
-	if( priv->opcode == SPINOR_OP_WREN || priv->opcode == SPINOR_OP_WRDIS)
+	if( priv->opcode == SPINOR_OP_WREN || priv->opcode == SPINOR_OP_WRDI)
 		return 0;
 	switch(priv->opcode) {
 		case SPINOR_OP_RDID:
+		case SPINOR_OP_RDSFDP:
 			priv->cmd_type = SPIC_CMD_TYPE_READ_JEDEC_ID;
 			break;
 		case SPINOR_OP_BE_4K:
@@ -1306,31 +1272,14 @@ static int es_spi_exec_op(struct spi_slave *slave, const struct spi_mem_op *op)
 		case SPIC_CMD_CODE_RELEASE_POWER_DOWN:
 			priv->cmd_type = SPIC_CMD_TYPE_RELEASE_POWER_DOWM;
 			break;
-		case SPIC_CMD_CODE_ENABLE_RESET:
-		case SPIC_CMD_CODE_RESET:
+		case SPINOR_OP_SRSTEN:
+		case SPINOR_OP_SRST:
 			priv->cmd_type = SPIC_CMD_TYPE_SPI_PROGRAM;
 			break;
 		default:
 			priv->cmd_type = SPIC_CMD_TYPE_SPI_PROGRAM;
 			break;
 	}
-	/*
-	if (g_priv.wp_enabled) {
-		switch(priv->opcode) {
-			case SPINOR_OP_BE_4K:
-			case SPINOR_OP_BE_4K_PMC:
-			case SPINOR_OP_BE_32K:
-			case SPINOR_OP_SE:
-			case SPINOR_OP_CHIP_ERASE:
-			case SPINOR_OP_PP:
-			case SPINOR_OP_PP_1_1_4:
-			case SPINOR_OP_PP_1_4_4:
-			case SPINOR_OP_PP_1_1_8:
-			case SPINOR_OP_PP_1_8_8:
-				return -EACCES;
-		}
-	}
-	*/
 	// dev_err(bus, "opcode = %x cmd_type %x\n", priv->opcode, priv->cmd_type);
 	es_external_cs_manage(priv, false);
 
