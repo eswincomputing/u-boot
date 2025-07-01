@@ -34,7 +34,7 @@
 #define DIE0_SYS_CON_TESTREG0  		(0x51810668)
 #define DIE1_SYS_CON_TESTREG0  		(0x51810668 + 0x20000000)
 
-#define PMIX_RECORD_ADDR                0xefc000    /* 0xefc000 - 0xefffff (16KiB) */
+#define PMIX_RECORD_ADDR            0x40000     /* 0x40000 - 0x43fff (16KiB) */
 #define PMIX_ENTRY_NUM 372  /* (16KiB - 12B) / sizeof(struct pmix_entry) */
 #define PMIX_MAGIC 0x504d4958
 
