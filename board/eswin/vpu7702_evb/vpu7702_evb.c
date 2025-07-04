@@ -174,7 +174,7 @@ int hardware_info_env_set(void)
 
 int misc_init_r(void)
 {
-	struct udevice *dev;
+	//struct udevice *dev;
 
 #ifdef CONFIG_ESWIN_PMP
 	eswin_pmp_init();
@@ -184,11 +184,11 @@ int misc_init_r(void)
 	es_bootspi_write_protection_init();
 #endif
 
-	uclass_get_device_by_name(UCLASS_VIDEO, "display-subsystem", &dev);
-	hardware_info_env_set();
+	//uclass_get_device_by_name(UCLASS_VIDEO, "display-subsystem", &dev);
+	//hardware_info_env_set();
 
 	if (NULL == env_get("fdtfile")) {
-		env_set("fdtfile","eswin/eic7700-evb-a3.dtb");
+		env_set("fdtfile","eswin/vpu7702-evb.dts");
 	}
 	eswin_update_bootargs();
 	return 0;
