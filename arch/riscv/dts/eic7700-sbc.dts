@@ -155,8 +155,8 @@
         enable-cmd-pullup;
         enable-data-pullup;
         pinctrl-names = "default";
-        pinctrl-0 = <&pinctrl_gpio34_default>;
-        rst-gpios = <&portb 2 GPIO_ACTIVE_HIGH>;
+        pinctrl-0 = <&pinctrl_gpio79_default>;
+        rst-gpios = <&portc 15 GPIO_ACTIVE_HIGH>;
 };
 
 &eswin_sata {
