@@ -53,6 +53,12 @@
 
 #define BOOTLOADER_INFO_SIZE SZ_4K
 #define FW_HEAD_SIZE SZ_4K
+
+#define LOGO_MAX_LEN_8M 0x80000 // 512k
+#define LOGO_MAX_LEN_16M 0x200000 // 2M
+#define GZIP_HEAD 0x08088b1f
+#define LOGO_WRITE_BLOCK 0x20000
+
 enum fw_offset {
 	/* Head */
 	FW_HEAD_OFFSET      = 0x0000UL,     /* HEAD 4K */
@@ -1109,6 +1115,105 @@ static int do_mmc_write(int argc, char *const argv[])
 	return CMD_RET_SUCCESS;
 }
 
+int es_bootchain_logo_write(int argc, char *const argv[], bool uboot_flag)
+{
+    u32 offset, len, ret, currentIndex = 0;
+	u32 start_x = 0xffffffff, start_y = 0xffffffff;
+    u64 src_addr = simple_strtoul(argv[1], NULL, 16);
+	if (*(u32 *)src_addr != GZIP_HEAD) {
+		printf("ERROR: logo data format is not gzip!\n");
+		return CMD_RET_FAILURE;
+	}
+	ret = es_spi_flash_probe(0);
+    if (ret) {
+        printf("ERROR: Failed to probe SPI flash\n");
+        return CMD_RET_FAILURE;
+    }
+
+	offset = (flash->size == 0x800000) ? IMG_OFFSET_8M : IMG_OFFSET_16M;
+	len = (flash->size == 0x800000) ? LOGO_MAX_LEN_8M : LOGO_MAX_LEN_16M;
+
+	if (!uboot_flag) {
+		len /= 4;
+		offset += len * 3;
+		if (argc == 4) {
+			start_x = simple_strtoul(argv[2], NULL, 10);
+			start_y = simple_strtoul(argv[3], NULL, 10);
+		}
+	}
+	ret = es_bootspi_wp_cfg(flash, 0);
+	if (ret) {
+        printf("ERROR: Failed to disEnable bootspi WP\n");
+		return CMD_RET_FAILURE;
+    }
+
+	ret = es_spi_flash_erase(offset, len);
+    if (ret) {
+        printf("ERROR: SPI flash erase failed\n");
+		return CMD_RET_FAILURE;
+    }
+	u32 total_size = len;
+	u32 write_cnt = DIV_ROUND_UP(total_size, LOGO_WRITE_BLOCK);
+	printf("\rWrite progress: %3d%%:\r", 0);
+	for (int i = 0; i < write_cnt; i++) {
+		ret = spi_flash_write(flash, offset + i * LOGO_WRITE_BLOCK,
+			LOGO_WRITE_BLOCK, ((void *)src_addr + i * LOGO_WRITE_BLOCK));
+		currentIndex = (uint64_t)i * 100 / write_cnt;
+		printf("Write progress: %3lld%%:", currentIndex);
+		for(int col = 0; col < currentIndex / 2; col++) {
+			printf("%s", "+");
+		}
+		printf("\r");
+		if (ret) {
+			printf("ERROR: SPI flash write failed\n");
+			break;
+		}
+	}
+	if(!ret) {
+		printf("Write progress: %3d%%:", 100);
+		for(int j = 0; j < 100 / 2; j ++)
+			printf("%s", "+");
+		printf("\r\n");
+	}
+	if (!uboot_flag) {
+		ret = spi_flash_write(flash, offset + len - 8, sizeof(u32), (void *)&start_x);
+		if (ret) {
+			printf("ERROR: SPI flash write start_x failed\n");
+			return CMD_RET_FAILURE;
+		}
+		ret = spi_flash_write(flash, offset + len - 4, sizeof(u32), (void *)&start_y);
+		if (ret) {
+			printf("ERROR: SPI flash write start_y failed\n");
+			return CMD_RET_FAILURE;
+		}
+	}
+	printf("SF: %zu bytes @ %#x Written: %s\r\n", (size_t)len,
+		   (uint32_t)offset, ret ? "ERROR" : "OK");
+
+	char *cmp_buf = memalign(ARCH_DMA_MINALIGN, len);
+	if (cmp_buf) {
+		ret = spi_flash_read(flash, offset, len, (void *)cmp_buf);
+		u32 cmp_len = uboot_flag ? len / 4 : len / 4 - 2; //start_x, start_y
+		for (int i = 0; i < cmp_len; i++) {
+			u32 *src_val = (u32 *)src_addr + i;
+			u32 *dst_val = (u32 *)cmp_buf + i;
+			if (*src_val != *dst_val) {
+				break;
+				printf("ERROR: Flash Data at 0x%08x offset compares failed!\n", offset + i * 4);
+				return CMD_RET_FAILURE;
+			}
+		}
+	}
+	ret = es_bootspi_wp_cfg(flash, 1);
+	if (ret) {
+        printf("ERROR: Failed to enable bootspi WP\n");
+		return CMD_RET_FAILURE;
+    }
+	spi_flash_free(flash);
+
+	return CMD_RET_SUCCESS;
+}
+
 static int do_esburn_bootchain(struct cmd_tbl *cmdtp, int flag, int argc,
 			char *const argv[])
 {
@@ -1119,7 +1224,7 @@ static int do_esburn_bootchain(struct cmd_tbl *cmdtp, int flag, int argc,
 		goto usage;
 
 	cmd = argv[1];
-	--argc;
+	--argc; // write logo x,y depend this;
 	++argv;
 	// for(int i = 0; i< MAX_FW_NUM;i++)
 	// {
@@ -1128,7 +1233,10 @@ static int do_esburn_bootchain(struct cmd_tbl *cmdtp, int flag, int argc,
 
 	if (strcmp(cmd, "write") == 0)
 		ret = do_bootchain_write(argc, argv);
-	else if (strcmp(cmd, "erase") == 0)
+	else if (strcmp(cmd, "uboot_logo") == 0 || strcmp(cmd, "preboot_logo") == 0) {
+		bool uboot_flag = (strcmp(cmd, "uboot_logo") == 0) ? true : false;
+		ret = es_bootchain_logo_write(argc, argv, uboot_flag);
+	} else if (strcmp(cmd, "erase") == 0)
 		ret = do_bootchain_erase(argc, argv);
 	else if (strcmp(cmd, "wboot") == 0)
 		ret = do_boot_write(argc, argv);
@@ -1159,4 +1267,6 @@ U_BOOT_CMD(
 	"es_burn wboot addr len flash_stg	- write bootmenu mode boot filesystem binary file from memory at `addr' to mtd 'flash_stg'\n"
 	"es_burn wroot addr len flash_stg	- write bootmenu mode root filesystem binary file from memory at `addr' to mtd 'flash_stg'\n"
 	"es_burn wmmc addr len	- write .wic image binary file from memory at `addr' to eMMC\n"
+	"es_burn uboot_logo addr             - uboot write logo gzip data from addr\n"
+	"es_burn preboot_logo addr           - preboot write logo gzip data from addr to flash_addr, or specify the start position of the picture by setting the (start_x, start_y)\n"
 );
