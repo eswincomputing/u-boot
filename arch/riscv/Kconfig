@@ -69,6 +69,9 @@ config TARGET_ESWIN_VPU7702_EVB
 config TARGET_ESWIN_VPU7702_PCIE
         bool "Support Eswin VPU7702 PCIE Card"
 
+config TARGET_ESWIN_U2_EVB
+        bool "Support ESWIN U2 EVB Card"
+
 endchoice
 
 config SYS_ICACHE_OFF
@@ -122,6 +125,7 @@ source "board/eswin/eic7700_osm/Kconfig"
 source "board/eswin/FML13V03/Kconfig"
 source "board/eswin/vpu7702_evb/Kconfig"
 source "board/eswin/vpu7702_pcie/Kconfig"
+source "board/eswin/u2_evb/Kconfig"
 
 # platform-specific options below
 source "arch/riscv/cpu/andesv5/Kconfig"

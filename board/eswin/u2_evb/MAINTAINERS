@@ -1,0 +1,6 @@
+ESWIN U2 EVB BOARD
+M:  Joey Zheng <zhengyu@eswincomputing.com>
+S:  Maintained
+F:  board/eswin/u2_evb/
+F:  include/configs/eswin_u2_evb.h
+F:  configs/u2_evb_defconfig
