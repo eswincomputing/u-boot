@@ -128,12 +128,12 @@ int hardware_info_env_set(void)
 
 	char *boardSerialNumber = gHardware_Board_Info.boardSerialNumber;
 	printf("boardSerialNumber %s\n",boardSerialNumber);
-	env_set("fdtfile","eswin/eic7700-z530.dtb");
 
 	return 0;
 }
 
 
+// set cpu voltage to 0.8v
 int set_voltage_default(void)
 {
 	ofnode node;

@@ -2,4 +2,4 @@
 #
 # Copyright 2024 Beijing ESWIN Computing Technology Co., Ltd.
 
-obj-y += eic7700_z530.o
+obj-y += eic7700_som260.o

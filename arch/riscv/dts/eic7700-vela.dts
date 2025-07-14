@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
- * Device Tree file for Eswin EIC7700 Z530 SoC.
+ * Device Tree file for Eswin EIC7700 VELA Board.
  *
  * Copyright 2024, Beijing ESWIN Computing Technology Co., Ltd.. All rights reserved.
  *
@@ -23,38 +23,17 @@
 / {
 	#address-cells = <2>;
 	#size-cells = <2>;
-	model = "ESWIN EIC7700 Z530";
+	model = "ESWIN EIC7700 VELA";
 	compatible = "eswin,eic7700";
 
 	aliases {
 		serial0 = &uart0;
-		i2c0 = &i2c0;
-		i2c1 = &i2c1;
-		i2c2 = &i2c2;
-		i2c3 = &i2c3;
-		i2c4 = &i2c4;
-		i2c5 = &i2c5;
-		i2c6 = &i2c6;
-		i2c7 = &i2c7;
-		i2c8 = &i2c8;
-		i2c9 = &i2c9;
-		i2c11 = &i2c11;
-		i2c12 = &i2c12;
 		gpio0 = &gpio0;
 		spi0 = &bootspi;
 		spi1 = &dw_spi0;
 	};
 };
 
-&dw_spi0 {
-	status = "okay";
-	spi-flash@1 {
-		reg = <1>;
-		compatible = "winbond,w25q128fw",
-			"jedec,spi-nor";
-		spi-max-frequency = <4800000>;
-	};
-};
 &sd {
 	status = "okay";
 	delay_code = <0x3b>;
@@ -79,14 +58,19 @@
 	status = "okay";
 };
 
+
+&pcie {
+	status = "okay";
+};
+
 &eth0 {
 	status = "okay";
 	phy-mode = "rgmii-id";
 	max-speed = <1000>;
 	phy-handle = <&phy0>;
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_gpio76_default>;
-	rst-gpios = <&portc 12 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&pinctrl_gpio80_default>;
+	rst-gpios = <&portc 16 GPIO_ACTIVE_LOW>;
 	dly-param-1000m = <0x23232323 0xa0209023 0x20202020>;
 	dly-param-100m = <0x50505050 0x803f8050 0x3f3f3f3f>;
 	dly-param-10m = <0 0 0>;
@@ -105,8 +89,8 @@
 	max-speed = <1000>;
 	phy-handle = <&phy1>;
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_gpio76_default>;
-	rst-gpios = <&portc 12 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&pinctrl_gpio81_default>;
+	rst-gpios = <&portc 17 GPIO_ACTIVE_LOW>;
 	dly-param-1000m = <0x00000000 0xda02e000 0x02020202>;
 	dly-param-100m = <0x48484848 0x80588048 0x58585858>;
 	dly-param-10m = <0 0 0>;
@@ -119,9 +103,6 @@
 	};
 };
 
-&pcie {
-	status = "okay";
-};
 &display_logo {
 	status = "disabled";
 };
@@ -146,17 +127,5 @@
 	status = "okay";
 };
 &osd {
-	status = "okay";
-};
-&i2c0 {
-	status = "disabled";
-};
-&i2c2 {
-	status = "disabled";
-};
-&i2c3 {
-	status = "disabled";
-};
-&i2c11 {
 	status = "okay";
 };

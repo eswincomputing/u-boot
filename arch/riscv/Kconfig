@@ -51,7 +51,7 @@ config TARGET_FML13V03
 config TARGET_HIFIVE_PREMIER_P550
 	bool "Support HiFive Premier P550 Board"
 
-config TARGET_ESWIN_EIC7700_Z530
+config TARGET_ESWIN_EIC7700_SOM260
 	bool "Support Eswin EIC7700 Z530 Board"
 
 config TARGET_ESWIN_EIC7700_D314
@@ -121,7 +121,7 @@ source "board/thead/th1520_lpi4a/Kconfig"
 source "board/eswin/eic7700_evb/Kconfig"
 source "board/eswin/eic7702_evb/Kconfig"
 source "board/eswin/hifive_premier_p550/Kconfig"
-source "board/eswin/eic7700_z530/Kconfig"
+source "board/eswin/eic7700_som260/Kconfig"
 source "board/eswin/eic7700_d314/Kconfig"
 source "board/eswin/eic7700_sbc/Kconfig"
 source "board/eswin/eic7700_osm/Kconfig"

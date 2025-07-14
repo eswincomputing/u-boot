@@ -1,0 +1,135 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Device Tree file for Eswin EIC7700 SOM260 SoC.
+ *
+ * Copyright 2024, Beijing ESWIN Computing Technology Co., Ltd.. All rights reserved.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 2.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Authors: Xiang Xu <xuxiang@eswincomputing.com>
+ */
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/soc/eswin-pmp.h>
+#include "eic770x.dtsi"
+/ {
+	#address-cells = <2>;
+	#size-cells = <2>;
+	model = "ESWIN EIC7700 SOM260";
+	compatible = "eswin,eic7700";
+
+	aliases {
+		serial0 = &uart0;
+		gpio0 = &gpio0;
+		spi0 = &bootspi;
+	};
+
+	config {
+		power-gpios = <&portc 30 GPIO_ACTIVE_HIGH>;
+	};
+
+	chosen {
+		stdout-path = "serial0";
+	};
+
+	memory@80000000 {
+		device_type = "memory";
+		reg = <0x0 0x80000000 0x4 0x00000000>;
+	};
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		display_reserved: region@E0000000 {
+			reg = <0x0 0xE0000000 0x0 0x2000000>;
+			no-map;
+		};
+
+		lpcpu_reserved: lpcpures@DFFF0000 {
+			reg = <0x00 0xDFFF0000 0x00 0x00010000>;
+			no-map;
+		};
+	};
+	soc {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		compatible = "SiFive,FU800-soc", "fu800-soc", "sifive-soc", "simple-bus";
+		ranges;
+	};
+};
+&cpu0 {
+	status = "okay";
+};
+&cpu1 {
+	status = "okay";
+};
+&cpu2 {
+	status = "okay";
+};
+&cpu3 {
+	status = "okay";
+};
+&plic0{
+	status = "okay";
+};
+&d0_mbox {
+	status = "okay";
+};
+&d0_mbox_srvc {
+	status = "okay";
+};
+&d0_mbox1 {
+	status = "okay";
+};
+&d0_mbox_srvc1 {
+	status = "okay";
+};
+&d0_pmp {
+	status = "okay";
+};
+&uart0 {
+	status = "okay";
+};
+
+&bootspi {
+	status = "okay";
+	cs-gpios = <&portd 0 GPIO_ACTIVE_LOW>;
+	wp-gpios = <&portd 4 GPIO_ACTIVE_LOW>;
+	spi-flash@0 {
+		reg = <0>;
+		compatible = "winbond,w25q64dw",
+			"jedec,spi-nor";
+		spi-max-frequency = <4800000>;
+	};
+};
+
+&sdhci_emmc {
+	status = "okay";
+	delay_code = <0x55>;
+	drive-impedance-ohm = <50>;
+	enable-cmd-pullup;
+	enable-data-pullup;
+	mmc-hs200-1_8v;
+	mmc-hs400-1_8v;
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&pinctrl {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_gpio94_default>;
+};

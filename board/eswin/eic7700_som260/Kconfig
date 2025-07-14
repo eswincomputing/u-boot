@@ -1,9 +1,9 @@
-if TARGET_ESWIN_EIC7700_Z530
+if TARGET_ESWIN_EIC7700_SOM260
 config SYS_BOARD
-	default "eic7700_z530"
+	default "eic7700_som260"
 
 config SYS_CONFIG_NAME
-	default "eswin_eic7700_z530"
+	default "eswin_eic7700_som260"
 
 config SYS_VENDOR
 	default "eswin"

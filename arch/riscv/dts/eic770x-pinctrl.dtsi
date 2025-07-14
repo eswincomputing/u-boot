@@ -1107,12 +1107,12 @@
 					function = "gpio80_func";
 				};
 			};
-			// pinctrl_gpio81_default: gpio81-default{
-			// 	mux {
-			// 		groups = "gpio81_group";
-			// 		function = "gpio81_func";
-			// 	};
-			// };
+			pinctrl_gpio81_default: gpio81-default{
+				mux {
+					groups = "gpio81_group";
+					function = "gpio81_func";
+				};
+			};
 			// pinctrl_gpio82_default: gpio82-default{
 			// 	mux {
 			// 		groups = "gpio82_group";
