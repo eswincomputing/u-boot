@@ -1,0 +1,6 @@
+ESWIN M2 EVB BOARD
+M:  Zhou Liang <zhouliang1@eswincomputing.com>
+S:  Maintained
+F:  board/eswin/m2_evb/
+F:  include/configs/eswin_m2_evb.h
+F:  configs/m2_evb_defconfig
