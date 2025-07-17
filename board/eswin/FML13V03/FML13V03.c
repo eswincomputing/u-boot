@@ -139,7 +139,7 @@ int misc_init_r(void)
 	hardware_info_env_set();
 
 	if (NULL == env_get("fdtfile")) {
-		env_set("fdtfile","eswin/eic7702-evb-a1.dtb");
+		env_set("fdtfile","eswin/eic7702-deepcomputing-fml13v03.dtb");
 	}
 	eswin_update_bootargs();
 	return 0;

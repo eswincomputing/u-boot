@@ -128,7 +128,7 @@
 
 		gpio-110 {
 			gpios = <&portd 14 GPIO_ACTIVE_HIGH>;
-			label = "gpio-109";
+			label = "gpio-110";
 			linux,default-trigger = "default-off";
 		};
 	};

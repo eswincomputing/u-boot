@@ -34,7 +34,7 @@
 
 #define CFG_EXTRA_ENV_SETTINGS \
     BOOTENV \
-    "bootdelay=3\0" \
+    "bootdelay=0\0" \
     "fdt_high=0xffffffffffffffff\0" \
     "initrd_high=0xffffffffffffffff\0" \
     "kernel_addr_r=0x84000000\0" \
