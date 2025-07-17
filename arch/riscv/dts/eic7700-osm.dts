@@ -26,7 +26,7 @@
 / {
 	#address-cells = <2>;
 	#size-cells = <2>;
-	model = "ESWIN EIC7700 EVB A3";
+	model = "ESWIN EIC7700 OSM";
 
 	aliases {
 		serial0 = &uart0;
