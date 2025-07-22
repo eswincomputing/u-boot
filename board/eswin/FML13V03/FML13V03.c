@@ -217,9 +217,20 @@ int board_late_init(void)
 	return 0;
 }
 
+extern int update_memory_nodes_match_start(void *fdt, u64 start[], u64 size[], int banks);
 int ft_board_setup(void *blob, struct bd_info *bd)
 {
-	return fdt_fixup_memory(blob, gd->ram_base, gd->ram_size);
+	u64 start[CONFIG_NR_DRAM_BANKS];
+	u64 size[CONFIG_NR_DRAM_BANKS];
+	u32 banks = 0;
+	for (int i = 0; i < CONFIG_NR_DRAM_BANKS; i++) {
+		if(gd->bd->bi_dram[i].start != 0 && gd->bd->bi_dram[i].size != 0) {
+			start[i] = gd->bd->bi_dram[i].start;
+			size[i] = gd->bd->bi_dram[i].size;
+			banks++;
+		}
+	}
+	return update_memory_nodes_match_start(blob, start, size, banks);
 }
 
 int is_valid_sn(const char* sn)

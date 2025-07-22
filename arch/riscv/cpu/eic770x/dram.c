@@ -208,3 +208,48 @@ phys_addr_t board_get_usable_ram_top(phys_size_t total_size)
 	return gd->ram_top;
 }
 
+int update_memory_nodes_match_start(void *fdt, u64 start[], u64 size[], int banks)
+{
+    int offset = -1;
+    const char *dtype;
+    int len, ret;
+    const fdt64_t *reg_prop;
+    fdt64_t reg_val[2];
+    for(int i = 0; i < banks; i++) {
+        debug("Searching for memory node with start=0x%llx to update...\n", start[i]);
+        while ((offset = fdt_next_node(fdt, offset, NULL)) >= 0) {
+            dtype = fdt_getprop(fdt, offset, "device_type", &len);
+            if (!dtype || strcmp(dtype, "memory") != 0)
+                continue;
+
+            reg_prop = fdt_getprop(fdt, offset, "reg", &len);
+            if (!reg_prop || len < 16) {
+                debug("Node offset %d: invalid reg property\n", offset);
+                continue;
+            }
+
+            u64 node_start = fdt64_to_cpu(reg_prop[0]);
+            u64 node_size  = fdt64_to_cpu(reg_prop[1]);
+
+            debug("Found memory node at offset %d: start=0x%llx size=0x%llx\n", 
+                offset, node_start, node_size);
+
+            if (node_start == start[i]) {
+                debug("Match found. Updating node at offset %d to start=0x%llx size=0x%llx\n",
+                    offset, start[i], size[i]);
+
+                reg_val[0] = cpu_to_fdt64(start[i]);
+                reg_val[1] = cpu_to_fdt64(size[i]);
+
+                ret = fdt_setprop(fdt, offset, "reg", reg_val, sizeof(reg_val));
+                if (ret < 0) {
+                    debug("Failed to update reg: %s\n", fdt_strerror(ret));
+                    return ret;
+                }
+                break;
+            }
+        }
+    }
+
+    return 0;
+}
