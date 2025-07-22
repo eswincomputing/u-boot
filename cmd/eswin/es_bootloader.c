@@ -1118,7 +1118,7 @@ static int do_mmc_write(int argc, char *const argv[])
 int es_bootchain_logo_write(int argc, char *const argv[], bool uboot_flag)
 {
     u32 offset, len, ret, currentIndex = 0;
-	u32 start_x = 0xffffffff, start_y = 0xffffffff;
+	u32 start_x = GZIP_HEAD, start_y = GZIP_HEAD;
     u64 src_addr = simple_strtoul(argv[1], NULL, 16);
 	if (*(u32 *)src_addr != GZIP_HEAD) {
 		printf("ERROR: logo data format is not gzip!\n");
@@ -1140,7 +1140,10 @@ int es_bootchain_logo_write(int argc, char *const argv[], bool uboot_flag)
 			start_x = simple_strtoul(argv[2], NULL, 10);
 			start_y = simple_strtoul(argv[3], NULL, 10);
 		}
+	} else {
+		len = len / 4 * 3;
 	}
+
 	ret = es_bootspi_wp_cfg(flash, 0);
 	if (ret) {
         printf("ERROR: Failed to disEnable bootspi WP\n");
@@ -1152,12 +1155,17 @@ int es_bootchain_logo_write(int argc, char *const argv[], bool uboot_flag)
         printf("ERROR: SPI flash erase failed\n");
 		return CMD_RET_FAILURE;
     }
-	u32 total_size = len;
+
+	u32 total_size = uboot_flag ? len : len - 8;
 	u32 write_cnt = DIV_ROUND_UP(total_size, LOGO_WRITE_BLOCK);
+	u32 write_len = LOGO_WRITE_BLOCK;
 	printf("\rWrite progress: %3d%%:\r", 0);
 	for (int i = 0; i < write_cnt; i++) {
+		if (i == write_cnt - 1 && total_size % LOGO_WRITE_BLOCK != 0) {
+			write_len = total_size % LOGO_WRITE_BLOCK;
+		}
 		ret = spi_flash_write(flash, offset + i * LOGO_WRITE_BLOCK,
-			LOGO_WRITE_BLOCK, ((void *)src_addr + i * LOGO_WRITE_BLOCK));
+							  write_len, ((void *)src_addr + i * LOGO_WRITE_BLOCK));
 		currentIndex = (uint64_t)i * 100 / write_cnt;
 		printf("Write progress: %3lld%%:", currentIndex);
 		for(int col = 0; col < currentIndex / 2; col++) {
