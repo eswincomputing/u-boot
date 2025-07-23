@@ -35,9 +35,16 @@
 #define DIE1_SYS_CON_TESTREG0  		(0x51810668 + 0x20000000)
 
 #define PMIX_RECORD_ADDR            0x40000     /* 0x40000 - 0x43fff (16KiB) */
-#define PMIX_ENTRY_NUM 372  /* (16KiB - 12B) / sizeof(struct pmix_entry) */
+#define PMIX_RECORD_MAX_SIZE		(16*1024)
+#define PMIX_ENTRY_NUM 350
 #define PMIX_MAGIC 0x504d4958
-#define PMIX_VERSION 0x1
+#define PMIX_VERSION 0x4
+
+typedef enum {
+	SWEEP_METHOD_NONE,
+	SWEEP_METHOD_NORMAL,
+	SWEEP_METHOD_SMOOTH,
+} sweep_method_t;
 
 struct One_pmix {
 	uint8_t phase0;
@@ -45,30 +52,55 @@ struct One_pmix {
 	uint8_t phase180;
 	uint8_t phase270;
 	uint8_t width;
-} __packed;
+};
 
 struct pmix_entry
 {
 	struct One_pmix pmix[8];
 	uint16_t temperature;
 	uint8_t valid;
-} __packed;
+	uint8_t reserved;
+};
 
 struct pmix_cfg
 {
-	uint8_t polarity_inverted;
-	uint8_t reserved[31];
-} __packed;
+	union {
+		struct {
+			uint8_t polarity_inverted;
+			uint8_t sweep_method;
+			uint8_t debug_print_enabled;
+			uint8_t fit_valid_degree;
+			uint8_t reserved[28];
+		};
+		uint8_t data[32];
+	};
+};
+
+struct fit_coeffs
+{
+	double c0;
+	double c1;
+};
+
+struct pmix_fit_params
+{
+	struct fit_coeffs phase0_coeffs;
+	struct fit_coeffs phase90_coeffs;
+	struct fit_coeffs phase180_coeffs;
+	struct fit_coeffs phase270_coeffs;
+};
 
 struct pmix_lookup_table
 {
 	uint32_t magic;
 	uint32_t version;
 	struct pmix_cfg cfg;
-	struct pmix_entry pmix_list[PMIX_ENTRY_NUM];
+	struct pmix_fit_params fit_params[8];
+	struct pmix_entry pmix_list[PMIX_ENTRY_NUM]; 
 	uint32_t valid_cnt;
 	uint32_t crc;
-} __packed;
+};
+static_assert(sizeof(struct pmix_lookup_table) <= PMIX_RECORD_MAX_SIZE);
 
 /*
  * struct pvt_poly_term - a term descriptor of the PVT data translation
@@ -474,6 +506,18 @@ static int do_d2d_pmix_get_mode(struct cmd_tbl *cmdtp, int flag, int argc, char 
 	return CMD_RET_SUCCESS;
 }
 
+static uint32_t d2d_pmix_calc_crc(const struct pmix_lookup_table *tbl)
+{
+	const void *addr;
+	uint32_t len;
+
+	/* Calculate CRC only for fix_params, pmix_list and valid_cnt. */
+	addr = tbl->fit_params;
+	len = (void *)&tbl->crc - addr;
+
+	return crc32(0xffffffff, addr, len);
+}
+
 static int d2d_pmix_verify(struct pmix_lookup_table *tbl)
 {
 	uint32_t calculated_crc;
@@ -495,8 +539,7 @@ static int d2d_pmix_verify(struct pmix_lookup_table *tbl)
 
 	/* Calculate and verify CRC */
 	stored_crc = tbl->crc;
-	calculated_crc = crc32(0xffffffff, (const void *)tbl, sizeof(*tbl) -4);
-
+	calculated_crc = d2d_pmix_calc_crc(tbl);
 	if (calculated_crc != stored_crc) {
 		printf("  Error: CRC mismatch (stored: 0x%08x, calculated: 0x%08x)\n",
 		       stored_crc, calculated_crc);
@@ -552,16 +595,259 @@ static int do_d2d_pmix_validate(struct cmd_tbl *cmdtp, int flag, int argc, char 
 	return CMD_RET_SUCCESS;
 }
 
+/* isinf & isnan macros should be provided by math.h */
+#ifndef isinf
+/* The value of Inf - Inf is NaN */
+#define isinf(n) (isnan((n) - (n)) && !isnan(n))
+#endif
+
+#ifndef isnan
+/* NaN is the only floating point value that does NOT equal itself.
+ * Therefore if n != n, then it is NaN. */
+#define isnan(n) ((n != n) ? 1 : 0)
+#endif
+
+static inline void prfloat(void (*putch)(int, void*), void *putdat,
+        double num_ull, unsigned base, int width, int padc)
+{
+#ifdef UNITY_INCLUDE_DOUBLE
+    static const int sig_digits = 9;
+    static const int min_scaled = 100000000;
+    static const int max_scaled = 1000000000;
+#else
+    static const int sig_digits = 7;
+    static const int min_scaled = 1000000;
+    static const int max_scaled = 10000000;
+#endif
+
+    double number = num_ull;
+    /* print minus sign (does not handle negative zero) */
+    if (number < 0.0f)
+    {
+        putch('-', putdat);
+        number = -number;
+    }
+
+    /* handle zero, NaN, and +/- infinity */
+    if (number == 0.0f)
+    {
+        putch('0', putdat);
+    }
+    else if (isnan(number))
+    {
+		putch('n', putdat);
+		putch('a', putdat);
+		putch('n', putdat);
+    }
+    else if (isinf(number))
+    {
+		putch('i', putdat);
+		putch('n', putdat);
+		putch('f', putdat);
+    }
+    else
+    {
+        int n_int = 0, n;
+        int exponent = 0;
+        int decimals, digits;
+        char buf[16] = {0};
+
+        /*
+         * Scale up or down by powers of 10.  To minimize rounding error,
+         * start with a factor/divisor of 10^10, which is the largest
+         * power of 10 that can be represented exactly.  Finally, compute
+         * (exactly) the remaining power of 10 and perform one more
+         * multiplication or division.
+         */
+        if (number < 1.0f)
+        {
+            double factor = 1.0f;
+
+            while (number < (double)max_scaled / 1e10f)  { number *= 1e10f; exponent -= 10; }
+            while (number * factor < (double)min_scaled) { factor *= 10.0f; exponent--; }
+
+            number *= factor;
+        }
+        else if (number > (double)max_scaled)
+        {
+            double divisor = 1.0f;
+
+            while (number > (double)min_scaled * 1e10f)   { number  /= 1e10f; exponent += 10; }
+            while (number / divisor > (double)max_scaled) { divisor *= 10.0f; exponent++; }
+
+            number /= divisor;
+        }
+        else
+        {
+            /*
+             * In this range, we can split off the integer part before
+             * doing any multiplications.  This reduces rounding error by
+             * freeing up significant bits in the fractional part.
+             */
+            double factor = 1.0f;
+            n_int = (int)number;
+            number -= (double)n_int;
+
+            while (n_int < min_scaled) { n_int *= 10; factor *= 10.0f; exponent--; }
+
+            number *= factor;
+        }
+
+        /* round to nearest integer */
+        n = ((int)(number + number) + 1) / 2;
+
+#ifndef UNITY_ROUND_TIES_AWAY_FROM_ZERO
+        /* round to even if exactly between two integers */
+        if ((n & 1) && (((double)n - number) == 0.5f))
+            n--;
+#endif
+
+        n += n_int;
+
+        if (n >= max_scaled)
+        {
+            n = min_scaled;
+            exponent++;
+        }
+
+        /* determine where to place decimal point */
+        decimals = ((exponent <= 0) && (exponent >= -(sig_digits + 3))) ? (-exponent) : (sig_digits - 1);
+        exponent += decimals;
+
+        /* truncate trailing zeroes after decimal point */
+        while ((decimals > 0) && ((n % 10) == 0))
+        {
+            n /= 10;
+            decimals--;
+        }
+
+        /* build up buffer in reverse order */
+        digits = 0;
+        while ((n != 0) || (digits < (decimals + 1)))
+        {
+            buf[digits++] = (char)('0' + n % 10);
+            n /= 10;
+        }
+        while (digits > 0)
+        {
+            if (digits == decimals) { putch('.', putdat); }
+            putch(buf[--digits], putdat);
+        }
+
+        /* print exponent if needed */
+        if (exponent != 0)
+        {
+            putch('e', putdat);
+
+            if (exponent < 0)
+            {
+                putch('-', putdat);
+                exponent = -exponent;
+            }
+            else
+            {
+                putch('+', putdat);
+            }
+
+            digits = 0;
+            while ((exponent != 0) || (digits < 2))
+            {
+                buf[digits++] = (char)('0' + exponent % 10);
+                exponent /= 10;
+            }
+            while (digits > 0)
+            {
+                putch(buf[--digits], putdat);
+            }
+        }
+    }
+}
+
+struct str_buf {
+	char buf[32];
+	int pos;
+};
+
+static void buf_putch(int ch, void *ptr)
+{
+	struct str_buf *str_buf = ptr;
+	str_buf->buf[str_buf->pos++] = ch;
+}
+
+static const char *double_to_str(double number)
+{
+	static struct str_buf str_buf;
+	memset(&str_buf, 0, sizeof(str_buf));
+	prfloat(buf_putch, &str_buf, number, 10, 0, 0);
+	return str_buf.buf;
+}
+
+static const char *d2d_pmix_cfg_name(size_t id)
+{
+	static const char *cfg_name[] = {
+		"Polarity inverted",
+		"Sweep method",
+		"Debug print enabled",
+		"Fit valid degree",
+	};
+
+	if (id >= ARRAY_SIZE(cfg_name))
+		return "";
+
+	return cfg_name[id];
+}
+
 void pmix_lookup_table_print(struct pmix_lookup_table *tbl)
 {
 	long degree;
+    const char *sweep_method_names[] = {
+		[SWEEP_METHOD_NONE]   = "NONE",
+		[SWEEP_METHOD_NORMAL] = "NORMAL",
+		[SWEEP_METHOD_SMOOTH] = "SMOOTH"
+    };
+
+    // Safely handle unknown sweep methods
+    const char *method_name = "UNKNOWN";
+    if (tbl->cfg.sweep_method < sizeof(sweep_method_names) / sizeof(sweep_method_names[0])) {
+		method_name = sweep_method_names[tbl->cfg.sweep_method];
+    }
 
 	printf("lookup table print\n");
 
-	printf("\tMagic: 0x%X, Version: 0x%X, Valid entry: %d\n", tbl->magic, tbl->version, tbl->valid_cnt);
-	if (0 == tbl->valid_cnt || tbl->valid_cnt == 0xffffffff) {
+    printf("\tMagic: 0x%X, Version: 0x%X, Valid entry: %d, Sweep method: %s\n", tbl->magic, tbl->version, tbl->valid_cnt, method_name);
+
+	if (d2d_pmix_verify(tbl) != CMD_RET_SUCCESS)
 		return;
+
+	printf("\tConfig:\n");
+	for (size_t i = 0; i < ARRAY_SIZE(tbl->cfg.data); i++) {
+		if (!strcmp(d2d_pmix_cfg_name(i), ""))
+			continue;
+		printf("\t\t%s: %d\n", d2d_pmix_cfg_name(i), tbl->cfg.data[i]);
 	}
+
+	if (tbl->cfg.fit_valid_degree != 0xff) {
+		for (size_t i = 0; i < ARRAY_SIZE(tbl->fit_params); i++) {
+			printf("\tFit[%ld]:\n", i);
+
+			printf("\t\tPhase0: ");
+			printf("c0=%s, ", double_to_str(tbl->fit_params[i].phase0_coeffs.c0));
+			printf("c1=%s\n", double_to_str(tbl->fit_params[i].phase0_coeffs.c1));
+
+			printf("\t\tPhase90: ");
+			printf("c0=%s, ", double_to_str(tbl->fit_params[i].phase90_coeffs.c0));
+			printf("c1=%s\n", double_to_str(tbl->fit_params[i].phase90_coeffs.c1));
+
+			printf("\t\tPhase180: ");
+			printf("c0=%s, ", double_to_str(tbl->fit_params[i].phase180_coeffs.c0));
+			printf("c1=%s\n", double_to_str(tbl->fit_params[i].phase180_coeffs.c1));
+
+			printf("\t\tPhase270: ");
+			printf("c0=%s, ", double_to_str(tbl->fit_params[i].phase270_coeffs.c0));
+			printf("c1=%s\n", double_to_str(tbl->fit_params[i].phase270_coeffs.c1));
+		}
+	}
+
 	for (int i = 0; i < PMIX_ENTRY_NUM; i++) {
 		struct pmix_entry *entry = &tbl->pmix_list[i];
 		if (1 != entry->valid)
@@ -580,6 +866,7 @@ void pmix_lookup_table_print(struct pmix_lookup_table *tbl)
 					entry->pmix[j].width);
 		}
 	}
+
 	printf("CRC: 0x%X\n", tbl->crc);
 }
 
@@ -610,8 +897,8 @@ static int d2d_pmix_prune(struct pmix_lookup_table *tbl, int min_degree, int max
 {
 	uint32_t i;
 	uint32_t start, end;
-	uint32_t valid_cnt;
 	long degree;
+	uint32_t prune_cnt = 0;
 
 	if (min_degree > max_degree)
 		return -1;
@@ -633,7 +920,7 @@ static int d2d_pmix_prune(struct pmix_lookup_table *tbl, int min_degree, int max
 	}
 
 	if (i >= tbl->valid_cnt)
-		return -1;
+		goto out;
 
 	for (; i < tbl->valid_cnt; i++) {
 		degree = pmix_table_idx_degree_lookup(tbl, i);
@@ -642,30 +929,42 @@ static int d2d_pmix_prune(struct pmix_lookup_table *tbl, int min_degree, int max
 			break;
 		} else if (degree > (max_degree * 1000)) {
 			if (i == start)
-				return -1;
+				goto out;
 			end = i - 1;
 			break;
 		}
 	}
 
-	valid_cnt = end - start + 1;
-	if (start > 0) {
-		for (i = 0; i < valid_cnt; i++) {
-			memcpy(&tbl->pmix_list[i], &tbl->pmix_list[start + i], sizeof(struct pmix_entry));
+	/*
+	 * [O][O][X][X][X][X][O][O][O]
+	 *        ^        ^
+	 *        |        |
+	 *        S        E
+	 *
+	 * [O][O][O][O][O][X][X][X][X]
+	 *        ^        ^
+	 *        |        |
+	 *        S        E
+	 */
+	prune_cnt = end - start + 1;
+	if (prune_cnt > 0) {
+		uint32_t mov_cnt = tbl->valid_cnt - end - 1;
+
+		for (i = 0; i < mov_cnt; i++) {
+			memcpy(&tbl->pmix_list[start + i], &tbl->pmix_list[end + 1 + i], sizeof(struct pmix_entry));
 		}
+		memset(&tbl->pmix_list[start + mov_cnt], 0, sizeof(struct pmix_entry) * prune_cnt);
+
+		tbl->valid_cnt -= prune_cnt;
+		tbl->crc = d2d_pmix_calc_crc(tbl);
 	}
 
-	if (valid_cnt < tbl->valid_cnt) {
-		memset(&tbl->pmix_list[valid_cnt], 0, sizeof(struct pmix_entry) * (tbl->valid_cnt - valid_cnt));
-	}
-
-	tbl->valid_cnt = valid_cnt;
-	tbl->crc = crc32(0xffffffff, (const void *)tbl, sizeof(*tbl) - 4);
-
+out:
 	printf("====prune result====\n");
+	printf("prune_cnt: %d\n", prune_cnt);
 	printf("valid_cnt: %d\n", tbl->valid_cnt);
 	printf("crc: 0x%08x\n", tbl->crc);
-	return 0;
+	return (int)prune_cnt;
 }
 
 static int do_d2d_pmix_prune(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
@@ -703,18 +1002,83 @@ static int do_d2d_pmix_prune(struct cmd_tbl *cmdtp, int flag, int argc, char *co
 	}
 
 	ret = d2d_pmix_prune(&_pmix_tbl, min_degree, max_degree);
-	if (ret) {
+	if (ret < 0) {
 		printf("  Error: Failed to prune PMIX data (err=%d)\n", ret);
 		return CMD_RET_FAILURE;
-	}
-
-	ret = d2d_pmix_store(node_name, &_pmix_tbl);
-	if (ret) {
-		printf("  Error: Failed to store PMIX data (err=%d)\n", ret);
-		return CMD_RET_FAILURE;
+	} else if (ret > 0) {
+		ret = d2d_pmix_store(node_name, &_pmix_tbl);
+		if (ret) {
+			printf("  Error: Failed to store PMIX data (err=%d)\n", ret);
+			return CMD_RET_FAILURE;
+		}
 	}
 
 	printf("Die %d PMIX data pruned (Min: %d, Max: %d) successfully.\n", die_num, min_degree, max_degree);
+	return CMD_RET_SUCCESS;
+}
+
+static int do_d2d_pmix_cfg(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+{
+	int ret;
+	int die_num = 0;
+	char *node_name = "spi@51800000";
+	size_t id = 0;
+	uint8_t data = 0;
+
+	if (argc < 2) {
+		return CMD_RET_USAGE;
+	}
+
+	if (!strcmp(argv[1], "1")) {
+		die_num = 1;
+		node_name = "spi@71800000";
+	}
+
+	/* Load PMIX data from */
+	ret = d2d_pmix_load(node_name, &_pmix_tbl);
+	if (ret) {
+		printf("  Error: Failed to load PMIX data (err=%d)\n", ret);
+		return CMD_RET_FAILURE;
+	}
+
+	/* Verify PMIX data */
+	ret = d2d_pmix_verify(&_pmix_tbl);
+	if (ret != CMD_RET_SUCCESS) {
+		printf("  Error: PMIX data is invalid (err=%d)\n", ret);
+		return ret;
+	}
+
+	if (argc < 3) {
+		for (size_t i = 0; i < ARRAY_SIZE(_pmix_tbl.cfg.data); i++) {
+			if (!strcmp(d2d_pmix_cfg_name(i), ""))
+				continue;
+			printf("Die %d CFG[%02ld] - %s: %d\n", die_num, i, d2d_pmix_cfg_name(i), _pmix_tbl.cfg.data[i]);
+		}
+		return CMD_RET_SUCCESS;
+	}
+
+	id = simple_strtol(argv[2], NULL, 0);
+	if (id >= ARRAY_SIZE(_pmix_tbl.cfg.data)) {
+		printf("  Error: invalid index.\n");
+	}
+
+	if (argc < 4) {
+		printf("Die %d CFG[%02ld] - %s: %d\n", die_num, id, d2d_pmix_cfg_name(id), _pmix_tbl.cfg.data[id]);
+		return CMD_RET_SUCCESS;
+	}
+
+	data = simple_strtol(argv[3], NULL, 0);
+	if (_pmix_tbl.cfg.data[id] != data) {
+		_pmix_tbl.cfg.data[id] = data;
+
+		ret = d2d_pmix_store(node_name, &_pmix_tbl);
+		if (ret) {
+			printf("  Error: Failed to store PMIX data (err=%d)\n", ret);
+			return CMD_RET_FAILURE;
+		}
+	}
+
+	printf("Die %d CFG[%02ld] - %s set to %d successfully.\n", die_num, id, d2d_pmix_cfg_name(id), _pmix_tbl.cfg.data[id]);
 	return CMD_RET_SUCCESS;
 }
 
@@ -727,6 +1091,7 @@ static struct cmd_tbl d2d_sub[] = {
 	U_BOOT_CMD_MKENT(get mode, 1, 0, do_d2d_pmix_get_mode, "", ""),
 	U_BOOT_CMD_MKENT(pmix show, 2, 0, do_d2d_pmix_show, "", ""),
 	U_BOOT_CMD_MKENT(pmix prune, 4, 0, do_d2d_pmix_prune, "", ""),
+	U_BOOT_CMD_MKENT(pmix cfg, 4, 0, do_d2d_pmix_cfg, "", ""),
 };
 
 /* Parent command handler remains unchanged */
@@ -769,4 +1134,7 @@ U_BOOT_CMD(
 	"d2d get mode - Get D2D operating mode\n"
 	"d2d pmix show [die_num] - Show D2D PMIX Data for `die_num`\n"
 	"d2d pmix prune die_num min_degree max_degree - Prune D2D PMIX Data using\n"
-	"				`min_degree` and `max_degree` for `die_num`\n");
+	"				`min_degree` and `max_degree` for `die_num`\n"
+	"d2d pmix cfg die_num [index] [value] - Set D2D PMIX Config `index` to `value`.\n"
+	"				for `die_num`. Display only if `value` is not provided.\n"
+	);
