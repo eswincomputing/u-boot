@@ -1040,14 +1040,17 @@ static int do_vendor_write(int argc, char *const argv[])
 	if(gHardware_Board_Info->magicNumber != HARDWARE_BOARD_INFO_MAGIC_NUMBER)
 		return -ENOENT;
 
+	es_bootspi_wp_cfg(flash, 0);
 	ret = norflash_write_bootchain((uint64_t)&gHardware_Board_Info->magicNumber, HARDWARE_BOARD_INFO_FLASH_MAIN_OFFSET, size);
 	if(ret)
-		return -1;
+		goto out;
 	ret = norflash_write_bootchain((uint64_t)&gHardware_Board_Info->magicNumber, HARDWARE_BOARD_INFO_FLASH_BACKUP_OFFSET, size);
 	if(ret)
-		return -1;
+		goto out;
+	es_bootspi_wp_cfg(flash, 1);
 	printf("vendor info write OK\r\n");
-	return 0;
+out:
+	return ret;
 }
 
 static int do_mmc_write(int argc, char *const argv[])
