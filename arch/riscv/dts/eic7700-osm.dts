@@ -171,8 +171,8 @@
 
 &sdhci_emmc {
 	status = "okay";
-	delay_code = <0x27>;
-	drive-impedance-ohm = <50>;
+	delay_code = <0x3c>;
+	drive-impedance-ohm = <33>;
 	enable-cmd-pullup;
 	enable-data-pullup;
 	mmc-hs200-1_8v;

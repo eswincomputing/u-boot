@@ -38,9 +38,7 @@
 /* 400KHz is max freq for card ID etc. Use that as min */
 #define EMMC_MIN_FREQ   400000
 #define  ESWIN_SDHCI_CTRL_HS400	0x0007 /* Non-standard */
-#define TUNING_RANGE_THRESHOLD   40
 
-#define mmc_hostname(x)   ((x)->dev->name)
 extern int mmc_switch(struct mmc *mmc, u8 set, u8 index, u8 value);
 
 struct eswin_sdhci_plat
@@ -571,9 +569,9 @@ int eswin_sdhci_execute_tuning(struct mmc *mmc, u8 opcode)
 
 	sdhci_writew(host, 0x0, SDHCI_CMD_DATA);
 	ret = eswin_sdhci_phase_code_tuning(host, opcode);
-	if(ret)
-		return ret;
-	ret = eswin_sdhci_sdio_delay_tuning(host, opcode);
+	// if(ret)
+		// return ret;
+	// ret = eswin_sdhci_sdio_delay_tuning(host, opcode);
 	return ret;
 }
 

@@ -24,7 +24,10 @@
 
 #include <linux/bitops.h>
 
+#define TUNING_RANGE_THRESHOLD   40
+
 #define HOST_DIE_OFFSET(host) (host->node_id * 0x20000000)
+#define mmc_hostname(x)   ((x)->dev->name)
 #define ESWIN_MSHC_CORE_CLK_REG 0x51828160UL
 #define ESWIN_HSPDMA_RST_CTRL   0x5182841cUL
 #define ESWIN_HSPDMA_SD_RST ((0x7 << 3) | (0x7 << 6) | (1 << 17) | (1 << 18) | (1 << 21) | (1 << 22))
@@ -597,7 +600,7 @@ struct eswin_sdhci_phy_data {
 	unsigned int enable_strobe_pulldown;
 	unsigned int enable_data_pullup;
 	unsigned int enable_cmd_pullup;
-	unsigned int delay_code;
+	int delay_code;
 };
 
 struct eswin_sdhci_data {
