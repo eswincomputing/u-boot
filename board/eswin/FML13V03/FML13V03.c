@@ -163,7 +163,10 @@ void irq_mux_route(void)
 	 * TIMER3 bit1~0
 	*/
 
-	// writel(val,(void *)(0x51810000+0x3c0));
+	val = readl((void *)(0x51810000+0x3c0));
+	val &= ~(1u << 16);
+	writel(val,(void *)(0x51810000+0x3c0));
+
 	val = readl((void *)(0x71810000+0x3c0));
 	val &= ~(1u << 12);
 	writel(val,(void *)(0x71810000+0x3c0));
