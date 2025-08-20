@@ -205,7 +205,7 @@ int board_late_init(void)
 #endif
 	return 0;
 }
-extern int update_memory_nodes_match_start(void *fdt, u64 mem_start, u64 new_start, u64 new_size);
+extern int update_memory_nodes_match_start(void *fdt, u64 start[], u64 size[], int banks);
 int ft_board_setup(void *blob, struct bd_info *bd)
 {
 	u64 start[CONFIG_NR_DRAM_BANKS];
