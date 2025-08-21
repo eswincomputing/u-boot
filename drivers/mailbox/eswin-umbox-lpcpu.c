@@ -65,7 +65,6 @@
 
 #define MBOX_MSG_LEN 4  // unit 4bytes,total=4*4bytes
 
-static struct spi_flash *flash = NULL;
 static u32 die_offset = 0;
 
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
@@ -292,13 +291,13 @@ static void eswin_lpcpu_coreclk_ctrl(uint8_t divisor)
 {
     u32 val = 0;
     // close gate
-    writel(0x0, (void __iomem*)(syscrg_csr_base + lpcpu_coreclk_ctrl + die_offset));
+    writel(0x0, (void __iomem*)(uint64_t)(syscrg_csr_base + lpcpu_coreclk_ctrl + die_offset));
     // set divisor & selected clk source
     val = (divisor & 0xfu) << 4;
-    writel(val, (void __iomem*)(syscrg_csr_base + lpcpu_coreclk_ctrl + die_offset));
+    writel(val, (void __iomem*)(uint64_t)(syscrg_csr_base + lpcpu_coreclk_ctrl + die_offset));
     // enable gate
     val |=  0x1u << 31;
-    writel(val, (void __iomem*)(syscrg_csr_base + lpcpu_coreclk_ctrl + die_offset));
+    writel(val, (void __iomem*)(uint64_t)(syscrg_csr_base + lpcpu_coreclk_ctrl + die_offset));
 }
 
 /*
@@ -308,18 +307,18 @@ static void eswin_lpcpu_busclk_ctrl(uint8_t ratio)
 {
     u32 val = 0;
     // close gate
-    writel(0x0, (void __iomem*)(syscrg_csr_base + lpcpu_busclk_ctrl + die_offset));
+    writel(0x0, (void __iomem*)(uint64_t)(syscrg_csr_base + lpcpu_busclk_ctrl + die_offset));
     // set divisor & selected clk source
     val = (ratio & 0x1u) << 16;
-    writel(val, (void __iomem*)(syscrg_csr_base + lpcpu_busclk_ctrl + die_offset));
+    writel(val, (void __iomem*)(uint64_t)(syscrg_csr_base + lpcpu_busclk_ctrl + die_offset));
     // enable gate
     val =  0x1u << 31;
-    writel(val, (void __iomem*)(syscrg_csr_base + lpcpu_busclk_ctrl + die_offset));
+    writel(val, (void __iomem*)(uint64_t)(syscrg_csr_base + lpcpu_busclk_ctrl + die_offset));
 }
 
 static void eswin_lpcpu_rst_ctrl(unsigned int val)
 {
-    writel(val, (void __iomem*)(syscrg_csr_base + lpcpu_rst_ctrl + die_offset));
+    writel(val, (void __iomem*)(uint64_t)(syscrg_csr_base + lpcpu_rst_ctrl + die_offset));
 }
 
 static int eswin_umbox_probe(struct udevice *dev)
@@ -336,12 +335,8 @@ static int eswin_umbox_probe(struct udevice *dev)
     unsigned long fw_ddr_addr;
     uint64_t len_read;
     int32_t ret = 0;
-    int len, numa_node;
-    fdt_addr_t ddr_addr;
+    int numa_node;
     u32 addr_offset;
-    u64 size, offset, dst_addr;
-    unsigned int *flags;
-    struct ofnode_phandle_args args;
 
     debug("%s(dev=%p)\n", __func__, dev);
     node = (const struct device_node*) dev->node_.np;
@@ -401,7 +396,7 @@ static int eswin_umbox_probe(struct udevice *dev)
     eswin_lpcpu_coreclk_ctrl(0x2);
     eswin_lpcpu_busclk_ctrl(0x0);
 
-	writel(LPCPU_FW_LOAD_ADDR + addr_offset, (void __iomem*)(syscrg_csr_base + lpcpu_boot_address + die_offset));
+	writel(LPCPU_FW_LOAD_ADDR + addr_offset, (void __iomem*)(uint64_t)(syscrg_csr_base + lpcpu_boot_address + die_offset));
     eswin_lpcpu_rst_ctrl(0x7);
     mdelay(5);
 

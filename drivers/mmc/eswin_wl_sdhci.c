@@ -65,8 +65,7 @@ static int eswin_sd_probe(struct udevice *dev)
 	struct eswin_sd_plat *plat = dev_get_plat(dev);
 	struct eswin_sdhci_data *eswin_sdhci_sdio = dev_get_priv(dev);
 	struct sdhci_host *host = &eswin_sdhci_sdio->host;
-	int max_frequency, ret;
-	u32 val = 0;
+	int ret;
 
 	host->ioaddr = (void *)dev_read_addr(dev);
 	host->mmc = &plat->mmc;

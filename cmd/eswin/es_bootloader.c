@@ -458,7 +458,7 @@ static int esburn_init_load_addr(uint64_t addr, uint64_t size)
 	return 0;
 }
 
-void defrag_move_cb(void *user_data, defrag_info_t *info)
+void defrag_move_cb(void *user_data, const defrag_info_t *info)
 {
 	uint8_t *fw_data = NULL;
 	printf("Defrag move: 0x%08lx => 0x%08lx, size=%zu\n",
@@ -490,7 +490,7 @@ int compare_by_addr(const void *a, const void *b)
 
 static int check_boardloader_info(void)
 {
-	int32_t ret, size;
+	int32_t size;
 	uint64_t len = BOOTLOADER_INFO_SIZE;
 
 	flash_info_t *src_flash_info = malloc_cache_aligned(len);
@@ -500,14 +500,15 @@ static int check_boardloader_info(void)
 
 	memcpy(src_flash_info->entries, flash_entry, sizeof(flash_entry));
 	size = sizeof(src_flash_info->num_entries) + sizeof(flash_info_entry_t) * src_flash_info->num_entries;
-	uint32_t crc_src = crc32(0, &src_flash_info->num_entries, size);
+	uint32_t crc_src = crc32(0, (void*)&src_flash_info->num_entries, size);
 	src_flash_info->crc = crc_src;
 
-	// printf("SOURCE FLASH INFO : magic %x, num %d crc %x\n", src_flash_info->magic, src_flash_info->num_entries, crc_src);
-	// printf("SOURCE FLASH size : num_entries %d, magic %d\n", sizeof(src_flash_info->num_entries), sizeof(src_flash_info->magic));
-	// for (int i = 0; i < count; i++)
-	// 	printf("Entry %d: typeid=%u addr=0x%lx siz=0x%zx\n", \
-	// 		i, src_flash_info->entries[i].typeid, src_flash_info->entries[i].addr, src_flash_info->entries[i].size);
+	/* 
+	printf("SOURCE FLASH INFO : magic %x, num %d crc %x\n", src_flash_info->magic, src_flash_info->num_entries, crc_src);	printf("SOURCE FLASH size : num_entries %d, magic %d\n", sizeof(src_flash_info->num_entries), sizeof(src_flash_info->magic));
+	for (int i = 0; i < count; i++)
+		printf("Entry %d: typeid=%u addr=0x%lx siz=0x%zx\n", 
+	 		i, src_flash_info->entries[i].typeid, src_flash_info->entries[i].addr, src_flash_info->entries[i].size);
+	*/
 
 	flash_info_t *dst_flash_info = malloc_cache_aligned(len);
 	if(dst_flash_info == NULL)
@@ -518,13 +519,15 @@ static int check_boardloader_info(void)
 	}
 
 	size = sizeof(dst_flash_info->num_entries) + sizeof(flash_info_entry_t) * dst_flash_info->num_entries;
-	uint32_t crc_dst = crc32(0, &dst_flash_info->num_entries, size);
+	uint32_t crc_dst = crc32(0, (void*)&dst_flash_info->num_entries, size);
 
-	// printf("DST FLASH INFO : magic %x, num %d crc %x\n", dst_flash_info->magic, dst_flash_info->num_entries, crc_src);
-	// printf("DST FLASH size : num_entries %d, magic %d\n", sizeof(dst_flash_info->num_entries), sizeof(dst_flash_info->magic));
-	// for (int i = 0; i < count; i++)
-	// 	printf("Entry %d: typeid=%u addr=0x%lx siz=0x%zx\n", \
-	// 		i, dst_flash_info->entries[i].typeid, dst_flash_info->entries[i].addr, dst_flash_info->entries[i].size);
+	/*
+	printf("DST FLASH INFO : magic %x, num %d crc %x\n", dst_flash_info->magic, dst_flash_info->num_entries, crc_src);
+	printf("DST FLASH size : num_entries %d, magic %d\n", sizeof(dst_flash_info->num_entries), sizeof(dst_flash_info->magic));
+	for (int i = 0; i < count; i++)
+		printf("Entry %d: typeid=%u addr=0x%lx siz=0x%zx\n", \
+	 		i, dst_flash_info->entries[i].typeid, dst_flash_info->entries[i].addr, dst_flash_info->entries[i].size);
+	*/
 
 	if(crc_dst != dst_flash_info->crc || src_flash_info->crc != dst_flash_info->crc)
 		goto update;
@@ -532,7 +535,7 @@ static int check_boardloader_info(void)
 	goto out;
 
 update:
-	es_write_bootchain(src_flash_info, BOOTLOAD_INFO_OFFSET, len);
+	es_write_bootchain((uint64_t)src_flash_info, BOOTLOAD_INFO_OFFSET, len);
 out:
 	free(src_flash_info);
 	free(dst_flash_info);
@@ -555,8 +558,6 @@ void update_flash_entry(uint64_t flash_size, uint64_t img_offset)
 			flash_entry[i].size = flash_entry[i + 1].addr - flash_entry[i].addr;
 		else
 			flash_entry[i].size = flash_size - flash_entry[i].addr;
-		// printf("Entry %d: typeid=%u addr=0x%lx siz=0x%zx\n", \
-			i, flash_entry[i].typeid, flash_entry[i].addr, flash_entry[i].size);
 	}
 	check_boardloader_info();
 }
@@ -1170,7 +1171,7 @@ int es_bootchain_logo_write(int argc, char *const argv[], bool uboot_flag)
 		ret = spi_flash_write(flash, offset + i * LOGO_WRITE_BLOCK,
 							  write_len, ((void *)src_addr + i * LOGO_WRITE_BLOCK));
 		currentIndex = (uint64_t)i * 100 / write_cnt;
-		printf("Write progress: %3lld%%:", currentIndex);
+		printf("Write progress: %3d%%:", currentIndex);
 		for(int col = 0; col < currentIndex / 2; col++) {
 			printf("%s", "+");
 		}
