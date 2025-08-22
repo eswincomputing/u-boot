@@ -1,0 +1,6 @@
+ESWIN D560 EP EVB BOARD
+M:  Liang Zhou <zhouliang1@eswincomputing.com>
+S:  Maintained
+F:  board/eswin/d560_ep_evb/
+F:  include/configs/eswin_d560_ep_evb.h
+F:  configs/d560_ep_evb_defconfig
