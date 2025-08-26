@@ -66,8 +66,9 @@ static int menukey;
 #define BAR0_UPDATE 0xC00E
 #define BAR0_UPDATE_DONE 0xDB0A
 
-#define TEST_REG0	0x51810668
-#define TEST_REG3_OFFSET    0x51810674
+#define TEST_REG0 0x51810668
+#define TEST_REG2 0x51810670
+#define TEST_REG3 0x51810674
 #define PCIE_CTRL_CFG14	0x50000034
 
 #define VERSION_TABLE_PHYS_ADDR 0x104413000ULL
@@ -488,7 +489,7 @@ static int es_bar0_update()
 	u32 testreg_var = 0;
 	u32 reg;
 
-	testreg_var = readl((u32 *)TEST_REG3_OFFSET);
+	testreg_var = readl((u32 *)TEST_REG3);
 	printf("update bar0 reg val=0x%x.\n", testreg_var);
 	writel(testreg_var, (u32 *)PCIE_CTRL_CFG14);
 
@@ -506,16 +507,26 @@ static int abortboot_single_key(int bootdelay)
 	unsigned long ts;
 	u32 testreg_var = 0;
 	int ret = 0;
+	const char *board_name;
 
 	if (save_firmware_version_to_shm()) {
 		printf("Failed to save firmware version to shared memory\n");
 	}
 
+	board_name = env_get("board_name");
+
 	/*
 	 * set test reg to info host ready for loading image
 	 */
-	writel(READY_SIGN, (u32 *)TEST_REG0);
-	testreg_var = readl((u32 *)TEST_REG0);
+	if (!strncmp("vpu7702_evb", board_name, 11) ||
+		!strncmp("vpu7702_pcie", board_name, 12)) {
+		writel(READY_SIGN, (u32 *)TEST_REG0);
+		testreg_var = readl((u32 *)TEST_REG0);
+	} else {
+		writel(READY_SIGN, (u32 *)TEST_REG2);
+		testreg_var = readl((u32 *)TEST_REG2);
+	}
+
 	if (testreg_var != READY_SIGN) {
 		printf("WARNING! set test reg failed. value is %d\n", testreg_var);
 	}
@@ -554,7 +565,12 @@ static int abortboot_single_key(int bootdelay)
 			 * autoboot if OS image is loaded from host
 			 * by checking test reg
 			 */
-			testreg_var = readl((u32 *)TEST_REG0);
+			if (!strncmp("vpu7702_evb", board_name, 11) ||
+				!strncmp("vpu7702_pcie", board_name, 12)) {
+				testreg_var = readl((u32 *)TEST_REG0);
+			} else {
+				testreg_var = readl((u32 *)TEST_REG2);
+			}
 			if (testreg_var == BAR0_UPDATE) {
 				printf("update bar0....\n");
 				ret = es_bar0_update();
@@ -562,8 +578,15 @@ static int abortboot_single_key(int bootdelay)
 					abort = 1;
 					break;
 				}
-				writel(BAR0_UPDATE_DONE, (u32 *)TEST_REG0);
-				testreg_var = readl((u32 *)TEST_REG0);
+				if (!strncmp("vpu7702_evb", board_name, 11) ||
+					!strncmp("vpu7702_pcie", board_name, 12)) {
+					writel(BAR0_UPDATE_DONE, (u32 *)TEST_REG0);
+					testreg_var = readl((u32 *)TEST_REG0);
+				} else {
+					writel(BAR0_UPDATE_DONE, (u32 *)TEST_REG2);
+					testreg_var = readl((u32 *)TEST_REG2);
+				}
+
 				if (testreg_var != BAR0_UPDATE_DONE) {
 					printf("WARNING! set test reg failed. value is %d\n", testreg_var);
 				}
