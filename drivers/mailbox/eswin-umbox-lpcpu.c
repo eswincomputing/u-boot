@@ -287,13 +287,16 @@ static int eswin_umbox_bind(struct udevice *dev)
     return 0;
 }
 
+/*
+ * lpcpu core clock ratio selection. 0-1: 24M, 2(defualt)-15: 800M/divisor
+ */
 static void eswin_lpcpu_coreclk_ctrl(uint8_t divisor)
 {
     u32 val = 0;
     // close gate
     writel(0x0, (void __iomem*)(uint64_t)(syscrg_csr_base + lpcpu_coreclk_ctrl + die_offset));
     // set divisor & selected clk source
-    val = (divisor & 0xfu) << 4;
+    val = (divisor > 1) ? (divisor & 0xfu) << 4 : 0x1u;
     writel(val, (void __iomem*)(uint64_t)(syscrg_csr_base + lpcpu_coreclk_ctrl + die_offset));
     // enable gate
     val |=  0x1u << 31;
@@ -393,7 +396,7 @@ static int eswin_umbox_probe(struct udevice *dev)
     // lpcpu bringup from ddr
     flush_cache(LPCPU_FW_LOAD_ADDR + addr_offset, len_read);
     eswin_lpcpu_rst_ctrl(0x0);
-    eswin_lpcpu_coreclk_ctrl(0x2);
+    eswin_lpcpu_coreclk_ctrl(0x0);
     eswin_lpcpu_busclk_ctrl(0x0);
 
 	writel(LPCPU_FW_LOAD_ADDR + addr_offset, (void __iomem*)(uint64_t)(syscrg_csr_base + lpcpu_boot_address + die_offset));
