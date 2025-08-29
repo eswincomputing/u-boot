@@ -78,6 +78,9 @@ config TARGET_ESWIN_M2_EVB
 config TARGET_ESWIN_EBC7702_P01_D560
         bool "Support Eswin EBC7702-P01 D560 Board"
 
+config TARGET_ESWIN_EBC7702_P01_PCIE
+        bool "Support Eswin EBC7702-P01 PCIE Board"
+
 endchoice
 
 config SYS_ICACHE_OFF
@@ -134,6 +137,7 @@ source "board/eswin/vpu7702_pcie/Kconfig"
 source "board/eswin/u2_evb/Kconfig"
 source "board/eswin/m2_evb/Kconfig"
 source "board/eswin/ebc7702_p01_d560/Kconfig"
+source "board/eswin/ebc7702_p01_pcie/Kconfig"
 
 # platform-specific options below
 source "arch/riscv/cpu/andesv5/Kconfig"

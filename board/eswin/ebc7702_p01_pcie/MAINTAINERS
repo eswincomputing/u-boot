@@ -1,0 +1,6 @@
+ESWIN EBC7702-P01 PCIE BOARD
+M:  Liang Zhou <zhouliang1@eswincomputing.com>
+S:  Maintained
+F:  board/eswin/ebc7702_p01_pcie/
+F:  include/configs/eswin_ebc7702_p01_pcie.h
+F:  configs/ebc7702_p01_pcie_defconfig
