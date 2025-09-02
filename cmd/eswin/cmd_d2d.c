@@ -96,7 +96,7 @@ struct pmix_lookup_table
 	uint32_t version;
 	struct pmix_cfg cfg;
 	struct pmix_fit_params fit_params[8];
-	struct pmix_entry pmix_list[PMIX_ENTRY_NUM]; 
+	struct pmix_entry pmix_list[PMIX_ENTRY_NUM];
 	uint32_t valid_cnt;
 	uint32_t crc;
 };
@@ -445,10 +445,10 @@ static int do_d2d_pmix_get_curr_temp(struct cmd_tbl *cmdtp, int flag, int argc, 
 	long temp_diff;
 
 	/* Read PVT raw temperature value from Die 0 */
-	die0_temp = ioread32((void *)DIE0_SYS_CON_TESTREG0);
+	die0_temp = ioread32((void *)DIE0_SYS_CON_TESTREG0) & 0xFFFF;
 
 	/* Read PVT raw temperature value from Die 1 */
-	die1_temp = ioread32((void *)DIE1_SYS_CON_TESTREG0);
+	die1_temp = ioread32((void *)DIE1_SYS_CON_TESTREG0) & 0xFFFF;
 
 	/* Convert to degrees Celsius (in milli-degree units) */
 	die0_degree = eswin_pvt_calc_poly(&poly_N_to_temp, die0_temp);
