@@ -354,12 +354,24 @@ static int usb_kbd_irq(struct usb_device *dev)
 static inline void usb_kbd_poll_for_event(struct usb_device *dev)
 {
 #if defined(CONFIG_SYS_USB_EVENT_POLL)
+	int ret;
+	static int error_count = 0;
 	struct usb_kbd_pdata *data = dev->privptr;
 
+	/* Suspend detect disconnect if more than 5 times errors.*/
+	if (error_count > 5) {
+		data->last_report = -1;
+		return;
+	}
+
 	/* Submit an interrupt transfer request */
-	if (usb_int_msg(dev, data->intpipe, &data->new[0],
-			data->intpktsize, data->intinterval, true) >= 0)
+	ret = usb_int_msg(dev, data->intpipe, &data->new[0],
+			data->intpktsize, data->intinterval, true);
+	if (ret == -ETIMEDOUT || ret == -EINVAL)
+		error_count++;
+	else if (ret >= 0)
 		usb_kbd_irq_worker(dev);
+
 #elif defined(CONFIG_SYS_USB_EVENT_POLL_VIA_CONTROL_EP) || \
       defined(CONFIG_SYS_USB_EVENT_POLL_VIA_INT_QUEUE)
 #if defined(CONFIG_SYS_USB_EVENT_POLL_VIA_CONTROL_EP)

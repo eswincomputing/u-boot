@@ -28,7 +28,7 @@
 #define HARDWARE_BOARD_INFO_MAGIC_NUMBER 0x05454943
 
 typedef struct HardwareBoardInfo{
-    // If applicable for Device info, else leave blank, i.e., all 0x0. 
+    // If applicable for Device info, else leave blank, i.e., all 0x0.
     //-------------- Head (36 bytes) --------------
     uint32_t magicNumber;   // Magic “number” 0x05454943
     uint16_t updateCount;   // record update count, if update boardinfo, this count need be added by 1
@@ -37,7 +37,7 @@ typedef struct HardwareBoardInfo{
     uint8_t bomRevision;    // BOM revision
     uint8_t bomVariant;     // BOM variant
     uint16_t productIdentifier;     // Product identifier, 0x0000: Unknown, 0x0001: EVB A1, 0x0002: EVB A2, 0x0003: HiFive Premier P550, 0x0004: EVB A3?,...
-    char boardSerialNumber[22];     // Board serial number(Stored in ASCII) , Vendor(2B)+Board(1B)+ProductNum(4B)+Version(1B)+RamType(1B)+RamSize(2B)+Factory(2B)+Year(2B)+Week(2B)+BoardNum(5B) 
+    char boardSerialNumber[22];     // Board serial number(Stored in ASCII) , Vendor(2B)+Board(1B)+ProductNum(4B)+Version(1B)+RamType(1B)+RamSize(2B)+Factory(2B)+Year(2B)+Week(2B)+BoardNum(5B)
     uint8_t manufacturingTestStatus;// Manufacturing test status, 0:Unknown,1:Pass,2:Fail
     uint8_t ReservedH;      // keep all 0xff
     //-------------- DIE0 (0x600 bytes) --------------
@@ -49,7 +49,7 @@ typedef struct HardwareBoardInfo{
     uint8_t ETH_PHY[16];    // Device info(Stored in ASCII), SN(16B)
     uint8_t PMIC[16];       // Device info(Stored in ASCII), SN(16B)
     uint8_t CODEC[16];      // Device info(Stored in ASCII), SN(16B)
-    uint8_t DEBUG[16];      // Device info(Stored in ASCII), SN(16B)/0x0 [Sample] FT4232HL-REEL___
+    uint8_t DEBUG0[16];      // Device info(Stored in ASCII), SN(16B)/0x0 [Sample] FT4232HL-REEL___
     uint8_t MCU[16];        // Device info(Stored in ASCII), SN(16B)/0x0 [Sample] STM32F407VET6___
     uint8_t WIFI[16];       // Device info(Stored in ASCII), SN(16B)/0x0 [Sample] AP12275_M2______
     uint8_t WIFI_MAC[6];    // leave blank, i.e., all 0xFF
