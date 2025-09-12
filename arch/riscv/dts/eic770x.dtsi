@@ -718,7 +718,7 @@
 			status = "disabled";
 		};
 
-		d1_sdio1: sdio@70470000 {
+		d1_sdio0: sdio@70470000{
                         compatible = "eswin,wl-sdhci";
                         reg = <0x0 0x70470000 0x0 0x10000>;
                         index = <2>;

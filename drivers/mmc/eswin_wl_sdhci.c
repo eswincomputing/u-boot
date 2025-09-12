@@ -43,20 +43,27 @@ struct eswin_sd_plat {
 	struct mmc_config cfg;
 	struct mmc mmc;
 };
-static int  sdhci_wl_phy_poweron(struct udevice *dev) {
-	int ret = -1;
-        struct gpio_desc *phy_reset_gpio;
-	phy_reset_gpio = devm_gpiod_get_optional(dev, "rst", GPIOD_IS_OUT);
-    	if (phy_reset_gpio && dm_gpio_is_valid(phy_reset_gpio)) {
-        	mdelay(20);
-        	ret = dm_gpio_set_value(phy_reset_gpio, 1);
-		if (ret) {
-            		pr_err("Eswin %s gpio set 1 failed\n", __func__);
-        	}
-		if (dm_gpio_is_valid(phy_reset_gpio))
-			dm_gpio_free(dev, phy_reset_gpio);
-	}
-	return ret;
+
+static int sdhci_wl_phy_poweron(struct udevice *dev)
+{
+    int ret = -1;
+    struct gpio_desc phy_reset_gpio;
+
+    ret = gpio_request_by_name(dev, "rst-gpios", 0, &phy_reset_gpio, GPIOD_IS_OUT);
+    if (ret) {
+        pr_err("%s: failed to request gpio, ret=%d\n", __func__, ret);
+        return ret;
+    }
+
+    if (dm_gpio_is_valid(&phy_reset_gpio)) {
+        mdelay(20);
+        ret = dm_gpio_set_value(&phy_reset_gpio, 1);
+        if (ret)
+            pr_err("Eswin %s gpio set failed\n", __func__);
+
+        dm_gpio_free(dev, &phy_reset_gpio);
+    }
+    return ret;
 }
 
 static int eswin_sd_probe(struct udevice *dev)

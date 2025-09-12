@@ -1422,5 +1422,17 @@
 		compatible = "eswin,eic770x-pinctrl", "syscon";
 		reg = <0x0 0x71600080 0x0 0x1FFF80>;
 		status = "disabled";
+		pinctrl_die1_gpio13_default: gpio13-default{
+                        mux {
+                                groups = "gpio13_group";
+                                function = "gpio13_func";
+                        };
+                };
+		pinctrl_die1_gpio16_default: gpio16-default{
+                        mux {
+                                groups = "gpio16_group";
+                                function = "gpio16_func";
+                        };
+                };
 	};
 };

@@ -201,16 +201,17 @@
 	mmc-hs400-1_8v;
 };
 
-&sdio1 {
+&d1_sdio0 {
         status = "okay";
         delay_code = <0x29>;
         drive-impedance-ohm = <33>;
         enable-cmd-pullup;
         enable-data-pullup;
         pinctrl-names = "default";
-        pinctrl-0 = <&pinctrl_gpio16_default>;
-        rst-gpios = <&porta 16 GPIO_ACTIVE_HIGH>;
+        pinctrl-0 = <&pinctrl_die1_gpio13_default>;
+        rst-gpios = <&d_1porta 13 GPIO_ACTIVE_HIGH>;
 };
+
 
 &dwc3_typec0 {
 		status = "okay";
