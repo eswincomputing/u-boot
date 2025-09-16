@@ -75,8 +75,8 @@ config TARGET_ESWIN_U2_EVB
 config TARGET_ESWIN_M2_EVB
         bool "Support Eswin M2 EVB Board"
 
-config TARGET_ESWIN_D560_EP_EVB
-        bool "Support Eswin D560 EP EVB Board"
+config TARGET_ESWIN_EBC7702_P01_D560
+        bool "Support Eswin EBC7702-P01 D560 Board"
 
 endchoice
 
@@ -133,7 +133,7 @@ source "board/eswin/vpu7702_evb/Kconfig"
 source "board/eswin/vpu7702_pcie/Kconfig"
 source "board/eswin/u2_evb/Kconfig"
 source "board/eswin/m2_evb/Kconfig"
-source "board/eswin/d560_ep_evb/Kconfig"
+source "board/eswin/ebc7702_p01_d560/Kconfig"
 
 # platform-specific options below
 source "arch/riscv/cpu/andesv5/Kconfig"

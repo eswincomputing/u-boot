@@ -1,0 +1,6 @@
+ESWIN EBC7702-P01 D560 BOARD
+M:  Liang Zhou <zhouliang1@eswincomputing.com>
+S:  Maintained
+F:  board/eswin/ebc7702_p01_d560/
+F:  include/configs/eswin_ebc7702_p01_d560.h
+F:  configs/ebc7702_p01_d560_defconfig

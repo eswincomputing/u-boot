@@ -1,6 +1,6 @@
-if TARGET_ESWIN_D560_EP_EVB
+if TARGET_ESWIN_EBC7702_P01_D560
 config SYS_BOARD
-	default "d560_ep_evb"
+	default "ebc7702_p01_d560"
 
 config SYS_VENDOR
 	default "eswin"
@@ -9,7 +9,7 @@ config SYS_CPU
 	default "eic770x"
 
 config SYS_CONFIG_NAME
-	default "eswin_d560_ep_evb"
+	default "eswin_ebc7702_p01_d560"
 
 config TEXT_BASE
 	default 0x80200000 if SPL

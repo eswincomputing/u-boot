@@ -55,7 +55,7 @@ int misc_init_r(void)
 #endif
 
 	if (NULL == env_get("fdtfile")) {
-		env_set("fdtfile","eswin/u2-evb.dtb");
+		env_set("fdtfile","eswin/ebc7702-p01-d560.dtb");
 	}
 	eswin_update_bootargs();
 	return 0;

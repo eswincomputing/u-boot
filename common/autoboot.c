@@ -65,11 +65,13 @@ static int menukey;
 #define READY_SIGN	0x2EA1
 #define BAR0_UPDATE 0xC00E
 #define BAR0_UPDATE_DONE 0xDB0A
+#define DIE1_SIGN	0x2EA2
 
 #define TEST_REG0 0x51810668
 #define TEST_REG2 0x51810670
 #define TEST_REG3 0x51810674
 #define PCIE_CTRL_CFG14	0x50000034
+#define TEST_REG2_DIE1 0x71810670
 
 #define VERSION_TABLE_PHYS_ADDR 0x104413000ULL
 
@@ -522,6 +524,11 @@ static int abortboot_single_key(int bootdelay)
 		!strncmp("vpu7702_pcie", board_name, 12)) {
 		writel(READY_SIGN, (u32 *)TEST_REG0);
 		testreg_var = readl((u32 *)TEST_REG0);
+	} else if (!strncmp("ebc7702_p01_", board_name, 11)) {
+		writel(DIE1_SIGN, (u32 *)TEST_REG2_DIE1);
+		testreg_var = readl((u32 *)TEST_REG2_DIE1);
+		writel(READY_SIGN, (u32 *)TEST_REG2);
+		testreg_var = readl((u32 *)TEST_REG2);
 	} else {
 		writel(READY_SIGN, (u32 *)TEST_REG2);
 		testreg_var = readl((u32 *)TEST_REG2);
