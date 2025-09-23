@@ -761,6 +761,8 @@
 				snps,phyif-utmi-bits = <16>;
 				snps,dis-u2-freeclk-exists-quirk;
 				snps,dis-u2-susphy-quirk;
+				snps,dis-del-phy-power-chg-quirk;
+				snps,parkmode-disable-ss-quirk;
 		};
 		d1_usb0: d1_usb0@70480000 {
 				compatible = "eswin,eic7700-dwc3-host";
@@ -1150,7 +1152,7 @@
 			reg = <0x0 0x71600000 0x0 0x80>;
 			status = "disabled";
 
-			d_1porta: gpio-port@0 {
+			d1_porta: gpio-port@0 {
 				compatible = "eswin,gpio-bank";
 				gpio-controller;
 				#gpio-cells = <2>;
