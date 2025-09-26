@@ -34,15 +34,22 @@
 #define DIE0_SYS_CON_TESTREG0  		(0x51810668)
 #define DIE1_SYS_CON_TESTREG0  		(0x51810668 + 0x20000000)
 
-#ifdef CONFIG_VPU_LAYOUT
-#define PMIX_RECORD_ADDR            0xe80000    /* 0xe80000 - 0xe8ffff (64KiB) */
-#else
-#define PMIX_RECORD_ADDR            0x40000     /* 0x40000 - 0x4ffff (64KiB) */
-#endif
-#define PMIX_RECORD_MAX_SIZE		(64*1024)
-#define PMIX_ENTRY_NUM 350
 #define PMIX_MAGIC 0x504d4958
-#define PMIX_VERSION 0x4
+#ifdef CONFIG_VPU_LAYOUT
+#define PMIX_RECORD_ADDR                0xe80000     /* 0xe80000 - 0xe8ffff (64KiB) */
+#else
+#define PMIX_RECORD_ADDR                0x40000     /* 0x40000 - 0x4ffff (64KiB) */
+#endif
+#define PMIX_RECORD_MAX_SIZE            (64*1024)
+#define PMIX_ENTRY_NUM 600
+
+#define PMIX_MAJOR_VERSION 0x5
+#define PMIX_MINOR_VERSION 0x0
+#define PMIX_VERSION (PMIX_MAJOR_VERSION | (PMIX_MINOR_VERSION << 16))
+#define GET_PMIX_MAJOR_VERSION(version) ((version) & 0xffff)
+#define GET_PMIX_MINOR_VERSION(version) (((version) >> 16) & 0xffff)
+
+#define TEMP_INVALID -274000
 
 typedef enum {
 	SWEEP_METHOD_NONE,
@@ -199,7 +206,7 @@ static struct pmix_entry *pmix_table_idx_lookup(struct pmix_lookup_table *tbl, i
  *
  * Returns:
  * - Temperature(in degrees) on success
- * - -1 for invalid parameters or lookup failure
+ * - TEMP_INVALID for invalid parameters or lookup failure
  */
 static long pmix_table_idx_degree_lookup(struct pmix_lookup_table *tbl, int idx)
 {
@@ -209,14 +216,14 @@ static long pmix_table_idx_degree_lookup(struct pmix_lookup_table *tbl, int idx)
 	/* Step 1: Get entry by index */
 	entry = pmix_table_idx_lookup(tbl, idx);
 	if (!entry) {
-		return -1; // Invalid index or table
+		return TEMP_INVALID; // Invalid index or table
 	}
 
 	/* Step 2: Convert raw temperature to degrees */
 	full_degree = eswin_pvt_calc_poly(&poly_N_to_temp, entry->temperature);
 
 	/* Step 3: Extract integer part */
-	return full_degree ;
+	return full_degree;
 }
 
 static int d2d_pmix_load(const char *node_name, struct pmix_lookup_table *tbl)
@@ -404,7 +411,7 @@ static int do_d2d_pmix_get_low_temp(struct cmd_tbl *cmdtp, int flag, int argc, c
 
 	/* Get start temperature from Die 0 */
 	die0_degree = pmix_table_idx_degree_lookup(&_pmix_tbl, 0);
-	if (die0_degree < 0) {
+	if (die0_degree == TEMP_INVALID) {
 		printf("Failed to get Die0 temperature (err=%ld)\n", die0_degree);
 		return CMD_RET_FAILURE;
 	}
@@ -418,16 +425,16 @@ static int do_d2d_pmix_get_low_temp(struct cmd_tbl *cmdtp, int flag, int argc, c
 
 	/* Get start temperature from Die 1 */
 	die1_degree = pmix_table_idx_degree_lookup(&_pmix_tbl, 0);
-	if (die1_degree < 0) {
+	if (die1_degree == TEMP_INVALID) {
 		printf("Failed to get Die1 temperature (err=%ld)\n", die1_degree);
 		return CMD_RET_FAILURE;
 	}
 
 	/* Print formatted temperature results */
 	printf("Die0 PMIX start temperature: %ld.%03ld °C\n",
-		die0_degree / 1000, abs(die0_degree % 1000));
+		die0_degree / 1000, abs(die0_degree) % 1000);
 	printf("Die1 PMIX start temperature: %ld.%03ld °C\n",
-		die1_degree / 1000, abs(die1_degree % 1000));
+		die1_degree / 1000, abs(die1_degree) % 1000);
 
 	/* Calculate and print temperature difference */
 	temp_diff = die0_degree - die1_degree;
@@ -460,9 +467,9 @@ static int do_d2d_pmix_get_curr_temp(struct cmd_tbl *cmdtp, int flag, int argc, 
 
 	/* Print raw values and converted temperatures */
 	printf("Die0 PVT temperature: %ld.%03ld °C\n",
-		die0_degree / 1000, abs(die0_degree % 1000));
+		die0_degree / 1000, abs(die0_degree) % 1000);
 	printf("Die1 PVT temperature: %ld.%03ld °C\n",
-		die1_degree / 1000, abs(die1_degree % 1000));
+		die1_degree / 1000, abs(die1_degree) % 1000);
 
 	/* Calculate and print temperature difference */
 	temp_diff = die0_degree - die1_degree;
@@ -535,8 +542,9 @@ static int d2d_pmix_verify(struct pmix_lookup_table *tbl)
 	}
 
 	/* Check version */
-	if (tbl->version != PMIX_VERSION) {
-		printf("  Error: Unmatched version (0x%08x != 0x%08x)\n",
+	if ((GET_PMIX_MAJOR_VERSION(tbl->version) != PMIX_MAJOR_VERSION) ||
+			(GET_PMIX_MINOR_VERSION(tbl->version) > PMIX_MINOR_VERSION)) {
+		printf("  Error: Unmatched version (0x%08x, 0x%08x)\n",
 		       tbl->version, PMIX_VERSION);
 		return CMD_RET_FAILURE;
 	}
@@ -859,7 +867,7 @@ void pmix_lookup_table_print(struct pmix_lookup_table *tbl)
 
 		degree = eswin_pvt_calc_poly(&poly_N_to_temp, entry->temperature);
 		printf("\tEntry[%d]: Temperature=0x%x((%ld.%03ld)), Valid=0x%x\n", i, entry->temperature,
-				degree/1000, degree%1000, entry->valid);
+				degree/1000, abs(degree%1000), entry->valid);
 		for (int j = 0; j < 8; j++) {
 			printf("\t\tPMIX[%d]: Phase0=0x%x, Phase90=0x%x, Phase180=0x%x, Phase270=0x%x, width=%d\n",
 					j,
@@ -907,8 +915,8 @@ static int d2d_pmix_prune(struct pmix_lookup_table *tbl, int min_degree, int max
 	if (min_degree > max_degree)
 		return -1;
 
-	if (min_degree < 0)
-		min_degree = 0;
+	if (min_degree < TEMP_INVALID)
+		min_degree = TEMP_INVALID;
 
 	if (max_degree > 100)
 		max_degree = 100;
@@ -917,6 +925,9 @@ static int d2d_pmix_prune(struct pmix_lookup_table *tbl, int min_degree, int max
 	end = tbl->valid_cnt - 1;
 	for (i = 0; i < tbl->valid_cnt; i++) {
 		degree = pmix_table_idx_degree_lookup(tbl, i);
+		if (degree == TEMP_INVALID)
+			continue;
+
 		if (degree >= (min_degree * 1000)) {
 			start = i;
 			break;
@@ -928,6 +939,9 @@ static int d2d_pmix_prune(struct pmix_lookup_table *tbl, int min_degree, int max
 
 	for (; i < tbl->valid_cnt; i++) {
 		degree = pmix_table_idx_degree_lookup(tbl, i);
+		if (degree == TEMP_INVALID)
+			continue;
+
 		if (degree == (max_degree * 1000)) {
 			end = i;
 			break;
@@ -1086,6 +1100,94 @@ static int do_d2d_pmix_cfg(struct cmd_tbl *cmdtp, int flag, int argc, char *cons
 	return CMD_RET_SUCCESS;
 }
 
+static int do_d2d_pmix_dump(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+{
+	int ret;
+	int die_num = 0;
+	char *node_name = "spi@51800000";
+	size_t id = 0;
+	uint8_t data = 0;
+	void *addr;
+	size_t len;
+
+	if (argc < 3) {
+		return CMD_RET_USAGE;
+	}
+
+	if (!strcmp(argv[1], "1")) {
+		die_num = 1;
+		node_name = "spi@71800000";
+	}
+
+	addr = simple_strtol(argv[2], NULL, 16);
+
+	/* Load PMIX data from */
+	ret = d2d_pmix_load(node_name, &_pmix_tbl);
+	if (ret) {
+		printf("  Error: Failed to load PMIX data (err=%d)\n", ret);
+		return CMD_RET_FAILURE;
+	}
+
+	/* Verify PMIX data */
+	ret = d2d_pmix_verify(&_pmix_tbl);
+	if (ret != CMD_RET_SUCCESS) {
+		printf("  Error: PMIX data is invalid (err=%d)\n", ret);
+		return ret;
+	}
+
+	len = sizeof(struct pmix_lookup_table);
+	memcpy(addr, &_pmix_tbl, len);
+
+	env_set_hex("fileaddr", addr);
+	env_set_hex("filesize", len);
+
+	printf("Die %d PMIX data dumped to 0x%x (length=0x%x) successfully.\n", die_num, addr, len);
+	return CMD_RET_SUCCESS;
+}
+
+static int do_d2d_pmix_update(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+{
+	int ret;
+	int die_num = 0;
+	char *node_name = "spi@51800000";
+	size_t id = 0;
+	uint8_t data = 0;
+	void *addr;
+	size_t len;
+	struct pmix_lookup_table *tbl;
+
+	if (argc < 3) {
+		return CMD_RET_USAGE;
+	}
+
+	if (!strcmp(argv[1], "1")) {
+		die_num = 1;
+		node_name = "spi@71800000";
+	}
+
+	addr = simple_strtol(argv[2], NULL, 16);
+
+	tbl = (struct pmix_lookup_table *)addr;
+	len = sizeof(struct pmix_lookup_table);
+
+	/* Verify PMIX data */
+	ret = d2d_pmix_verify(tbl);
+	if (ret != CMD_RET_SUCCESS) {
+		printf("  Error: PMIX data is invalid (err=%d)\n", ret);
+		return ret;
+	}
+
+	/* Store PMIX data from */
+	ret = d2d_pmix_store(node_name, tbl);
+	if (ret) {
+		printf("  Error: Failed to load PMIX data (err=%d)\n", ret);
+		return CMD_RET_FAILURE;
+	}
+
+	printf("Die %d PMIX data updated from 0x%x (length=0x%x) successfully.\n", die_num, addr, len);
+	return CMD_RET_SUCCESS;
+}
+
 /* Extend subcommand list */
 static struct cmd_tbl d2d_sub[] = {
 	U_BOOT_CMD_MKENT(pmix invalid, 2, 0, do_d2d_pmix_invalid, "", ""),
@@ -1096,6 +1198,8 @@ static struct cmd_tbl d2d_sub[] = {
 	U_BOOT_CMD_MKENT(pmix show, 2, 0, do_d2d_pmix_show, "", ""),
 	U_BOOT_CMD_MKENT(pmix prune, 4, 0, do_d2d_pmix_prune, "", ""),
 	U_BOOT_CMD_MKENT(pmix cfg, 4, 0, do_d2d_pmix_cfg, "", ""),
+	U_BOOT_CMD_MKENT(pmix dump, 3, 0, do_d2d_pmix_dump, "", ""),
+	U_BOOT_CMD_MKENT(pmix update, 3, 0, do_d2d_pmix_update, "", ""),
 };
 
 /* Parent command handler remains unchanged */
@@ -1141,4 +1245,6 @@ U_BOOT_CMD(
 	"				`min_degree` and `max_degree` for `die_num`\n"
 	"d2d pmix cfg die_num [index] [value] - Set D2D PMIX Config `index` to `value`.\n"
 	"				for `die_num`. Display only if `value` is not provided.\n"
+	"d2d pmix dump die_num addr - Dump D2D PMIX Data to `addr` for `die_num`.\n"
+	"d2d pmix update die_num addr - Update D2D PMIX Data from `addr` for `die_num`.\n"
 	);
