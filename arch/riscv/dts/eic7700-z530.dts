@@ -81,14 +81,14 @@
 
 &eth0 {
 	status = "okay";
-	phy-mode = "rgmii-id";
+	phy-mode = "rgmii-txid";
 	max-speed = <1000>;
 	phy-handle = <&phy0>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_gpio76_default>;
 	rst-gpios = <&portc 12 GPIO_ACTIVE_LOW>;
-	dly-param-1000m = <0x23232323 0xa0209023 0x20202020>;
-	dly-param-100m = <0x50505050 0x803f8050 0x3f3f3f3f>;
+	dly-param-1000m = <0x10101010 0x1D003410 0x0>;
+	dly-param-100m = <0x10101010 0x64104610 0x10101010>;
 	dly-param-10m = <0 0 0>;
 	mdio0 {
 		#address-cells = <1>;
@@ -101,14 +101,14 @@
 
 &eth1 {
 	status = "disabled";
-	phy-mode = "rgmii-id";
+	phy-mode = "rgmii-txid";
 	max-speed = <1000>;
 	phy-handle = <&phy1>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_gpio76_default>;
 	rst-gpios = <&portc 12 GPIO_ACTIVE_LOW>;
-	dly-param-1000m = <0x00000000 0xda02e000 0x02020202>;
-	dly-param-100m = <0x48484848 0x80588048 0x58585858>;
+	dly-param-1000m = <0x10101010 0x14102810 0x10101010>;
+	dly-param-100m = <0x10101010 0x3C102810 0x10101010>;
 	dly-param-10m = <0 0 0>;
 	mdio1 {
 		#address-cells = <1>;

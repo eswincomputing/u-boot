@@ -165,7 +165,7 @@
 
 &eth0 {
 	status = "okay";
-	phy-mode = "rgmii-id";
+	phy-mode = "rgmii-txid";
 	max-speed = <1000>;
 	phy-handle = <&phy0>;
 	pinctrl-names = "default";
