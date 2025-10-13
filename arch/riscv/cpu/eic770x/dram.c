@@ -158,7 +158,8 @@ int dram_init(void)
     if(ret) {
         return ret;
     }
-#ifndef CONFIG_CMD_ESWIN_DIE
+
+#if (ENABLE_DDR_ECC != 1)
 	uint32_t base_addr = 0x52300000;
 	uint64_t ddr_size_mb = (ddr_sw_mr_size_mb(mr_operation(base_addr, MR_TYPE_READ, 0x1, 0x8))) * 2; 
 	uint64_t ram_size = ddr_size_mb << 20;
