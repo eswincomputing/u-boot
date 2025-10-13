@@ -514,7 +514,7 @@ static void reset_ep(struct usb_device *udev, int ep_index)
 	u64 addr;
 	u32 field;
 
-	printf("Resetting EP %d...\n", ep_index);
+	debug("Resetting EP %d...\n", ep_index);
 	xhci_queue_command(ctrl, 0, udev->slot_id, ep_index, TRB_RESET_EP);
 	event = xhci_wait_for_event(ctrl, TRB_COMPLETION);
 	if (!event)

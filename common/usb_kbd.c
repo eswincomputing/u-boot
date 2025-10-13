@@ -358,8 +358,8 @@ static inline void usb_kbd_poll_for_event(struct usb_device *dev)
 	static int error_count = 0;
 	struct usb_kbd_pdata *data = dev->privptr;
 
-	/* Suspend detect disconnect if more than 5 times errors.*/
-	if (error_count > 5) {
+	/* Suspend detect disconnect if more than 3 times errors.*/
+	if (error_count > 3) {
 		data->last_report = -1;
 		return;
 	}
