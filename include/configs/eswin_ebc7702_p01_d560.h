@@ -60,7 +60,18 @@
     "uuid_swap=5ebcaaf0-e098-43b9-beef-1f8deedd135e\0" \
     "partitions=name=boot,start=1MiB,size=512MiB,type=${typeid_efi},uuid=${uuid_boot};name=swap,size=4096MiB,type=${typeid_swap},uuid=${uuid_swap};name=root,size=-,type=${typeid_filesystem},uuid=${uuid_root}\0" \
     "gpt_partition=gpt write mmc ${emmc_dev} $partitions\0" \
-    "boot_targets=mmc1 usb ahci nvme mmc0\0"
+    "boot_targets=mmc1 usb ahci nvme mmc0\0" \
+    "set_1_ep_mode=bootspi probe 1; " \
+        "bootspi wp 0; " \
+        "mw.l 0x90000000 0x00454243; " \
+        "mw.l 0x90000004 0x0; " \
+        "sf probe 2:0; " \
+        "sf erase 0x600000 0x1000; " \
+        "sf write 0x90000000 0x600000 8\0" \
+    "set_2_ep_mode=bootspi probe 1; " \
+        "bootspi wp 0; " \
+        "sf probe 2:0; " \
+        "sf erase 0x600000 0x1000\0"
 
 #undef CONFIG_BOOTCOMMAND
 #define CONFIG_BOOTCOMMAND \

@@ -257,11 +257,11 @@
 };
 
 &gpio0 {
-	status = "disabled";
+	status = "okay";
 };
 
 &d1_gpio {
-	status = "disabled";
+	status = "okay";
 };
 
 &pinctrl {
