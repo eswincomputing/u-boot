@@ -73,7 +73,8 @@ static int menukey;
 #define PCIE_CTRL_CFG14	0x50000034
 #define TEST_REG2_DIE1 0x71810670
 
-#define VERSION_TABLE_PHYS_ADDR 0x104413000ULL
+#define VERSION_TABLE_PHYS_ADDR  0x104413000ULL
+#define VERSION_TABLE1_PHYS_ADDR 0x2084413000ULL
 
 #define FIRMWARE_VERSION_OFFSET	 (0)
 #define FIRMWARE_VERSION_MAX_LEN 32 /* Maximum length for firmware version string */
@@ -153,19 +154,19 @@ int get_die_ordinary(void)
 	return die_ordinary;
 }
 
-static int save_firmware_version_to_shm()
+static int save_firmware_version_to_shm(uint64_t version_table_addr)
 {
 	char *firmware_version = VPU_FW_VERSION;
 
 	debug("Saving firmware version %s to shared memory\n", firmware_version);
-	strncpy((char *)VERSION_TABLE_PHYS_ADDR + FIRMWARE_VERSION_OFFSET, firmware_version,
+	strncpy((char *)version_table_addr + FIRMWARE_VERSION_OFFSET, firmware_version,
 		FIRMWARE_VERSION_MAX_LEN - 1);
 	// Ensure null termination
-	*((char *)VERSION_TABLE_PHYS_ADDR + FIRMWARE_VERSION_OFFSET + FIRMWARE_VERSION_MAX_LEN -
+	*((char *)version_table_addr + FIRMWARE_VERSION_OFFSET + FIRMWARE_VERSION_MAX_LEN -
 	  1) = '\0';
 	// Flush cache to make sure data is written to memory
-	flush_dcache_range((ulong)VERSION_TABLE_PHYS_ADDR + FIRMWARE_VERSION_OFFSET,
-			   (ulong)VERSION_TABLE_PHYS_ADDR + FIRMWARE_VERSION_OFFSET +
+	flush_dcache_range((ulong)version_table_addr + FIRMWARE_VERSION_OFFSET,
+			   (ulong)version_table_addr + FIRMWARE_VERSION_OFFSET +
 				   FIRMWARE_VERSION_MAX_LEN);
 
 	return 0;
@@ -511,7 +512,7 @@ static int abortboot_single_key(int bootdelay)
 	int ret = 0;
 	const char *board_name;
 
-	if (save_firmware_version_to_shm()) {
+	if (save_firmware_version_to_shm(VERSION_TABLE_PHYS_ADDR)) {
 		printf("Failed to save firmware version to shared memory\n");
 	}
 
@@ -525,6 +526,10 @@ static int abortboot_single_key(int bootdelay)
 		writel(READY_SIGN, (u32 *)TEST_REG0);
 		testreg_var = readl((u32 *)TEST_REG0);
 	} else if (!strncmp("ebc7702_p01_", board_name, 11)) {
+		if (save_firmware_version_to_shm(VERSION_TABLE1_PHYS_ADDR)) {
+			printf("Failed to save firmware version to shared memory\n");
+		}
+
 		writel(DIE1_SIGN, (u32 *)TEST_REG2_DIE1);
 		testreg_var = readl((u32 *)TEST_REG2_DIE1);
 		writel(READY_SIGN, (u32 *)TEST_REG2);
