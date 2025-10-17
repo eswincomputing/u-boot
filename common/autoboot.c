@@ -73,13 +73,6 @@ static int menukey;
 #define PCIE_CTRL_CFG14	0x50000034
 #define TEST_REG2_DIE1 0x71810670
 
-#define PCIE_D0_DBI_CFG_BASE    0x54000000
-#define PCIE_D1_DBI_CFG_BASE    0x74000000
-#define PCIE_D0_CSR_CFG_BASE    0x50000000
-#define PCIE_D1_CSR_CFG_BASE    0x70000000
-#define BAR0_REG_OFFSET         0x10
-#define CFG_BAR0_ADDR_OFFSET    0x34
-
 #define VERSION_TABLE_PHYS_ADDR 0x104413000ULL
 
 #define FIRMWARE_VERSION_OFFSET	 (0)
@@ -492,31 +485,6 @@ static int abortboot_key_sequence(int bootdelay)
 
 #ifdef CONFIG_BOOT_ESWIN_VPU7702
 
-static void update_die0_bar0_base(void)
-{
-	u32 bar_base = readl(PCIE_D0_DBI_CFG_BASE + BAR0_REG_OFFSET);
-	u32 reg_base = readl(PCIE_D0_CSR_CFG_BASE + CFG_BAR0_ADDR_OFFSET);
-	u32 fina_val;
-
-	fina_val = reg_base - (u32)(bar_base & 0x07ffffff);
-	writel(fina_val, (u32 *)TEST_REG3);
-	printf("%s, %d,die0 bus_base=0x%x, bar_base=0x%x, fina_val=0x%x.\r\n",
-		     __func__, __LINE__, reg_base, bar_base, fina_val);
-}
-
-static void update_die1_bar0_base(void)
-{
-	u32 bar_base = readl(PCIE_D1_DBI_CFG_BASE + BAR0_REG_OFFSET);
-	u32 reg_base = readl(PCIE_D1_CSR_CFG_BASE + CFG_BAR0_ADDR_OFFSET);
-	u32 fina_val;
-
-	fina_val = reg_base - (u32)(bar_base & 0x07ffffff);
-
-	writel(fina_val, (u32 *)(PCIE_D1_CSR_CFG_BASE + CFG_BAR0_ADDR_OFFSET));
-	printf("%s, %d,die1 bus_base=0x%x, bar_base=0x%x, fina_val=0x%x.\r\n",
-		     __func__, __LINE__, reg_base, bar_base, fina_val);
-}
-
 static int es_bar0_update()
 {
 	int ret = 0;
@@ -612,11 +580,6 @@ static int abortboot_single_key(int bootdelay)
 			}
 			if (testreg_var == BAR0_UPDATE) {
 				printf("update bar0....\n");
-				// update bar0 base
-				update_die0_bar0_base();
-				if (!strncmp("ebc7702_p01_", board_name, 11)) {
-					update_die1_bar0_base();
-				}
 				ret = es_bar0_update();
 				if (ret < 0) {
 					abort = 1;
