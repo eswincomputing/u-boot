@@ -1,0 +1,6 @@
+ESWIN EBC7702-U01 A1 BOARD
+M:  Geroge <zhaodonghui@eswincomputing.com>
+S:  Maintained
+F:  board/eswin/ebc7702_u01_pcie/
+F:  include/configs/eswin_ebc7702_u01_pcie.h
+F:  configs/ebc7702_u01_pcie_defconfig
