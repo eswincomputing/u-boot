@@ -849,6 +849,30 @@ UBOOTINCLUDE    := \
 
 NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
 
+# Read BOARD_NAME
+ifneq ($(findstring eic7700_sbc,$(CONFIG_SYS_BOARD)),)
+variant := sbc
+else ifneq ($(findstring eic7700_ce,$(CONFIG_SYS_BOARD)),)
+variant := ce
+else ifneq ($(findstring eic7700_z530,$(CONFIG_SYS_BOARD)),)
+variant := s260
+else ifneq ($(findstring eic7702_evb,$(CONFIG_SYS_BOARD)),)
+variant := 7702evb
+else ifneq ($(findstring eic7702_d560,$(CONFIG_SYS_BOARD)),)
+variant := s560
+else ifneq ($(findstring fml13,$(CONFIG_SYS_BOARD)),)
+variant := fml13
+else
+variant := $(CONFIG_SYS_BOARD)
+endif
+$(info variant=$(variant))
+VARIANT := $(shell echo $(variant) | tr a-z A-Z)
+CONFIG_BOARD_NAME := CONFIG_ESWIN_$(VARIANT)
+BOARD_TYPE_NAME := BOARD_TYPE_$(VARIANT)
+$(info BOARD_TYPE_NAME=$(BOARD_TYPE_NAME))
+
+KBUILD_CFLAGS += -DBOARD_TYPE=$(BOARD_TYPE_NAME)
+
 # FIX ME
 cpp_flags := $(KBUILD_CPPFLAGS) $(PLATFORM_CPPFLAGS) $(UBOOTINCLUDE) \
 							$(NOSTDINC_FLAGS)

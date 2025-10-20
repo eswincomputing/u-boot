@@ -66,12 +66,12 @@
         "mw.l 0x90000000 0x00454243; " \
         "mw.l 0x90000004 0x0; " \
         "sf probe 2:0; " \
-        "sf erase 0x600000 0x1000; " \
-        "sf write 0x90000000 0x600000 8\0" \
+        "sf erase 0xe90000 0x1000; " \
+        "sf write 0x90000000 0xe90000 8\0" \
     "set_8_ep_mode=bootspi probe 1; " \
         "bootspi wp 0; " \
         "sf probe 2:0; " \
-        "sf erase 0x600000 0x1000\0"
+        "sf erase 0xe90000 0x1000\0"
 
 #undef CONFIG_BOOTCOMMAND
 #define CONFIG_BOOTCOMMAND \
