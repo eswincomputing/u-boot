@@ -259,7 +259,7 @@
         enable-data-pullup;
         pinctrl-names = "default";
         pinctrl-0 = <&pinctrl_die1_gpio16_default>;
-        rst-gpios = <&d_1porta 16 GPIO_ACTIVE_HIGH>;
+        rst-gpios = <&d1_porta 16 GPIO_ACTIVE_HIGH>;
 };
 
 &eswin_sata {
