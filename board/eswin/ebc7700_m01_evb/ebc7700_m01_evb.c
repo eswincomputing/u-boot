@@ -188,7 +188,7 @@ int misc_init_r(void)
 	//hardware_info_env_set();
 
 	if (NULL == env_get("fdtfile")) {
-		env_set("fdtfile","eswin/m2-evb.dts");
+		env_set("fdtfile","eswin/ebc7700-m01-evb.dts");
 	}
 	eswin_update_bootargs();
 	return 0;

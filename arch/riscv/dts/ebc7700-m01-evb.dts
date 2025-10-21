@@ -26,7 +26,7 @@
 / {
 	#address-cells = <2>;
 	#size-cells = <2>;
-	model = "ESWIN M2 EVB";
+	model = "ESWIN EBC7700-M01 EVB";
 
 
 	aliases {

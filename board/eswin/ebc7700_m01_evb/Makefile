@@ -2,4 +2,4 @@
 #
 # Copyright 2024 Beijing ESWIN Computing Technology Co., Ltd.
 
-obj-y += m2_evb.o
+obj-y += ebc7700_m01_evb.o
