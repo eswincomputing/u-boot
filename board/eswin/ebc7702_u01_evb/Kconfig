@@ -1,6 +1,6 @@
-if TARGET_ESWIN_U2_EVB
+if TARGET_ESWIN_EBC7702_U01_EVB
 config SYS_BOARD
-	default "u2_evb"
+	default "ebc7702_u01_evb"
 
 config SYS_VENDOR
 	default "eswin"
@@ -9,7 +9,7 @@ config SYS_CPU
 	default "eic770x"
 
 config SYS_CONFIG_NAME
-	default "eswin_u2_evb"
+	default "eswin_ebc7702_u01_evb"
 
 config TEXT_BASE
 	default 0x80200000 if SPL

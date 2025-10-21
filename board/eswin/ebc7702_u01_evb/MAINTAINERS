@@ -1,0 +1,7 @@
+ESWIN EBC7702-U01 EVB BOARD
+M:  Joey Zheng <zhengyu@eswincomputing.com>
+    Liang Zhou <zhouliang1@eswincomputing.com>
+S:  Maintained
+F:  board/eswin/ebc7702_u01_evb/
+F:  include/configs/eswin_ebc7701_u01_evb.h
+F:  configs/ebc7702_u01_evb_defconfig
