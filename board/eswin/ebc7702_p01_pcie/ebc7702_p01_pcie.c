@@ -81,7 +81,7 @@ void irq_mux_route(void)
 	 * Route GPIO, TIMER0 to LPCPU
 	*/
 
-	val = 0x1040;
+	val = 0x19040;
 	writel(val,(void *)(0x51810000+0x3c0));
 	writel(val,(void *)(0x71810000+0x3c0));
 }
