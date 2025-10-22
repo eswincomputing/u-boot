@@ -24,6 +24,7 @@
 #include <linux/sizes.h>
 
 #define CONFIG_STANDALONE_LOAD_ADDR 0x80200000
+#define CONFIG_VPU_LAYOUT
 
 /* Environment options */
 #define BOOT_TARGET_DEVICES(func) \
