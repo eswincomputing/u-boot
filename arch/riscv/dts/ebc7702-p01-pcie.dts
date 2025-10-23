@@ -54,13 +54,13 @@
 
 	memory@80000000 {
 		device_type = "memory";
-		reg = <0x0 0x80000000 0x3 0x80000000>;
+		reg = <0x0 0x80000000 0x7 0x0>;
 		numa-node-id = <0>;
 	};
 
 	memory@2000000000 {
 		device_type = "memory";
-		reg = <0x20 0x00000000 0x3 0x80000000>;
+		reg = <0x20 0x00000000 0x7 0x0>;
 		numa-node-id = <1>;
 	};
 
