@@ -272,8 +272,8 @@
 	max-speed = <1000>;
 	phy-handle = <&phy0>;
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_gpio94_default>;
-	rst-gpios = <&portc 30 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&pinctrl_gpio15_default>;
+	rst-gpios = <&porta 15 GPIO_ACTIVE_LOW>;
 	dly-param-1000m = <0x23232323 0x5a0c6423 0x0c0c0c0c>;
 	dly-param-100m = <0x50505050 0x803f8050 0x3f3f3f3f>;
 	dly-param-10m = <0 0 0>;
@@ -292,8 +292,8 @@
 	max-speed = <1000>;
 	phy-handle = <&phy1>;
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_gpio16_default>;
-	rst-gpios = <&porta 16 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&pinctrl_gpio14_default>;
+	rst-gpios = <&porta 14 GPIO_ACTIVE_LOW>;
 	dly-param-1000m = <0x25252525 0x5a266425 0x26262626>;
 	dly-param-100m = <0x48484848 0x80588048 0x58585858>;
 	dly-param-10m = <0 0 0>;
