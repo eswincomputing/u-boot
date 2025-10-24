@@ -357,30 +357,15 @@
 };
 &usb0 {
 	status = "okay";
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_gpio42_default>;
-	pwren-gpios = <&portb 10 GPIO_ACTIVE_HIGH>;
 };
-
 &usb1 {
 	status = "okay";
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_gpio43_default>;
-	pwren-gpios = <&portb 11 GPIO_ACTIVE_HIGH>;
 };
-
 &d1_usb0 {
 	status = "okay";
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_gpio42_default>;
-	pwren-gpios = <&d1_portb 10 GPIO_ACTIVE_HIGH>;
 };
-
 &d1_usb1 {
 	status = "okay";
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_gpio43_default>;
-	pwren-gpios = <&d1_portb 11 GPIO_ACTIVE_HIGH>;
 };
 
 &hdmi {

@@ -110,15 +110,9 @@ static int dwc3_generic_probe(struct udevice *dev,
 	struct dwc3_glue_data *glue = dev_get_plat(dev->parent);
 	int __maybe_unused index;
 	ofnode __maybe_unused node;
-	struct gpio_desc __maybe_unused pwren_gpio;
 
-
-	if (device_is_compatible(dev->parent, "eswin,eic7700-dwc3-dev")) {
-		if (!gpio_request_by_name(dev, "pwren-gpios", 0, &pwren_gpio, GPIOD_IS_OUT | GPIOD_IS_OUT_ACTIVE)) {
-			dm_gpio_set_value(&pwren_gpio, 1);
-		}
+	if (device_is_compatible(dev->parent, "eswin,eic7700-dwc3-dev"))
 		dwc_usb_clk_init();
-	}
 
 	dwc3->dev = dev;
 	dwc3->maximum_speed = plat->maximum_speed;
