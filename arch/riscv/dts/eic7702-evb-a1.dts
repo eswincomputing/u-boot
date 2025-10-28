@@ -259,7 +259,7 @@
         enable-data-pullup;
         pinctrl-names = "default";
         pinctrl-0 = <&pinctrl_die1_gpio16_default>;
-        rst-gpios = <&d_1porta 16 GPIO_ACTIVE_HIGH>;
+        rst-gpios = <&d1_porta 16 GPIO_ACTIVE_HIGH>;
 };
 
 &eswin_sata {
@@ -357,15 +357,30 @@
 };
 &usb0 {
 	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_gpio42_default>;
+	pwren-gpios = <&portb 10 GPIO_ACTIVE_HIGH>;
 };
+
 &usb1 {
 	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_gpio43_default>;
+	pwren-gpios = <&portb 11 GPIO_ACTIVE_HIGH>;
 };
+
 &d1_usb0 {
 	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_gpio42_default>;
+	pwren-gpios = <&d1_portb 10 GPIO_ACTIVE_HIGH>;
 };
+
 &d1_usb1 {
 	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_gpio43_default>;
+	pwren-gpios = <&d1_portb 11 GPIO_ACTIVE_HIGH>;
 };
 
 &hdmi {

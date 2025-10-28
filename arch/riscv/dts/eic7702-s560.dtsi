@@ -209,7 +209,7 @@
         enable-data-pullup;
         pinctrl-names = "default";
         pinctrl-0 = <&pinctrl_die1_gpio13_default>;
-        rst-gpios = <&d_1porta 13 GPIO_ACTIVE_HIGH>;
+        rst-gpios = <&d1_porta 13 GPIO_ACTIVE_HIGH>;
 };
 
 
@@ -218,17 +218,33 @@
 		dr_mode = "peripheral";
 		maximum-speed = "super-speed";
 };
+
 &usb0 {
 	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_gpio42_default>;
+	pwren-gpios = <&portb 10 GPIO_ACTIVE_HIGH>;
 };
+
 &usb1 {
 	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_gpio14_default>;
+	hub-rst-gpios = <&porta 14 GPIO_ACTIVE_HIGH>;
 };
+
 &d1_usb0 {
 	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_die1_gpio42_default>;
+	pwren-gpios = <&d1_portb 10 GPIO_ACTIVE_HIGH>;
 };
+
 &d1_usb1 {
 	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_die1_gpio43_default>;
+	pwren-gpios = <&d1_portb 11 GPIO_ACTIVE_HIGH>;
 };
 
 &i2c0 {

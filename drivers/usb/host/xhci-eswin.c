@@ -56,11 +56,24 @@ static int xhci_usb_of_to_plat(struct udevice *dev)
     struct eswin_xhci_platdata *plat = dev_get_plat(dev);
     struct udevice *child;
     int ret = 0;
+    struct gpio_desc *hub_reset_gpio;
+    struct gpio_desc pwren_gpio;
 
     /*
      * Get the base address for XHCI controller from the device node
      */
     plat->hcd_base = dev_read_addr(dev);
+
+    hub_reset_gpio = devm_gpiod_get_optional(dev, "hub-rst", GPIOD_IS_OUT | GPIOD_IS_OUT_ACTIVE);
+    if (hub_reset_gpio) {
+        ret = dm_gpio_set_value(hub_reset_gpio, 1);
+        dm_gpio_free(dev, hub_reset_gpio);
+    }
+
+   if (!gpio_request_by_name(dev, "pwren-gpios", 0, &pwren_gpio, GPIOD_IS_OUT | GPIOD_IS_OUT_ACTIVE)) {
+        dm_gpio_set_value(&pwren_gpio, 1);
+   }
+
     dwc_usb_clk_init(plat->hcd_base);
     if (plat->hcd_base == FDT_ADDR_T_NONE) {
         pr_err("Can't get the XHCI register base address\n");
@@ -125,6 +138,12 @@ static void eswin_dwc3_phy_setup(struct dwc3 *dwc3_reg,
         reg &= ~DWC3_GUSB2PHYCFG_SUSPHY;
 
     writel(reg, &dwc3_reg->g_usb2phycfg[0]);
+
+    if (dev_read_bool(dev, "snps,dis-del-phy-power-chg-quirk")) {
+        reg = readl(&dwc3_reg->g_usb3pipectl[0]);
+        reg &= ~(1 << 18);
+        writel(reg, &dwc3_reg->g_usb3pipectl[0]);
+    }
 }
 
 static int eswin_xhci_core_init(struct eswin_xhci *eswxhci,
@@ -206,7 +225,6 @@ static int xhci_usb_probe(struct udevice *dev)
     struct eswin_xhci *ctx = dev_get_priv(dev);
     struct xhci_hcor *hcor;
     int ret;
-    struct gpio_desc *hub_reset_gpio;
 
     ctx->hcd = (struct xhci_hccr *)plat->hcd_base;
     ctx->dwc3_reg = (struct dwc3 *)((char *)(ctx->hcd) + DWC3_REG_OFFSET);
@@ -226,14 +244,6 @@ static int xhci_usb_probe(struct udevice *dev)
         pr_err("XHCI: failed to initialize controller\n");
         return ret;
     }
-    
-
-    hub_reset_gpio = devm_gpiod_get_optional(dev, "hub-rst", GPIOD_IS_OUT | GPIOD_IS_OUT_ACTIVE);
-    if (hub_reset_gpio) {
-        ret = dm_gpio_set_value(hub_reset_gpio, 1);
-        dm_gpio_free(dev, hub_reset_gpio);
-    }
-
 
     return xhci_register(dev, ctx->hcd, hcor);
 }
