@@ -78,6 +78,9 @@ config TARGET_ESWIN_EBC7700_M01_EVB
 config TARGET_ESWIN_EBC7702_U01_PCIE
         bool "Support Eswin EBC7702-U01 PCIE Board"
 
+config TARGET_ESWIN_EBC7700_M01_PCIE
+        bool "Support Eswin EBC7700-M01 PCIE Board"
+
 config TARGET_ESWIN_EBC7702_P01_D560
         bool "Support Eswin EBC7702-P01 D560 Board"
 
@@ -140,6 +143,7 @@ source "board/eswin/vpu7702_pcie/Kconfig"
 source "board/eswin/ebc7702_u01_evb/Kconfig"
 source "board/eswin/ebc7700_m01_evb/Kconfig"
 source "board/eswin/ebc7702_u01_pcie/Kconfig"
+source "board/eswin/ebc7700_m01_pcie/Kconfig"
 source "board/eswin/ebc7702_p01_d560/Kconfig"
 source "board/eswin/ebc7702_p01_pcie/Kconfig"
 

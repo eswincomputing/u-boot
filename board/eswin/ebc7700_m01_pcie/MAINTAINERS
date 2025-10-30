@@ -1,0 +1,6 @@
+ESWIN EBC7700-M01 PCIE BOARD
+M:  Zhou Liang <zhouliang1@eswincomputing.com>
+S:  Maintained
+F:  board/eswin/ebc7700_m01_pcie/
+F:  include/configs/eswin_ebc7700_m01_pcie.h
+F:  configs/ebc7700_m01_pcie_defconfig

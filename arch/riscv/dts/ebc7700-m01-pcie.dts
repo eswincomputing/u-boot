@@ -1,0 +1,236 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Device Tree file for Eswin EIC7700 SoC.
+ *
+ * Copyright 2024, Beijing ESWIN Computing Technology Co., Ltd.. All rights reserved.
+ * SPDX-License-Identifier: GPL-2.0
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 2.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/soc/eswin-pmp.h>
+#include "eic770x.dtsi"
+#include "dt-bindings/media/eswin_mipi_dsi.h"
+#include "media_bus_format.h"
+/ {
+	#address-cells = <2>;
+	#size-cells = <2>;
+	model = "ESWIN EBC7700-M01 A1";
+
+
+	aliases {
+		serial0 = &uart0;
+		i2c0 = &i2c0;
+		i2c1 = &i2c1;
+		i2c2 = &i2c2;
+		i2c3 = &i2c3;
+		i2c4 = &i2c4;
+		i2c5 = &i2c5;
+		i2c6 = &i2c6;
+		i2c7 = &i2c7;
+		i2c8 = &i2c8;
+		i2c9 = &i2c9;
+		i2c11 = &i2c11;
+		i2c12 = &i2c12;
+		gpio0 = &gpio0;
+		spi0 = &bootspi;
+		spi1 = &dw_spi0;
+	};
+
+	chosen {
+		stdout-path = "serial0";
+	};
+
+	memory@80000000 {
+		device_type = "memory";
+		reg = <0x0 0x80000000 0x4 0x00000000>;
+	};
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		display_reserved: region@E0000000 {
+			reg = <0x0 0xE0000000 0x0 0x2000000>;
+			no-map;
+		};
+
+		lpcpu_reserved: lpcpures@DFFF0000 {
+			reg = <0x00 0xDFFF0000 0x00 0x00010000>;
+			no-map;
+		};
+	};
+	soc {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		compatible = "SiFive,FU800-soc", "fu800-soc", "sifive-soc", "simple-bus";
+		ranges;
+	};
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+	};
+
+};
+&cpu0 {
+	status = "okay";
+};
+&cpu1 {
+	status = "okay";
+};
+&cpu2 {
+	status = "okay";
+};
+&cpu3 {
+	status = "okay";
+};
+&plic0{
+	status = "okay";
+};
+&d0_mbox {
+	status = "okay";
+};
+&d0_mbox_srvc {
+	status = "okay";
+};
+&d0_mbox1 {
+	status = "okay";
+};
+&d0_mbox_srvc1 {
+	status = "okay";
+};
+&d0_pmp {
+	status = "okay";
+};
+&uart0 {
+	status = "okay";
+};
+&uart1 {
+	status = "disabled";
+};
+&bootspi {
+	status = "okay";
+	cs-gpios = <&portd 0 GPIO_ACTIVE_LOW>;
+	wp-gpios = <&portd 4 GPIO_ACTIVE_LOW>;
+	spi-flash@0 {
+		reg = <0>;
+		compatible = "winbond,w25q128fw",
+			"jedec,spi-nor";
+		spi-max-frequency = <4800000>;
+	};
+};
+&dw_spi0 {
+	status = "okay";
+	spi-flash@1 {
+		reg = <1>;
+		compatible = "winbond,w25q128fw",
+			"jedec,spi-nor";
+		spi-max-frequency = <4800000>;
+	};
+};
+&sd {
+	status = "disabled";
+	delay_code = <0x55>;
+	drive-impedance-ohm = <33>;
+	enable-cmd-pullup;
+	enable-data-pullup;
+};
+
+&sdhci_emmc {
+	status = "disabled";
+	delay_code = <0x55>;
+	drive-impedance-ohm = <50>;
+	enable-cmd-pullup;
+	enable-data-pullup;
+	mmc-hs200-1_8v;
+	mmc-hs400-1_8v;
+};
+
+&eswin_sata {
+	status = "disabled";
+};
+
+&eth0 {
+	status = "disabled";
+};
+
+&eth1 {
+	status = "disabled";
+};
+
+&pcie {
+	status = "disabled";
+};
+&display_logo {
+	status = "disabled";
+};
+&mipi_dsi {
+	status = "disabled";
+};
+&dwc3_typec0 {
+	status = "disabled";
+};
+&usb0 {
+	status = "disabled";
+};
+&usb1 {
+	status = "disabled";
+};
+&hdmi {
+	status = "disabled";
+};
+&display_subsystem {
+	status = "disabled";
+};
+&route_hdmi {
+	status = "disabled";
+};
+&route_mipi {
+	status = "disabled";
+};
+&osd {
+	status = "disabled";
+};
+&i2c0 {
+	status = "disabled";
+};
+&i2c2 {
+	status = "disabled";
+};
+&i2c3 {
+	status = "disabled";
+};
+&i2c5 {
+	status = "disabled";
+	eeprom@50 {
+		compatible = "atmel,24c02";
+		reg = <0x50>;
+		pagesize = <8>;
+	};
+};
+&i2c11 {
+	status = "disabled";
+	rtc@51 {
+		compatible = "nxp,pcf8563";
+		reg = <0x51>;
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&pinctrl {
+	status = "okay";
+};
