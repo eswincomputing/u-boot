@@ -91,4 +91,6 @@ typedef struct SoftwareBoardInfo {
         uint32_t crc32Checksum; // hardware+software info CRC32 checksum (zlib)
 } __attribute__((packed)) SoftwareBoardInfo_t;
 
+int eic770x_fdt_fixup_matched_memory_banks(void *blob, struct bd_info *bd);
+
 #endif

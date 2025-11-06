@@ -232,5 +232,5 @@ int board_late_init(void)
 
 int ft_board_setup(void *blob, struct bd_info *bd)
 {
-	return fdt_fixup_memory(blob, gd->ram_base, gd->ram_size);
+	return eic770x_fdt_fixup_matched_memory_banks(blob, bd);
 }

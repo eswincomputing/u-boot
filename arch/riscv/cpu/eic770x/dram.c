@@ -152,43 +152,69 @@ uint32_t ddr_sw_mr_size_mb(uint8_t mr_value)
 #define RAM_BASE_OFFSET 	0x8000000
 #define DDR_MEM_ADDR0   0x0080000000ul
 #define DDR_MEM_ADDR1   0x2000000000ul
+
+#define DDR_CTRL_ADDR 0x52300000
+
+/* get dram size */
+uint64_t get_dram_info(int nid, uint64_t *dram_size)
+{
+	uint64_t ctrl_base_addr;
+	uint64_t dram_size_mb, dram_size_bytes;
+
+	if ((nid +1) > CONFIG_NR_DRAM_BANKS) {
+		printf("DRAM: Input DRAM BANKS %d is invalid\n", nid);
+		return -1;
+	}
+
+	ctrl_base_addr = DDR_CTRL_ADDR + nid*0x20000000;
+	dram_size_mb = (ddr_sw_mr_size_mb(mr_operation(ctrl_base_addr, MR_TYPE_READ, 0x1, 0x8))) * 2;
+	dram_size_bytes = dram_size_mb << 20;
+
+	#if (ENABLE_DDR_ECC == 1)
+		dram_size_bytes = dram_size_bytes - (dram_size_bytes / 8);
+		debug("ECC Eabled\n");
+	#else
+		debug("ECC Disabled\n");
+	#endif
+	*dram_size = dram_size_bytes;
+
+	return 0;
+}
 int dram_init(void)
 {
 	int ret = fdtdec_setup_mem_size_base();
-    if(ret) {
-        return ret;
-    }
 
-#if (ENABLE_DDR_ECC != 1)
-	uint32_t base_addr = 0x52300000;
-	uint64_t ddr_size_mb = (ddr_sw_mr_size_mb(mr_operation(base_addr, MR_TYPE_READ, 0x1, 0x8))) * 2; 
-	uint64_t ram_size = ddr_size_mb << 20;
-	gd->ram_size = ram_size;
-#endif
+	if(ret) {
+		return ret;
+	}
+
+	get_dram_info(0, &gd->ram_size);
+
 	return ret;
 }
 
 int dram_init_banksize(void)
 {
 	int ret = 0;
-	unsigned long long size;
+	uint64_t size;
+	uint64_t dram_size;
+
 	ret = fdtdec_setup_memory_banksize();
+
 	if(ret) {
 		return ret;
-    }
+	}
+
 	for (uint64_t i = size = 0; i < CONFIG_NR_DRAM_BANKS; i++) {
 		if(DDR_MEM_ADDR0 == gd->bd->bi_dram[i].start) {
-            uint32_t base_addr = 0x52300000;
-            uint64_t ddr_size_mb = (ddr_sw_mr_size_mb(mr_operation(base_addr, MR_TYPE_READ, 0x1, 0x8))) * 2; 
-            uint64_t ram_size = ddr_size_mb << 20;
-			gd->bd->bi_dram[i].size = ram_size;
-        } else if(DDR_MEM_ADDR1 == gd->bd->bi_dram[i].start) {
-            uint32_t base_addr = 0x72300000;
-            uint64_t ddr_size_mb = (ddr_sw_mr_size_mb(mr_operation(base_addr, MR_TYPE_READ, 0x1, 0x8))) * 2; 
-            uint64_t ram_size = ddr_size_mb << 20;
-			gd->bd->bi_dram[i].size = ram_size;
-        }
+			get_dram_info(0, &dram_size);
+			gd->bd->bi_dram[i].size = dram_size;
+		} else if(DDR_MEM_ADDR1 == gd->bd->bi_dram[i].start) {
+			get_dram_info(1, &dram_size);
+			gd->bd->bi_dram[i].size = dram_size;
+		}
 	}
+
 	return ret;
 }
 
@@ -209,7 +235,7 @@ phys_addr_t board_get_usable_ram_top(phys_size_t total_size)
 	return gd->ram_top;
 }
 
-int update_memory_nodes_match_start(void *fdt, u64 start[], u64 size[], int banks)
+static int update_memory_nodes_match_start(void *fdt, u64 start[], u64 size[], int banks)
 {
     int offset = -1;
     const char *dtype;
@@ -253,4 +279,20 @@ int update_memory_nodes_match_start(void *fdt, u64 start[], u64 size[], int bank
     }
 
     return 0;
+}
+
+int eic770x_fdt_fixup_matched_memory_banks(void *blob, struct bd_info *bd)
+{
+	u32 banks = 0;
+	u64 start[CONFIG_NR_DRAM_BANKS];
+	u64 size[CONFIG_NR_DRAM_BANKS];
+
+	for (int i = 0; i < CONFIG_NR_DRAM_BANKS; i++) {
+		if(gd->bd->bi_dram[i].start != 0 && gd->bd->bi_dram[i].size != 0) {
+			start[i] = gd->bd->bi_dram[i].start;
+			size[i] = gd->bd->bi_dram[i].size;
+			banks++;
+		}
+	}
+	return update_memory_nodes_match_start(blob, start, size, banks);
 }
