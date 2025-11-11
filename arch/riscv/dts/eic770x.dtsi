@@ -33,6 +33,7 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+		timebase-frequency = <1000000>;
 		cpu0: cpu@0 {
 			clock-frequency = <0>;
 			compatible = "eic7700", "riscv";
@@ -495,6 +496,16 @@
 			};
 		#endif
 		};
+		clint: timer@2000000 {
+			compatible = "eswin,eic7700-clint", "sifive,clint0";
+			reg = <0x0 0x02000000 0x0 0x10000>;
+			interrupts-extended =
+				<&cpu0_intc 3>, <&cpu0_intc 7>,
+				<&cpu1_intc 3>, <&cpu1_intc 7>,
+				<&cpu2_intc 3>, <&cpu2_intc 7>,
+				<&cpu3_intc 3>, <&cpu3_intc 7>;
+		};
+
 		plic0: interrupt-controller@c000000 {
 			status = "disabled";
 			#interrupt-cells = <1>;
@@ -594,15 +605,19 @@
 		};
 		uart0: serial@50900000 {
 			status = "disabled";
-			compatible = "synopsys,uart0";
+			compatible = "snps,dw-apb-uart";
 			clock-frequency = <200000000>;
+			reg-io-width = <4>;
+			reg-shift = <2>;
 			reg = <0x0 0x50900000 0x0 0xffff>;
 			reg-names = "control";
 		};
 		uart1: serial@50910000 {
 			status = "disabled";
-			compatible = "synopsys,uart0";
+			compatible = "snps,dw-apb-uart";
 			clock-frequency = <200000000>;
+			reg-io-width = <4>;
+			reg-shift = <2>;
 			reg = <0x0 0x50910000 0x0 0xffff>;
 			reg-names = "control";
 		};
