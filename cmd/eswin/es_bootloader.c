@@ -1276,6 +1276,8 @@ U_BOOT_CMD(
 #else
 	"\nes_burn write addr flash_stg	- write binary file from memory at `addr' to mtd\n"
 #endif
+	"es_burn erase flash_stg die_num	- erase die0/die1 mtd bootloader (die_num 0:default/1)\n"
+	"\t eg. es_burn erase flash 0	-erase the die0 bootloader in flash\n"
 	"es_burn wboot addr len flash_stg	- write bootmenu mode boot filesystem binary file from memory at `addr' to mtd 'flash_stg'\n"
 	"es_burn wroot addr len flash_stg	- write bootmenu mode root filesystem binary file from memory at `addr' to mtd 'flash_stg'\n"
 	"es_burn wmmc addr len	- write .wic image binary file from memory at `addr' to eMMC\n"
