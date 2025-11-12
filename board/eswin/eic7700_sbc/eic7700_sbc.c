@@ -41,10 +41,6 @@
 #include <eswin/cpu.h>
 #include <eic7700_common.h>
 #include <fdt_support.h>
-#ifdef CONFIG_ESWIN_UMBOX
-#include <eswin/eswin-umbox-srvc.h>
-#endif
-
 
 static int get_hardware_board_info(const char *node_name, HardwareBoardInfo_t *gHardware_Board_Info)
 {
@@ -437,9 +433,6 @@ int request_power_pd(uint busnum, uint chip)
 
 int board_late_init(void)
 {
-#ifdef CONFIG_ESWIN_UMBOX
-	lpcpu_misc_func();
-#endif
 	request_power_pd(1, 0x8);
 	return 0;
 }

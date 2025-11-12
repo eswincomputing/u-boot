@@ -37,9 +37,6 @@
 #include <dm/device-internal.h>
 #include <dm/pinctrl.h>
 #include <eswin/cpu.h>
-#ifdef CONFIG_ESWIN_UMBOX
-#include <eswin/eswin-umbox-srvc.h>
-#endif
 #include "eic7700_common.h"
 
 
@@ -215,8 +212,5 @@ int board_init(void)
 
 int board_late_init(void)
 {
-#ifdef CONFIG_ESWIN_UMBOX
-	lpcpu_misc_func();
-#endif
 	return 0;
 }

@@ -37,9 +37,6 @@
 #include <fml13v03_common.h>
 #include <eswin/cpu.h>
 #include <fdt_support.h>
-#ifdef CONFIG_ESWIN_UMBOX
-#include <eswin/eswin-umbox-srvc.h>
-#endif
 #include <command.h>
 
 static int get_hardware_board_info(const char *node_name, FMLHardwareBoardInfo_t *gHardware_Board_Info)
@@ -207,9 +204,6 @@ int board_init(void)
 int board_late_init(void)
 {
 	int ret;
-#ifdef CONFIG_ESWIN_UMBOX
-	// lpcpu_misc_func();
-#endif
 
 	irq_mux_route();
 

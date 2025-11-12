@@ -40,9 +40,6 @@
 #include <dm/pinctrl.h>
 #include <eswin/cpu.h>
 #include <fdt_support.h>
-#ifdef CONFIG_ESWIN_UMBOX
-#include <eswin/eswin-umbox-srvc.h>
-#endif
 
 typedef struct {
 	uint32_t magicNumber;
@@ -300,9 +297,6 @@ int board_init(void)
 
 int board_late_init(void)
 {
-#ifdef CONFIG_ESWIN_UMBOX
-	lpcpu_misc_func();
-#endif
 	return 0;
 }
 
