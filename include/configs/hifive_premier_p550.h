@@ -34,6 +34,7 @@
     "initrd_high=0xffffffffffffffff\0" \
     "kernel_addr_r=0x84000000\0" \
     "fdt_addr_r=0x88000000\0" \
+    "fdtoverlay_addr_r=0x100000000\0" \
     "fdtfile=eswin/eic7700-hifive-premier-p550.dtb\0" \
     "scriptaddr=0x88100000\0" \
     "pxefile_addr_r=0x88200000\0" \
