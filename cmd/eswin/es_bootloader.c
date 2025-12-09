@@ -719,6 +719,15 @@ static int do_bootchain_write(int argc, char *const argv[])
 			}
 			firmware_entry_header_t *data = firmware_info->data;
 			es_mem_pool_free(&es_pool, (void *)data->offset);
+			if(feht->nsign_version != 0) {
+				uint32_t crc_raw = crc32(0xFFFFFFFF, (void *)(fw_addr + feht->offset + SIGNATURE_SIZE), feht->size);
+				if(feht->crc32 != crc_raw) {
+					printf("Firmware(payload type %x) check crc32 error!!!\r\n", feht->payload_type);
+					ret = -ENXIO;
+					goto out;
+				}
+			}
+
 		}
 		if (size > es_mem_pool_count_free_pages(&es_pool) * es_pool.page_size) {
 			printf("Not enough memory to update bootchain\n");

@@ -21,7 +21,7 @@
 #define _SYSTEM_UPDATE_H
 
 #define BTL_HASH_DIG_SIZE 32
-#define SIGNATURE_SIZE    512
+#define SIGNATURE_SIZE    256
 
 typedef struct __attribute__((packed)) firmware_entry_header{
     uint32_t version;
@@ -32,8 +32,8 @@ typedef struct __attribute__((packed)) firmware_entry_header{
     uint8_t payload_type; /* Payload type */
     uint8_t  last_flag;
     uint8_t reserved0[4];
-    uint32_t reserved1;
-    uint32_t Reserved2;
+    uint32_t nsign_version;
+    uint32_t crc32;
 }firmware_entry_header_t;
 
 typedef struct __attribute__((packed)) firmware_header{
