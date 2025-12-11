@@ -32,6 +32,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define DDR_CTRL_ADDR 0x52300000
 #define CONTRLLER_NUM 2
 
+#define DDR_CTRL_MSTR0	0x10000
 #define DDR_CTRL_MRCTRL0 0x10080
 #define DDR_CTRL_MRCTRL1 0x10084
 
@@ -89,7 +90,17 @@ int mr_operation(uint32_t ctrl_base_addr, uint8_t mr_type, uint8_t rank, uint8_t
     return value;
 }
 
-uint32_t ddr_sw_mr_size_mb(uint8_t mr_value)
+static int count_ones(u32 x)
+{
+    int cnt = 0;
+    while(x) {
+        x &= (x - 1);
+        cnt++;
+    }
+    return cnt;
+}
+
+uint32_t ddr_sw_mr_size_mb(uint8_t mr_value, uint32_t rank_num)
 {
     uint32_t chip_num = 0;
     uint32_t density = 0;
@@ -141,7 +152,7 @@ uint32_t ddr_sw_mr_size_mb(uint8_t mr_value)
             ;
         break;
     }
-    chn_ddr_size_mb = (density * 1024 /* gb to mb */ * chip_num * 2 /* rank */) >> 3; /* bit to Byte */
+    chn_ddr_size_mb = (density * 1024 /* gb to mb */ * chip_num * count_ones(rank_num) /* rank */) >> 3; /* bit to Byte */
     return chn_ddr_size_mb;
 }
 
@@ -160,14 +171,18 @@ uint64_t get_dram_info(int nid, uint64_t *dram_size)
 {
 	uint64_t ctrl_base_addr;
 	uint64_t dram_size_mb, dram_size_bytes;
-
+	uint32_t reg, rank_num;
+	volatile void *ctrl_base;
 	if ((nid +1) > CONFIG_NR_DRAM_BANKS) {
 		printf("DRAM: Input DRAM BANKS %d is invalid\n", nid);
 		return -1;
 	}
 
 	ctrl_base_addr = DDR_CTRL_ADDR + nid*0x20000000;
-	dram_size_mb = (ddr_sw_mr_size_mb(mr_operation(ctrl_base_addr, MR_TYPE_READ, 0x1, 0x8))) * 2;
+	ctrl_base = (volatile void *)ctrl_base_addr;
+	reg = readl(ctrl_base + DDR_CTRL_MSTR0);
+	rank_num = (reg >> 24) & 0xf;
+	dram_size_mb = (ddr_sw_mr_size_mb(mr_operation(ctrl_base_addr, MR_TYPE_READ, 0x1, 0x8), rank_num)) * 2;
 	dram_size_bytes = dram_size_mb << 20;
 
 	#if (ENABLE_DDR_ECC == 1)
