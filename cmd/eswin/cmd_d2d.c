@@ -31,87 +31,18 @@
 #include <linux/io.h>
 #include <u-boot/crc.h>
 
+#include "d2d_pmix.h"
+
 #define DIE0_SYS_CON_TESTREG0  		(0x51810668)
 #define DIE1_SYS_CON_TESTREG0  		(0x51810668 + 0x20000000)
-
-#define PMIX_MAGIC 0x504d4958
-#ifdef CONFIG_VPU_LAYOUT
-#define PMIX_RECORD_ADDR                0xe80000     /* 0xe80000 - 0xe8ffff (64KiB) */
-#else
-#define PMIX_RECORD_ADDR                0x40000     /* 0x40000 - 0x4ffff (64KiB) */
-#endif
-#define PMIX_RECORD_MAX_SIZE            (64*1024)
-#define PMIX_ENTRY_NUM 600
-
-#define PMIX_MAJOR_VERSION 0x5
-#define PMIX_MINOR_VERSION 0x0
-#define PMIX_VERSION (PMIX_MAJOR_VERSION | (PMIX_MINOR_VERSION << 16))
-#define GET_PMIX_MAJOR_VERSION(version) ((version) & 0xffff)
-#define GET_PMIX_MINOR_VERSION(version) (((version) >> 16) & 0xffff)
 
 #define TEMP_INVALID -274000
 
 typedef enum {
-	SWEEP_METHOD_NONE,
+	SWEEP_METHOD_NONE = 0,
 	SWEEP_METHOD_NORMAL,
 	SWEEP_METHOD_SMOOTH,
 } sweep_method_t;
-
-struct One_pmix {
-	uint8_t phase0;
-	uint8_t phase90;
-	uint8_t phase180;
-	uint8_t phase270;
-	uint8_t width;
-};
-
-struct pmix_entry
-{
-	struct One_pmix pmix[8];
-	uint16_t temperature;
-	uint8_t valid;
-	uint8_t reserved;
-};
-
-struct pmix_cfg
-{
-	union {
-		struct {
-			uint8_t polarity_inverted;
-			uint8_t sweep_method;
-			uint8_t debug_print_enabled;
-			uint8_t fit_valid_degree;
-			uint8_t reserved[28];
-		};
-		uint8_t data[32];
-	};
-};
-
-struct fit_coeffs
-{
-	double c0;
-	double c1;
-};
-
-struct pmix_fit_params
-{
-	struct fit_coeffs phase0_coeffs;
-	struct fit_coeffs phase90_coeffs;
-	struct fit_coeffs phase180_coeffs;
-	struct fit_coeffs phase270_coeffs;
-};
-
-struct pmix_lookup_table
-{
-	uint32_t magic;
-	uint32_t version;
-	struct pmix_cfg cfg;
-	struct pmix_fit_params fit_params[8];
-	struct pmix_entry pmix_list[PMIX_ENTRY_NUM];
-	uint32_t valid_cnt;
-	uint32_t crc;
-};
-static_assert(sizeof(struct pmix_lookup_table) <= PMIX_RECORD_MAX_SIZE);
 
 /*
  * struct pvt_poly_term - a term descriptor of the PVT data translation
@@ -191,7 +122,7 @@ static struct pmix_entry *pmix_table_idx_lookup(struct pmix_lookup_table *tbl, i
 	}
 
 	/* Check index boundaries */
-	if (idx < 0 || idx >= PMIX_ENTRY_NUM) {
+	if (idx < 0 || idx >= tbl->valid_cnt) {
 		return NULL;
 	}
 
@@ -225,6 +156,107 @@ static long pmix_table_idx_degree_lookup(struct pmix_lookup_table *tbl, int idx)
 	/* Step 3: Extract integer part */
 	return full_degree;
 }
+
+static uint32_t d2d_pmix_legacy_calc_crc(const struct pmix_lookup_table_legacy *tbl)
+{
+	const void *addr;
+	uint32_t len;
+
+	/* Calculate CRC only for fit_params, pmix_list and valid_cnt. */
+	addr = tbl->fit_params;
+	len = (void *)&tbl->crc - addr;
+
+	return crc32(0xffffffff, addr, len);
+}
+
+static uint32_t d2d_pmix_calc_crc(const struct pmix_lookup_table *tbl)
+{
+	const void *addr;
+	uint32_t len;
+
+	/* Calculate CRC only for fit_params, pmix_list and valid_cnt. */
+	addr = tbl->fit_params;
+	len = (void *)&tbl->crc - addr;
+
+	return crc32(0xffffffff, addr, len);
+}
+
+static bool pmix_table_legacy_upgrade(struct pmix_lookup_table_legacy *tbl_legacy)
+{
+	struct pmix_lookup_table *tbl = (struct pmix_lookup_table *)tbl_legacy;
+
+	if (!tbl_legacy)
+		return false;
+
+	tbl->version = PMIX_LEGACY_UPGRADED_VERSION;
+	tbl->valid_cnt = tbl_legacy->valid_cnt;
+	tbl_legacy->valid_cnt = 0;
+	tbl_legacy->crc = 0;
+	tbl->crc = d2d_pmix_calc_crc(tbl);
+	printf("PMIX data upgraded.\n");
+	return true;
+}
+
+static bool pmix_table_try_upgrade(struct pmix_lookup_table *tbl)
+{
+	if (!tbl)
+		return false;
+
+	if (tbl->magic != PMIX_MAGIC)
+		return false;
+
+	if (tbl->version == PMIX_LEGACY_VERSION) {
+		struct pmix_lookup_table_legacy *tbl_legacy = (struct pmix_lookup_table_legacy *)tbl;
+		if (tbl_legacy->crc != d2d_pmix_legacy_calc_crc(tbl_legacy))
+			return false;
+		if ((tbl_legacy->valid_cnt == 0) || (tbl_legacy->valid_cnt > ARRAY_SIZE(tbl_legacy->pmix_list)))
+			return false;
+
+		return pmix_table_legacy_upgrade(tbl_legacy);
+	}
+
+	return false;
+}
+
+static bool pmix_table_downgrade(struct pmix_lookup_table *tbl)
+{
+	struct pmix_lookup_table_legacy *tbl_legacy = (struct pmix_lookup_table_legacy *)tbl;
+
+	if (!tbl)
+		return false;
+
+	if (tbl->valid_cnt > ARRAY_SIZE(tbl_legacy->pmix_list))
+		return false;
+
+	tbl_legacy->version = PMIX_LEGACY_VERSION;
+	tbl_legacy->valid_cnt = tbl->valid_cnt;
+	tbl->valid_cnt = 0;
+	tbl->crc = 0;
+	tbl_legacy->crc = d2d_pmix_legacy_calc_crc(tbl_legacy);
+	printf("PMIX data downgraded.\n");
+	return true;
+}
+
+static bool pmix_table_try_downgrade(struct pmix_lookup_table *tbl)
+{
+	if (!tbl)
+		return false;
+
+	if (tbl->magic != PMIX_MAGIC)
+		return false;
+
+	if (tbl->version != PMIX_LEGACY_VERSION) {
+		if (tbl->crc != d2d_pmix_calc_crc(tbl))
+			return false;
+		if ((tbl->valid_cnt == 0) || (tbl->valid_cnt > ARRAY_SIZE(tbl->pmix_list)))
+			return false;
+
+		return pmix_table_downgrade(tbl);
+	}
+
+	return false;
+}
+
 
 static int d2d_pmix_load(const char *node_name, struct pmix_lookup_table *tbl)
 {
@@ -409,6 +441,8 @@ static int do_d2d_pmix_get_low_temp(struct cmd_tbl *cmdtp, int flag, int argc, c
 		return CMD_RET_FAILURE;
 	}
 
+	pmix_table_try_upgrade(&_pmix_tbl);
+
 	/* Get start temperature from Die 0 */
 	die0_degree = pmix_table_idx_degree_lookup(&_pmix_tbl, 0);
 	if (die0_degree == TEMP_INVALID) {
@@ -422,6 +456,8 @@ static int do_d2d_pmix_get_low_temp(struct cmd_tbl *cmdtp, int flag, int argc, c
 		printf("Failed to load Die1 PMIX data (err=%d)\n", ret);
 		return CMD_RET_FAILURE;
 	}
+
+	pmix_table_try_upgrade(&_pmix_tbl);
 
 	/* Get start temperature from Die 1 */
 	die1_degree = pmix_table_idx_degree_lookup(&_pmix_tbl, 0);
@@ -517,18 +553,6 @@ static int do_d2d_pmix_get_mode(struct cmd_tbl *cmdtp, int flag, int argc, char 
 	return CMD_RET_SUCCESS;
 }
 
-static uint32_t d2d_pmix_calc_crc(const struct pmix_lookup_table *tbl)
-{
-	const void *addr;
-	uint32_t len;
-
-	/* Calculate CRC only for fix_params, pmix_list and valid_cnt. */
-	addr = tbl->fit_params;
-	len = (void *)&tbl->crc - addr;
-
-	return crc32(0xffffffff, addr, len);
-}
-
 static int d2d_pmix_verify(struct pmix_lookup_table *tbl)
 {
 	uint32_t calculated_crc;
@@ -559,9 +583,9 @@ static int d2d_pmix_verify(struct pmix_lookup_table *tbl)
 	}
 
 	/* Check valid entry count */
-	if (tbl->valid_cnt > PMIX_ENTRY_NUM) {
-		printf("  Error: Invalid entry count (%u > %d)\n",
-		       tbl->valid_cnt, PMIX_ENTRY_NUM);
+	if (tbl->valid_cnt > ARRAY_SIZE(tbl->pmix_list)) {
+		printf("  Error: Invalid entry count (%d > %ld)\n",
+		       tbl->valid_cnt, ARRAY_SIZE(tbl->pmix_list));
 		return CMD_RET_FAILURE;
 	}
 
@@ -581,6 +605,8 @@ static int do_d2d_pmix_validate(struct cmd_tbl *cmdtp, int flag, int argc, char 
 		return CMD_RET_FAILURE;
 	}
 
+	pmix_table_try_upgrade(&_pmix_tbl);
+
 	/* Verify Die 0 PMIX data */
 	ret = d2d_pmix_verify(&_pmix_tbl);
 	if (ret != CMD_RET_SUCCESS)
@@ -596,6 +622,8 @@ static int do_d2d_pmix_validate(struct cmd_tbl *cmdtp, int flag, int argc, char 
 		printf("  Error: Failed to load Die1 PMIX data (err=%d)\n", ret);
 		return CMD_RET_FAILURE;
 	}
+
+	pmix_table_try_upgrade(&_pmix_tbl);
 
 	/* Verify Die 1 PMIX data */
 	ret = d2d_pmix_verify(&_pmix_tbl);
@@ -860,7 +888,7 @@ void pmix_lookup_table_print(struct pmix_lookup_table *tbl)
 		}
 	}
 
-	for (int i = 0; i < PMIX_ENTRY_NUM; i++) {
+	for (int i = 0; i < tbl->valid_cnt; i++) {
 		struct pmix_entry *entry = &tbl->pmix_list[i];
 		if (1 != entry->valid)
 			continue;
@@ -901,6 +929,7 @@ static int do_d2d_pmix_show(struct cmd_tbl *cmdtp, int flag, int argc, char *con
 		return CMD_RET_FAILURE;
 	}
 
+	pmix_table_try_upgrade(&_pmix_tbl);
 	pmix_lookup_table_print(&_pmix_tbl);
 	return CMD_RET_SUCCESS;
 }
@@ -991,6 +1020,7 @@ static int do_d2d_pmix_prune(struct cmd_tbl *cmdtp, int flag, int argc, char *co
 	int die_num = 0;
 	char *node_name = "spi@51800000";
 	int min_degree, max_degree;
+	bool upgraded;
 
 	if (argc < 4)
 		return CMD_RET_USAGE;
@@ -1005,12 +1035,14 @@ static int do_d2d_pmix_prune(struct cmd_tbl *cmdtp, int flag, int argc, char *co
 
 	printf("Die %d PMIX data pruning (Min: %d, Max: %d) ...\n", die_num, min_degree, max_degree);
 
-	/* Load PMIX data from */
+	/* Load PMIX data */
 	ret = d2d_pmix_load(node_name, &_pmix_tbl);
 	if (ret) {
 		printf("  Error: Failed to load PMIX data (err=%d)\n", ret);
 		return CMD_RET_FAILURE;
 	}
+
+	upgraded = pmix_table_try_upgrade(&_pmix_tbl);
 
 	/* Verify PMIX data */
 	ret = d2d_pmix_verify(&_pmix_tbl);
@@ -1024,6 +1056,8 @@ static int do_d2d_pmix_prune(struct cmd_tbl *cmdtp, int flag, int argc, char *co
 		printf("  Error: Failed to prune PMIX data (err=%d)\n", ret);
 		return CMD_RET_FAILURE;
 	} else if (ret > 0) {
+		if (upgraded)
+			pmix_table_try_downgrade(&_pmix_tbl);
 		ret = d2d_pmix_store(node_name, &_pmix_tbl);
 		if (ret) {
 			printf("  Error: Failed to store PMIX data (err=%d)\n", ret);
@@ -1042,6 +1076,7 @@ static int do_d2d_pmix_cfg(struct cmd_tbl *cmdtp, int flag, int argc, char *cons
 	char *node_name = "spi@51800000";
 	size_t id = 0;
 	uint8_t data = 0;
+	bool upgraded;
 
 	if (argc < 2) {
 		return CMD_RET_USAGE;
@@ -1052,12 +1087,14 @@ static int do_d2d_pmix_cfg(struct cmd_tbl *cmdtp, int flag, int argc, char *cons
 		node_name = "spi@71800000";
 	}
 
-	/* Load PMIX data from */
+	/* Load PMIX data */
 	ret = d2d_pmix_load(node_name, &_pmix_tbl);
 	if (ret) {
 		printf("  Error: Failed to load PMIX data (err=%d)\n", ret);
 		return CMD_RET_FAILURE;
 	}
+
+	upgraded = pmix_table_try_upgrade(&_pmix_tbl);
 
 	/* Verify PMIX data */
 	ret = d2d_pmix_verify(&_pmix_tbl);
@@ -1089,6 +1126,9 @@ static int do_d2d_pmix_cfg(struct cmd_tbl *cmdtp, int flag, int argc, char *cons
 	if (_pmix_tbl.cfg.data[id] != data) {
 		_pmix_tbl.cfg.data[id] = data;
 
+		if (upgraded)
+			pmix_table_try_downgrade(&_pmix_tbl);
+
 		ret = d2d_pmix_store(node_name, &_pmix_tbl);
 		if (ret) {
 			printf("  Error: Failed to store PMIX data (err=%d)\n", ret);
@@ -1105,8 +1145,6 @@ static int do_d2d_pmix_dump(struct cmd_tbl *cmdtp, int flag, int argc, char *con
 	int ret;
 	int die_num = 0;
 	char *node_name = "spi@51800000";
-	size_t id = 0;
-	uint8_t data = 0;
 	void *addr;
 	size_t len;
 
@@ -1119,14 +1157,16 @@ static int do_d2d_pmix_dump(struct cmd_tbl *cmdtp, int flag, int argc, char *con
 		node_name = "spi@71800000";
 	}
 
-	addr = simple_strtol(argv[2], NULL, 16);
+	addr = (void *)simple_strtol(argv[2], NULL, 16);
 
-	/* Load PMIX data from */
+	/* Load PMIX data */
 	ret = d2d_pmix_load(node_name, &_pmix_tbl);
 	if (ret) {
 		printf("  Error: Failed to load PMIX data (err=%d)\n", ret);
 		return CMD_RET_FAILURE;
 	}
+
+	pmix_table_try_upgrade(&_pmix_tbl);
 
 	/* Verify PMIX data */
 	ret = d2d_pmix_verify(&_pmix_tbl);
@@ -1138,10 +1178,10 @@ static int do_d2d_pmix_dump(struct cmd_tbl *cmdtp, int flag, int argc, char *con
 	len = sizeof(struct pmix_lookup_table);
 	memcpy(addr, &_pmix_tbl, len);
 
-	env_set_hex("fileaddr", addr);
+	env_set_hex("fileaddr", (ulong)addr);
 	env_set_hex("filesize", len);
 
-	printf("Die %d PMIX data dumped to 0x%x (length=0x%x) successfully.\n", die_num, addr, len);
+	printf("Die %d PMIX data dumped to %p (length=0x%lx) successfully.\n", die_num, addr, len);
 	return CMD_RET_SUCCESS;
 }
 
@@ -1150,8 +1190,6 @@ static int do_d2d_pmix_update(struct cmd_tbl *cmdtp, int flag, int argc, char *c
 	int ret;
 	int die_num = 0;
 	char *node_name = "spi@51800000";
-	size_t id = 0;
-	uint8_t data = 0;
 	void *addr;
 	size_t len;
 	struct pmix_lookup_table *tbl;
@@ -1165,7 +1203,7 @@ static int do_d2d_pmix_update(struct cmd_tbl *cmdtp, int flag, int argc, char *c
 		node_name = "spi@71800000";
 	}
 
-	addr = simple_strtol(argv[2], NULL, 16);
+	addr = (void *)simple_strtol(argv[2], NULL, 16);
 
 	tbl = (struct pmix_lookup_table *)addr;
 	len = sizeof(struct pmix_lookup_table);
@@ -1177,14 +1215,115 @@ static int do_d2d_pmix_update(struct cmd_tbl *cmdtp, int flag, int argc, char *c
 		return ret;
 	}
 
-	/* Store PMIX data from */
+	/* Store PMIX data */
 	ret = d2d_pmix_store(node_name, tbl);
 	if (ret) {
 		printf("  Error: Failed to load PMIX data (err=%d)\n", ret);
 		return CMD_RET_FAILURE;
 	}
 
-	printf("Die %d PMIX data updated from 0x%x (length=0x%x) successfully.\n", die_num, addr, len);
+	printf("Die %d PMIX data updated from %p (length=0x%lx) successfully.\n", die_num, addr, len);
+	return CMD_RET_SUCCESS;
+}
+
+static int do_d2d_pmix_upgrade(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+{
+	int ret;
+	int die_num = 0;
+	char *node_name = "spi@51800000";
+	bool upgraded;
+
+	if (argc < 2)
+		return CMD_RET_USAGE;
+
+	if (!strcmp(argv[1], "1")) {
+		die_num = 1;
+		node_name = "spi@71800000";
+	}
+
+	printf("Die %d PMIX data upgrading ...\n", die_num);
+
+	/* Load PMIX data */
+	ret = d2d_pmix_load(node_name, &_pmix_tbl);
+	if (ret) {
+		printf("  Error: Failed to load PMIX data (err=%d)\n", ret);
+		return CMD_RET_FAILURE;
+	}
+
+	upgraded = pmix_table_try_upgrade(&_pmix_tbl);
+
+	/* Verify PMIX data */
+	ret = d2d_pmix_verify(&_pmix_tbl);
+	if (ret != CMD_RET_SUCCESS) {
+		printf("  Error: PMIX data is invalid (err=%d)\n", ret);
+		return ret;
+	}
+
+	if (!upgraded) {
+		printf("Die %d PMIX data is already upgraded.\n", die_num);
+		return CMD_RET_SUCCESS;
+	}
+
+	ret = d2d_pmix_store(node_name, &_pmix_tbl);
+	if (ret) {
+		printf("  Error: Failed to store PMIX data (err=%d)\n", ret);
+		return CMD_RET_FAILURE;
+	}
+
+	printf("Die %d PMIX data upgraded successfully.\n", die_num);
+	return CMD_RET_SUCCESS;
+}
+
+static int do_d2d_pmix_downgrade(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
+{
+	int ret;
+	int die_num = 0;
+	char *node_name = "spi@51800000";
+	bool upgraded;
+
+	if (argc < 2)
+		return CMD_RET_USAGE;
+
+	if (!strcmp(argv[1], "1")) {
+		die_num = 1;
+		node_name = "spi@71800000";
+	}
+
+	printf("Die %d PMIX data downgrading ...\n", die_num);
+
+	/* Load PMIX data */
+	ret = d2d_pmix_load(node_name, &_pmix_tbl);
+	if (ret) {
+		printf("  Error: Failed to load PMIX data (err=%d)\n", ret);
+		return CMD_RET_FAILURE;
+	}
+
+	upgraded = pmix_table_try_upgrade(&_pmix_tbl);
+
+	/* Verify PMIX data */
+	ret = d2d_pmix_verify(&_pmix_tbl);
+	if (ret != CMD_RET_SUCCESS) {
+		printf("  Error: PMIX data is invalid (err=%d)\n", ret);
+		return ret;
+	}
+
+	if (upgraded) {
+		printf("Die %d PMIX data is already downgraded.\n", die_num);
+		return CMD_RET_SUCCESS;
+	}
+
+	if (!pmix_table_try_downgrade(&_pmix_tbl)) {
+		printf("  Error: Failed to downgrade PMIX data\n");
+		return CMD_RET_FAILURE;
+	}
+
+	ret = d2d_pmix_store(node_name, &_pmix_tbl);
+	if (ret) {
+		printf("  Error: Failed to store PMIX data (err=%d)\n", ret);
+		return CMD_RET_FAILURE;
+	}
+
+	printf("Die %d PMIX data downgraded successfully.\n", die_num);
 	return CMD_RET_SUCCESS;
 }
 
@@ -1200,6 +1339,8 @@ static struct cmd_tbl d2d_sub[] = {
 	U_BOOT_CMD_MKENT(pmix cfg, 4, 0, do_d2d_pmix_cfg, "", ""),
 	U_BOOT_CMD_MKENT(pmix dump, 3, 0, do_d2d_pmix_dump, "", ""),
 	U_BOOT_CMD_MKENT(pmix update, 3, 0, do_d2d_pmix_update, "", ""),
+	U_BOOT_CMD_MKENT(pmix upgrade, 2, 0, do_d2d_pmix_upgrade, "", ""),
+	U_BOOT_CMD_MKENT(pmix downgrade, 2, 0, do_d2d_pmix_downgrade, "", ""),
 };
 
 /* Parent command handler remains unchanged */
@@ -1247,4 +1388,6 @@ U_BOOT_CMD(
 	"				for `die_num`. Display only if `value` is not provided.\n"
 	"d2d pmix dump die_num addr - Dump D2D PMIX Data to `addr` for `die_num`.\n"
 	"d2d pmix update die_num addr - Update D2D PMIX Data from `addr` for `die_num`.\n"
+	"d2d pmix upgrade die_num - Upgrade D2D PMIX Data for `die_num`.\n"
+	"d2d pmix downgrade die_num - Downgrade D2D PMIX Data for `die_num`.\n"
 	);
