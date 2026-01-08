@@ -279,19 +279,19 @@
 	status = "okay";
 };
 &hdmi {
-	status = "okay";
+	status = "disabled";
 };
 &display_subsystem {
-	status = "okay";
+	status = "disabled";
 };
 &route_hdmi {
-	status = "okay";
+	status = "disabled";
 };
 &route_mipi {
 	status = "disabled";
 };
 &osd {
-	status = "okay";
+	status = "disabled";
 };
 &i2c0 {
 	status = "disabled";

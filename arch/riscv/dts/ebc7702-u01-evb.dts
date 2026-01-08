@@ -369,23 +369,23 @@
 };
 
 &hdmi {
-	status = "okay";
+	status = "disabled";
 };
 &d1_hdmi {
-	status = "okay";
+	status = "disabled";
 };
 &display_subsystem {
-	status = "okay";
+	status = "disabled";
 };
 &d1_display_subsystem {
 	double-screen = <1>;
-	status = "okay";
+	status = "disabled";
 };
 &route_hdmi {
-	status = "okay";
+	status = "disabled";
 };
 &d1_route_hdmi {
-	status = "okay";
+	status = "disabled";
 };
 &route_mipi {
 	status = "disabled";
@@ -394,10 +394,10 @@
 	status = "disabled";
 };
 &osd {
-	status = "okay";
+	status = "disabled";
 };
 &d1_osd {
-	status = "okay";
+	status = "disabled";
 };
 &i2c0 {
 	status = "disabled";
