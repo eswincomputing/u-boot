@@ -1460,36 +1460,29 @@ void es_flash_global_wp_cfg(struct es_spi_priv *priv, int enable)
 
 	es_external_cs_manage(priv, false);
 
-	//Update status register1
+	// Winbond/puya select to Block Lock protection mode, disable individual block
+	// The configuration methods for write protection selection vary for different flashes. To make
+	// the code more universal, this function is temporarily disabled, as well as the write protection
+	// for flash regions.
+	es_read_flash_status_register(priv, (uint8_t *)&register_data, SPINOR_OP_RDSR3);
+	request_register_data = register_data;
+	request_register_data &= ~(1 << 2);   //WPS 0, disable individual block
+	if (request_register_data != register_data) {
+		es_write_flash_status_register(priv, request_register_data, SPINOR_OP_WRSR3);
+	}
+	es_write_flash_global_block_lock_register(priv, SPINOR_GLOBAL_BLOCK_UNLOCK);
+
 	es_read_flash_status_register(priv, (uint8_t *)&register_data, SPINOR_OP_RDSR);
 	request_register_data = register_data;
-		/*
-			  SRP SEC TB BP2 BP1 BP0 WEL BUSY
-	 	*/
-	request_register_data |= (1 << 5);  //TB 1, bottom
-	//request_register_data &= ~(1 << 5);  //TB 0, top
-	request_register_data &= ~(1 << 6);  // SEC 0, 64K
+	if (enable) {
+		request_register_data |= (0xF << 2);  //BP0~4 SET 1
+	} else {
+		request_register_data &= ~(0xF << 2);  //BP0~4 SET 0
+	}
 	if (request_register_data != register_data) {
 		es_write_flash_status_register(priv, request_register_data, SPINOR_OP_WRSR);
 	}
 
-	//Update status register3
-	es_read_flash_status_register(priv, (uint8_t *)&register_data, SPINOR_OP_RDSR3);
-	request_register_data = register_data;
-		/*
-			  R DRV1 DRV0 R R WPS R R
-	 	*/
-	request_register_data |= (1 << 2);   //WPS 1, individual block
-	if (request_register_data != register_data) {
-		es_write_flash_status_register(priv, request_register_data, SPINOR_OP_WRSR3);
-	}
-
-	//Update global lock/unlock register
-	if (enable) {
-		es_write_flash_global_block_lock_register(priv, SPINOR_GLOBAL_BLOCK_LOCK);
-	} else {
-		es_write_flash_global_block_lock_register(priv, SPINOR_GLOBAL_BLOCK_UNLOCK);
-	}
 	es_external_cs_manage(priv, true);
 }
 

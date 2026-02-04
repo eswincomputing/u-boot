@@ -90,7 +90,7 @@ typedef struct som_info{
 int update_som_info(struct spi_flash *flash, u64 offset, u32 size, const void *buf)
 {
 	int ret = 0;
-	es_flash_region_wp_cfg(flash, (void *)offset, SOM_BOARD_INFO_SIZE, 0);
+	es_bootspi_wp_cfg(flash, 0);
 	ret = spi_flash_erase(flash, offset, SOM_BOARD_INFO_SIZE);
 	if(ret) {
 		goto out;
@@ -100,7 +100,7 @@ int update_som_info(struct spi_flash *flash, u64 offset, u32 size, const void *b
 		goto out;
 	}
 out:
-	es_flash_region_wp_cfg(flash, (void *)offset, SOM_BOARD_INFO_SIZE, 1);
+	es_bootspi_wp_cfg(flash, 1);
 	return ret;
 }
 

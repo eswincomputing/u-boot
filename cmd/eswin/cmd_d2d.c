@@ -344,7 +344,7 @@ static int d2d_pmix_store(const char *node_name, struct pmix_lookup_table *tbl)
 
 	/* Write data to PMIX region */
 	addr = (void *)ALIGN_DOWN(PMIX_RECORD_ADDR, SZ_64K);
-	es_flash_region_wp_cfg(flash, addr, SZ_64K, 0);
+	es_bootspi_wp_cfg(flash, 0);
 
 	erase_size = ALIGN(sizeof(struct pmix_lookup_table), flash->erase_size);
 	ret = spi_flash_erase(flash, PMIX_RECORD_ADDR, erase_size);
@@ -361,7 +361,7 @@ static int d2d_pmix_store(const char *node_name, struct pmix_lookup_table *tbl)
 	}
 
 out:
-	es_flash_region_wp_cfg(flash, addr, SZ_64K, 0);
+	es_bootspi_wp_cfg(flash, 1);
 	return ret;
 }
 
@@ -397,13 +397,13 @@ static int d2d_pmix_erase(const char *node_name)
 		return -1;
 	}
 	addr = (void *)ALIGN_DOWN(PMIX_RECORD_ADDR, SZ_64K);
-	es_flash_region_wp_cfg(flash, addr, SZ_64K, 0);
+	es_bootspi_wp_cfg(flash, 0);
 	erase_size = ALIGN(sizeof(struct pmix_lookup_table), flash->erase_size);
 	ret = spi_flash_erase(flash, PMIX_RECORD_ADDR, erase_size);
 	if(ret) {
 		printf("D2D PMIX Data erase failed\n");
 	}
-	es_flash_region_wp_cfg(flash, addr, SZ_64K, 1);
+	es_bootspi_wp_cfg(flash, 1);
 	return 0;
 }
 
