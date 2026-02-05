@@ -295,6 +295,12 @@ efi_status_t efi_install_fdt(void *fdt)
 		return EFI_LOAD_ERROR;
 	}
 
+	/* The u-boot working FDT may has been changed by fdt mmz command.
+	   In order for the changes to take effect on linux device tree,
+	   fixup linux FDT with u-boot working FDT before carving out dt
+	   reserve memory*/
+	arch_fixup_fdt(fdt);
+
 	/* Create memory reservations as indicated by the device tree */
 	efi_carve_out_dt_rsv(fdt);
 
