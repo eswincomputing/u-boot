@@ -41,6 +41,7 @@
 #include <eswin/cpu.h>
 #include <eic7700_common.h>
 #include <fdt_support.h>
+#include <system_update.h>
 
 static int get_hardware_board_info(const char *node_name, HardwareBoardInfo_t *gHardware_Board_Info)
 {
@@ -396,6 +397,7 @@ int request_power_pd(uint busnum, uint chip)
 int board_late_init(void)
 {
 	request_power_pd(1, 0x8);
+	application_confirm_valid("spi@51800000");
 	return 0;
 }
 

@@ -121,4 +121,7 @@ typedef struct __attribute__((packed)) boot_bank{
 }boot_bank;
 
 int esw_update(int mode);
+bool application_confirm_valid(void *flash_str);
+bool update_bootloader(char *name, uint64_t base_addr);
+int hardware_init(void *flash_str);
 #endif

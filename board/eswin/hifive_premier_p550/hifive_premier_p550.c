@@ -40,7 +40,7 @@
 #include <dm/pinctrl.h>
 #include <eswin/cpu.h>
 #include <fdt_support.h>
-
+#include <system_update.h>
 typedef struct {
 	uint32_t magicNumber;
 	uint8_t formatVersionNumber;
@@ -297,6 +297,7 @@ int board_init(void)
 
 int board_late_init(void)
 {
+	application_confirm_valid("spi@51800000");
 	return 0;
 }
 

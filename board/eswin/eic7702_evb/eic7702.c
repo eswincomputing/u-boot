@@ -37,6 +37,7 @@
 #include <eic7700_common.h>
 #include <eswin/cpu.h>
 #include <fdt_support.h>
+#include <system_update.h>
 
 static int get_hardware_board_info(const char *node_name, HardwareBoardInfo_t *gHardware_Board_Info)
 {
@@ -197,6 +198,8 @@ int board_init(void)
 
 int board_late_init(void)
 {
+	application_confirm_valid("spi@51800000");
+	application_confirm_valid("spi@71800000");
 	return 0;
 }
 int ft_board_setup(void *blob, struct bd_info *bd)

@@ -639,6 +639,26 @@ out:
 	return ret;
 }
 
+int bootloader_flash_probe(u32 num)
+{
+	struct udevice *bus, *dev;
+	char *node_name_d0 = "spi@51800000";
+	char *node_name_d1 = "spi@71800000";
+	char *node_name = NULL;
+	int ret;
+
+	if(num == 0)
+		node_name = node_name_d0;
+	else
+		node_name = node_name_d1;
+
+	ret = hardware_init(node_name);
+	if(ret)
+		return ret;
+
+	return 0;
+}
+
 static int do_bootchain_write(int argc, char *const argv[])
 {
 
@@ -658,18 +678,13 @@ static int do_bootchain_write(int argc, char *const argv[])
 	if(argc < 3) {
 		printf("arguments : flash_stg type error!\r\n");
 		return -ENOENT;
-	} else if (strcmp(argv[2], "emmc") == 0) {
-		flash_stg = 1;
-		ret = emmc_dev_get();
-		if(ret < 0)
-			return -ENOENT;
 	}else if (strcmp(argv[2], "flash") == 0){
 		if (argc < 4)
-			ret = es_spi_flash_probe(0);
+			ret = bootloader_flash_probe(0);
 		else if (strcmp(argv[3], "1") == 0) {
-			ret = es_spi_flash_probe(1);
+			ret = bootloader_flash_probe(1);
 		} else
-			ret = es_spi_flash_probe(0);
+			ret = bootloader_flash_probe(0);
 		if(ret < 0)
 			return -ENOENT;
 		flash_stg = 0;
@@ -677,155 +692,8 @@ static int do_bootchain_write(int argc, char *const argv[])
 		printf("arguments : flash_stg type error!\r\n");
 		return -ENXIO;
 	}
+	update_bootloader(NULL, fw_addr);
 
-	fw_fht = (firmware_header_t *) fw_addr;
-	if(FHT_MAGIC != fw_fht->magic){
-		printf("FHT magic should be %x, but %x!\r\n",
-				FHT_MAGIC, fw_fht->magic);
-		return -ENODATA;
-	}
-
-	num_entries = fw_fht->num_entries;
-	if(num_entries == 0){
-		printf("fw file error(entries is 0)!\r\n");
-		ret = -ENXIO;
-		goto out;
-	}
-
-	if (!flash_stg)
-		es_bootspi_wp_cfg(flash, 0);
-
-
-	/* bootchain firmware list and  flash memory pool init */
-	es_list_init(&bootloader_list);
-	flash_memory_init();
-
-	/* get bootchain info from memory device */
-	update_flag = get_bootchain_info();
-
-	/* If there is an available bootloader in the flash, only the existing type can be updated, 
-		and it is impossible to add a new firmware type.*/
-	if(!update_flag) {
-		size = 0;
-		for(int i = 0; i < num_entries; i++) {
-			feht = (firmware_entry_header_t *) &fw_fht->entries[i];
-			payload_type = feht->payload_type;
-			size += feht->size;
-			firmware_info = (es_list_node_t *)es_list_find(&bootloader_list, payload_type, 0);
-			if(!firmware_info) {
-				printf("UPDATE BOOTLOADER FAILED (Invalid image file type)\r\n");
-				ret = -ENXIO;
-				goto out;
-			}
-			firmware_entry_header_t *data = firmware_info->data;
-			es_mem_pool_free(&es_pool, (void *)data->offset);
-			if(feht->nsign_version != 0) {
-				uint32_t crc_raw = crc32(0xFFFFFFFF, (void *)(fw_addr + feht->offset + SIGNATURE_SIZE), feht->size);
-				if(feht->crc32 != crc_raw) {
-					printf("Firmware(payload type %x) check crc32 error!!!\r\n", feht->payload_type);
-					ret = -ENXIO;
-					goto out;
-				}
-			}
-
-		}
-		if (size > es_mem_pool_count_free_pages(&es_pool) * es_pool.page_size) {
-			printf("Not enough memory to update bootchain\n");
-			ret = -ENXIO;
-			goto out;
-		}
-	}
-
-	// es_list_traverse(&bootloader_list, print_node);
-	// es_mem_pool_dump(&es_pool);
-	for(int i = 0; i < num_entries; i++) {
-
-		feht = (firmware_entry_header_t *) &fw_fht->entries[i];
-		src_addr = feht->offset + fw_addr;
-		size = feht->size + SIGNATURE_SIZE;
-		payload_type = feht->payload_type;
-
-
-		ret = es_mem_pool_try_alloc(&es_pool, size, &ptr);
-		if  (ret == ES_MEMPOOL_ERR_FRAGMENTED) {
-			printf("Wait a moment. The malloc memory operation failed. Fragmentation cleanup is underway.\n");
-			es_mem_pool_defrag(&es_pool, defrag_move_cb, NULL);
-			ret = es_mem_pool_try_alloc(&es_pool, size, &ptr);
-			if (ret != ES_MEMPOOL_SUCCESS) {
-				printf("Allocation failed permanently (not enough memory)\n");
-				ret = -ENXIO;
-				goto out;
-			}
-		} else if (ret != ES_MEMPOOL_SUCCESS){
-			printf("Allocation failed permanently (not enough memory)\n");
-			ret = -ENXIO;
-			goto out;
-		}
-	
-		firmware_entry_header_t *entry_head = malloc_cache_aligned(sizeof(firmware_entry_header_t));
-		memcpy(entry_head, &feht->version, sizeof(firmware_entry_header_t));
-		dst_addr = (uint64_t)ptr;
-		entry_head->offset = dst_addr;
-		entry_head->size = feht->size;
-		es_list_update(&bootloader_list, payload_type, 0, entry_head);
-
-		switch(payload_type){
-			case PUBKEY_RSA:
-				printf("PUBKEY_RSA writing...\r\n");
-				break;
-			case PUBKEY_ECC:
-				printf("PUBKEY_ECC writing...\r\n");
-				break;
-			case DDR:
-				printf("DDR writing...\r\n");
-				break;
-			case D2D:
-				printf("D2D writing...\r\n");
-				break;
-			case BOOTLOADER:
-				printf("BOOTLOADER writing...\r\n");
-				break;
-			case FIRMWARE:
-				printf("FIRMWARE writing...\r\n");
-				break;
-			default:
-				printf("Invalid image file type!\r\n");
-				ret = -ENXIO;
-				goto out;
-		}
-		ret = es_write_bootchain(src_addr, dst_addr, size);
-		if(ret)
-			goto out;
-		// es_list_traverse(&bootloader_list, print_node);
-		// es_mem_pool_dump(&es_pool);
-	}
-
-	size = FW_HEAD_SIZE;
-	fht = malloc_cache_aligned(size);
-	if(!fht) {
-		ret = -1;
-		goto out;
-	}
-	memset(fht, 0, size);
-	fht->magic = FHT_MAGIC;
-	fht->num_entries = es_pool.alloc_cnt;
-	es_list_foreach(&bootloader_list, node) {
-		firmware_entry_header_t *entry = (firmware_entry_header_t *)node->data;
-		memcpy(&fht->entries[cnt++].version, entry, sizeof(firmware_entry_header_t)); 
-	}
-
-	printf("BOOTCHAIN HEAD writing...\r\n");
-	ret = es_write_bootchain((uint64_t)&fht->magic, FW_HEAD_OFFSET, size);
-	if(ret)
-		goto out;
-	printf("bootloader write OK\r\n");
-out:
-	if (!flash_stg)
-		es_bootspi_wp_cfg(flash, 1);
-	if(fht)
-		free(fht);
-	es_list_clear(&bootloader_list);
-	flash_memory_free();
 	return ret;
 }
 
@@ -1279,7 +1147,7 @@ usage:
 
 U_BOOT_CMD(
 	es_burn,	5,	0,	do_esburn_bootchain,
-	"ESWIN burn tool",
+	"ESWIN burn tool version 3.0.0",
 #if defined(CONFIG_TARGET_ESWIN_EVB_EIC7702) || defined(CONFIG_TARGET_FML13V03)
 	"\nes_burn write addr flash_stg die_num	- write binary file from memory at `addr' to die0/die1 mtd(die_num 0:default/1)\n"
 #else

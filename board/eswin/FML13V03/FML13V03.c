@@ -38,6 +38,7 @@
 #include <eswin/cpu.h>
 #include <fdt_support.h>
 #include <command.h>
+#include <system_update.h>
 
 static int get_hardware_board_info(const char *node_name, FMLHardwareBoardInfo_t *gHardware_Board_Info)
 {
@@ -210,6 +211,8 @@ int board_late_init(void)
 	ret = init_pwm_fan();
 	if (ret)
 		printf("PWM fan initialization failed: %d\n", ret);
+	application_confirm_valid("spi@51800000");
+	application_confirm_valid("spi@71800000");
 
 	return 0;
 }

@@ -1556,7 +1556,7 @@ int es_bootspi_wp_cfg(struct spi_flash *flash, int enable)
 		priv->wp_enabled = 0;
 	}
 
-	printf("Bootspi flash write protection %s\n", enable ? "enabled" : "disabled");
+	// printf("Bootspi flash write protection %s\n", enable ? "enabled" : "disabled");
 	return 0;
 }
 
@@ -1628,6 +1628,7 @@ static int do_bootspi_wp_cfg(int argc, char * const argv[])
 		return CMD_RET_USAGE;
 	}
 
+	printf("Bootspi flash write protection %s\n", enable ? "enabled" : "disabled");
 	es_bootspi_wp_cfg(boot_flash, enable);
 	return CMD_RET_SUCCESS;
 }
