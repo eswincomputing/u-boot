@@ -1,6 +1,0 @@
-EIC7700 D314 BOARD
-M:  Xiang Xu <xuxiang@eswincomputing.com>
-S:  Maintained
-F:  board/eswin/eic7700_d314/
-F:  include/configs/eic7700_d314.h
-F:  configs/eic7700_d314_defconfig

@@ -152,19 +152,19 @@ int hardware_info_env_set(void)
 
 	char *boardSerialNumber = gHardware_Board_Info.boardSerialNumber;
 	printf("boardSerialNumber %s\n",boardSerialNumber);
-	if(strstr(boardSerialNumber, "EIDS100AX16")) {
-		env_set("fdtfile","eswin/eic7700-evb.dtb");
-	}
-	else if(strstr(boardSerialNumber, "EIDS200A516")) {
-		env_set("fdtfile","eswin/eic7700-evb.dtb");
-	}
-	else if(strstr(boardSerialNumber, "EIDS200B516")) {
-		env_set("fdtfile","eswin/eic7700-evb-a2.dtb");
-	}
-	else if(strstr(boardSerialNumber, "EIMSE00")) {
-		env_set("fdtfile","eswin/eic7700-evb-a3.dtb");
-		set_voltage_default();
-	}
+	// if(strstr(boardSerialNumber, "EIDS100AX16")) {
+	// 	env_set("fdtfile","eswin/eic7700-evb.dtb");
+	// }
+	// else if(strstr(boardSerialNumber, "EIDS200A516")) {
+	// 	env_set("fdtfile","eswin/eic7700-evb.dtb");
+	// }
+	// else if(strstr(boardSerialNumber, "EIDS200B516")) {
+	// 	env_set("fdtfile","eswin/eic7700-evb-a2.dtb");
+	// }
+	// else if(strstr(boardSerialNumber, "EIMSE00")) {
+	// 	env_set("fdtfile","eswin/eic7700-evb-a3.dtb");
+	// 	set_voltage_default();
+	// }
 	return 0;
 }
 
@@ -184,7 +184,7 @@ int misc_init_r(void)
 	hardware_info_env_set();
 
 	if (NULL == env_get("fdtfile")) {
-		env_set("fdtfile","eswin/eic7700-evb-a3.dtb");
+		env_set("fdtfile","eswin/eic7700-evb.dtb");
 	}
 	eswin_update_bootargs();
 	return 0;
