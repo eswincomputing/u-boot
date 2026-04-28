@@ -520,17 +520,17 @@
 			// 		bias-pull-up = <1>;
 			// 	};
 			// };
-			// pinctrl_gpio11_default: gpio11-default{
-			// 	mux {
-			// 		groups = "gpio11_group";
-			// 		function = "gpio11_func";
-			// 	};
-			// 	conf {
-			// 		groups = "gpio11_group";
-			// 		input-enable = <1>;
-			// 		bias-pull-up = <1>;
-			// 	};
-			// };
+			pinctrl_gpio11_default: gpio11-default{
+				mux {
+					groups = "gpio11_group";
+					function = "gpio11_func";
+				};
+				conf {
+					groups = "gpio11_group";
+					input-enable = <1>;
+					bias-pull-up = <1>;
+				};
+			};
 			// pinctrl_gpio12_default: gpio12-default{
 			// 	mux {
 			// 		groups = "gpio12_group";
@@ -544,7 +544,7 @@
 				};
 				conf {
 					groups = "gpio13_group";
-					input-enable = <0>;
+					input-enable = <1>;
 					bias-pull-down = <1>;
 				};
 			};
@@ -555,7 +555,7 @@
 				};
 				conf {
 					groups = "gpio14_group";
-					input-enable = <0>;
+					input-enable = <1>;
 					bias-pull-down = <1>;
 				};
 			};
@@ -566,7 +566,7 @@
 				};
 				conf {
 					groups = "gpio15_group";
-					input-enable = <0>;
+					input-enable = <1>;
 					bias-pull-down = <1>;
 				};
 			};
@@ -577,7 +577,7 @@
 				};
 				conf {
 					groups = "gpio16_group";
-					input-enable = <0>;
+					input-enable = <1>;
 					bias-pull-down = <1>;
 				};
 			};

@@ -1,0 +1,6 @@
+ESWIN EIC7700 AI NAS BOARD
+M:  Xiang Xu <xuxiang@eswincomputing.com>
+S:  Maintained
+F:  board/eswin/eic7700_nas/
+F:  include/configs/eswin_eic7700_nas.h
+F:  configs/eic7700_ai_nas_defconfig
