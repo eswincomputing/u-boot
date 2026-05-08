@@ -90,6 +90,24 @@ static int menukey;
  */
 static const char vpu_fw_version_string[] __attribute__((used)) = "VPU_FW_VERSION: " VPU_FW_VERSION;
 
+static int save_firmware_version_to_shm(uint64_t version_table_addr)
+{
+	char *firmware_version = VPU_FW_VERSION;
+
+	debug("Saving firmware version %s to shared memory\n", firmware_version);
+	strncpy((char *)version_table_addr + FIRMWARE_VERSION_OFFSET, firmware_version,
+		FIRMWARE_VERSION_MAX_LEN - 1);
+	// Ensure null termination
+	*((char *)version_table_addr + FIRMWARE_VERSION_OFFSET + FIRMWARE_VERSION_MAX_LEN -
+	  1) = '\0';
+	// Flush cache to make sure data is written to memory
+	flush_dcache_range((ulong)version_table_addr + FIRMWARE_VERSION_OFFSET,
+			   (ulong)version_table_addr + FIRMWARE_VERSION_OFFSET +
+				   FIRMWARE_VERSION_MAX_LEN);
+
+	return 0;
+}
+
 /**
  * early_print_vpu_version - Print VPU firmware version early in boot
  *
@@ -98,6 +116,37 @@ static const char vpu_fw_version_string[] __attribute__((used)) = "VPU_FW_VERSIO
  */
 int early_print_vpu_version(void)
 {
+	u32 testreg_var = 0;
+	int ret = 0;
+	const char *board_name;
+
+	/*
+	 * set test reg to info host ready for loading image
+	 */
+	board_name = env_get("board_name");
+
+	if (!strncmp("vpu7702_evb", board_name, 11) ||
+		!strncmp("vpu7702_pcie", board_name, 12)) {
+		writel(READY_SIGN, (u32 *)TEST_REG0);
+		testreg_var = readl((u32 *)TEST_REG0);
+	} else if (!strncmp("ebc7702_p01_", board_name, 11)) {
+		if (save_firmware_version_to_shm(VERSION_TABLE1_PHYS_ADDR)) {
+			printf("Failed to save firmware version to shared memory\n");
+		}
+
+		writel(DIE1_SIGN, (u32 *)TEST_REG2_DIE1);
+		testreg_var = readl((u32 *)TEST_REG2_DIE1);
+		writel(READY_SIGN, (u32 *)TEST_REG2);
+		testreg_var = readl((u32 *)TEST_REG2);
+	} else {
+		writel(READY_SIGN, (u32 *)TEST_REG2);
+		testreg_var = readl((u32 *)TEST_REG2);
+	}
+
+	if (testreg_var != READY_SIGN) {
+		printf("WARNING! set test reg failed. value is %d\n", testreg_var);
+	}
+
 	printf("VPU_FW_VERSION: %s\n", VPU_FW_VERSION);
 	return 0;
 }
@@ -152,24 +201,6 @@ int get_die_ordinary(void)
 	}
 
 	return die_ordinary;
-}
-
-static int save_firmware_version_to_shm(uint64_t version_table_addr)
-{
-	char *firmware_version = VPU_FW_VERSION;
-
-	debug("Saving firmware version %s to shared memory\n", firmware_version);
-	strncpy((char *)version_table_addr + FIRMWARE_VERSION_OFFSET, firmware_version,
-		FIRMWARE_VERSION_MAX_LEN - 1);
-	// Ensure null termination
-	*((char *)version_table_addr + FIRMWARE_VERSION_OFFSET + FIRMWARE_VERSION_MAX_LEN -
-	  1) = '\0';
-	// Flush cache to make sure data is written to memory
-	flush_dcache_range((ulong)version_table_addr + FIRMWARE_VERSION_OFFSET,
-			   (ulong)version_table_addr + FIRMWARE_VERSION_OFFSET +
-				   FIRMWARE_VERSION_MAX_LEN);
-
-	return 0;
 }
 
 #endif /* CONFIG_BOOT_ESWIN_VPU7702 */
@@ -517,31 +548,6 @@ static int abortboot_single_key(int bootdelay)
 	}
 
 	board_name = env_get("board_name");
-
-	/*
-	 * set test reg to info host ready for loading image
-	 */
-	if (!strncmp("vpu7702_evb", board_name, 11) ||
-		!strncmp("vpu7702_pcie", board_name, 12)) {
-		writel(READY_SIGN, (u32 *)TEST_REG0);
-		testreg_var = readl((u32 *)TEST_REG0);
-	} else if (!strncmp("ebc7702_p01_", board_name, 11)) {
-		if (save_firmware_version_to_shm(VERSION_TABLE1_PHYS_ADDR)) {
-			printf("Failed to save firmware version to shared memory\n");
-		}
-
-		writel(DIE1_SIGN, (u32 *)TEST_REG2_DIE1);
-		testreg_var = readl((u32 *)TEST_REG2_DIE1);
-		writel(READY_SIGN, (u32 *)TEST_REG2);
-		testreg_var = readl((u32 *)TEST_REG2);
-	} else {
-		writel(READY_SIGN, (u32 *)TEST_REG2);
-		testreg_var = readl((u32 *)TEST_REG2);
-	}
-
-	if (testreg_var != READY_SIGN) {
-		printf("WARNING! set test reg failed. value is %d\n", testreg_var);
-	}
 	bootdelay = 5;
 #ifdef CONFIG_CMD_ESWIN_DIE
 	run_command_list("eswin_die", -1, 0);
@@ -607,7 +613,13 @@ static int abortboot_single_key(int bootdelay)
 			if (testreg_var == BOOT_SIGN) {
 				printf("OS image is loaded. Now autobooting ... \n");
 				invalidate_dcache_range(0x140000000, 0x180000000);
-				run_command_list("bootm 0x140000000", -1, 0);
+				if(gd->bd->bi_dram[0].size <= SZ_8G) {
+					ret = run_command_list("bootm 0x140000000#config-8g", -1, 0);
+				} else {
+					ret = run_command_list("bootm 0x140000000#config-a2", -1, 0);
+				}
+				if(ret)
+					run_command_list("bootm 0x140000000", -1, 0);
 			}
 
 			udelay(10000);
