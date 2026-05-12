@@ -113,8 +113,9 @@ static int splash_video_logo_load(void)
 		printf("Error: spi_flash_read failed! ret = %d\n", ret);
 		return ret;
 	}
+	// printf("splash: splash_video_logo_load bmp_load_addr:0x%llx\n", bmp_load_addr);
 	if (*((u32 *)bmp_load_addr) == GZIP_HEAD) return 0;
-
+	// printf("splash: splash_video_logo_load memcpy bmp_load_addr:0x%llx bmp_logo_bitmap\n", bmp_load_addr);
 	memcpy((void *)bmp_load_addr, bmp_logo_bitmap, ARRAY_SIZE(bmp_logo_bitmap));
 	return 0;
 }

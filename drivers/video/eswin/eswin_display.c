@@ -48,6 +48,7 @@
 #include "eswin_connector.h"
 #include "eswin_panel.h"
 #include "eswin_dc_test.h"
+#include "rasp_panel.h"
 #include <dm.h>
 #include <dm/of_access.h>
 #include <dm/ofnode.h>
@@ -275,7 +276,6 @@ static int display_get_timing_from_dts(struct panel_state *panel_state,
 
 	mode->clock = pixelclock / 1000;
 	mode->flags = flags;
-
 	return 0;
 }
 
@@ -521,7 +521,7 @@ static int display_init(struct display_state *state)
 	}
 
 	if (panel_state->panel) {
-		vo_debug("get panle timing.\n");
+		vo_debug("get panel timing.\n");
 		ret = display_get_timing(state);
 	} else if (conn_funcs->get_timing) {
 		vo_debug("get connctor timing.\n");
@@ -624,19 +624,23 @@ static int display_enable(struct display_state *state)
 		crtc_funcs->prepare(state);
 
 	if (crtc_funcs->enable)
-        crtc_funcs->enable(state);
+		crtc_funcs->enable(state);
+
 #ifndef CONFIG_DRM_ESWIN_WRITEBACK
-	if (conn_funcs->prepare)
+	if (conn_funcs->prepare){
 		conn_funcs->prepare(state);
-
+	}
 	if (panel_state->panel)
+	{
 		eswin_panel_prepare(panel_state->panel);
+	}
 
-	if (conn_funcs->enable)
+	if (conn_funcs->enable){
 		conn_funcs->enable(state);
-
-	if (panel_state->panel)
+	}
+	if (panel_state->panel){
 		eswin_panel_enable(panel_state->panel);
+	}
 #endif
 	state->is_enable = true;
 	vo_debug("leave.\n");
@@ -725,8 +729,10 @@ static int display_logo(struct display_state *state)
 #ifdef CONFIG_ESWIN_LOGO_DISPLAY
 	memcpy((char *)crtc_state->dma_addr, logo->mem, DRM_ESWIN_FB_SIZE);
 #endif
+	vo_debug("crtc_state->dma_addr=0x%llx,logo->mem=0x%llx, logo size:%d sifive_l3_flush64_range begin\n",
+			crtc_state->dma_addr, (u64)logo->mem, DRM_ESWIN_FB_SIZE);
 	sifive_l3_flush64_range(crtc_state->dma_addr, DRM_ESWIN_FB_SIZE);
-	vo_debug("crtc_state->dma_addr=0x%llx,logo->mem=0x%llx, logo size:%d\n",
+	vo_debug("crtc_state->dma_addr=0x%llx,logo->mem=0x%llx, logo size:%d sifive_l3_flush64_range end\n",
 			crtc_state->dma_addr, (u64)logo->mem, DRM_ESWIN_FB_SIZE);
 
 	if (logo->mode == ESWIN_DISPLAY_FULLSCREEN) {
@@ -754,7 +760,6 @@ static int display_logo(struct display_state *state)
 
 	display_set_plane(state);
 	display_enable(state);
-
 	return 0;
 }
 
@@ -997,18 +1002,25 @@ enum {
 static struct eswin_panel *eswin_of_find_panel(struct udevice *dev)
 {
 	ofnode panel_node, ports, ep;
+	ofnode ports2, bridge, regulator, i2c7, pca9548, i2c5, port2, ep2;
 	ofnode port = {0};
 	struct udevice *panel_dev;
+	struct udevice *bridge_dev;
+	struct udevice *regulator_dev;
+	struct udevice *i2c5_dev;
+	struct udevice *pca9548_dev;
+	struct udevice *i2c7_dev;
 	int ret;
-
+	uint reg7 = 0;
+	vo_debug("eswin_of_find_panel conndev = %s-----------.\n", dev->name);
 	panel_node = dev_read_subnode(dev, "panel");
+
 	if (ofnode_valid(panel_node) && ofnode_is_enabled(panel_node)) {
-		ret = uclass_get_device_by_ofnode(UCLASS_PANEL, panel_node,
-						  &panel_dev);
+		ret = uclass_get_device_by_ofnode(UCLASS_PANEL, panel_node, &panel_dev);
+		vo_debug("%s:find simple panel node(%s).\n", __func__, panel_dev->name);
 		if (!ret)
 			goto found;
 	}
-
 	ports = dev_read_subnode(dev, "ports");
 	if (!ofnode_valid(ports))
 		return NULL;
@@ -1019,10 +1031,12 @@ static struct eswin_panel *eswin_of_find_panel(struct udevice *dev)
 		if (ofnode_read_u32(port, "reg", &reg))
 			continue;
 
-		if (reg != PORT_DIR_OUT)
+		if (reg != PORT_DIR_OUT) { //reg == 0
 			continue;
+		}
 
-		ofnode_for_each_subnode(ep, port) {
+		// reg == 1
+		ofnode_for_each_subnode(ep, port) { //only one endpoint
 			ofnode _ep, _port;
 			uint phandle;
 
@@ -1037,20 +1051,107 @@ static struct eswin_panel *eswin_of_find_panel(struct udevice *dev)
 			if (!ofnode_valid(_port))
 				continue;
 
-			panel_node = ofnode_get_parent(_port);
-			if (!ofnode_valid(panel_node))
+			ports2 = ofnode_get_parent(_port);
+			if (!ofnode_valid(ports2))
 				continue;
 
-			ret = uclass_get_device_by_ofnode(UCLASS_PANEL,
-							  panel_node,
-							  &panel_dev);
-			if (!ret)
-				goto found;
+			if (ofnode_device_is_compatible(ports2,"simple-panel-dsi")) {
+				ret = uclass_get_device_by_ofnode(UCLASS_PANEL, panel_node, &panel_dev);
+				if (!ret)
+					goto found;
+			}
+			bridge = ofnode_get_parent(ports2);
+			if (!ofnode_valid(bridge))
+				continue;
+
+			if (ofnode_read_u32(bridge, "vddc-supply", &phandle))
+				continue;
+
+			regulator = ofnode_get_by_phandle(phandle);
+			if (!ofnode_valid(regulator))
+			  vo_debug("--regulator get null---------.\n");
+
+			i2c7 = ofnode_get_parent(regulator);
+			if (!ofnode_valid(i2c7))
+				continue;
+
+			ofnode_read_u32(i2c7, "reg", &reg7);
+			if (reg7 == 7) {
+				pca9548 = ofnode_get_parent(i2c7);
+				if (!ofnode_valid(pca9548))
+					continue;
+
+				i2c5 = ofnode_get_parent(pca9548);
+				if (!ofnode_valid(i2c5))
+					continue;
+
+				vo_debug("eswin_of_find_panel get i2c (reg=%d)----------.\n", reg7);
+				ret = uclass_get_device_by_ofnode(UCLASS_I2C, i2c5, &i2c5_dev);
+				if (!ret) {
+					vo_debug("eswin_of_find_panel I2C5(%s)-----------.\n", i2c5_dev->name);
+				}
+				ret = uclass_get_device_by_ofnode(UCLASS_I2C_MUX, pca9548, &pca9548_dev);
+				if (!ret) {
+					vo_debug("eswin_of_find_panel pca9548(%s)-----------.\n", pca9548_dev->name);
+				}
+			} else {
+				vo_debug("eswin_of_find_panel get i2c (reg=%d)----------.\n", reg7);
+				ret = uclass_get_device_by_ofnode(UCLASS_I2C, i2c7, &i2c7_dev);
+				if (!ret) {
+					vo_debug("eswin_of_find_panel I2C2(%s)-----------.\n", i2c7_dev->name);
+				}
+			}
+			ret = uclass_get_device_by_ofnode(UCLASS_I2C_GENERIC, regulator, &regulator_dev);
+			if (!ret) {
+				vo_debug("eswin_of_find_panel RETULATOR(%s)-----------.\n", regulator_dev->name);
+			}
+
+			ofnode_for_each_subnode(port2, ports2) {
+				ofnode _ep2, _ports2;
+				uint phandle2;
+
+				if (ofnode_read_u32(port2, "reg", &reg))
+					continue;
+
+				if (reg != PORT_DIR_OUT){
+					vo_debug("eswin_of_find_panel bridge_in == 0 ------.\n");
+					continue;
+				}
+
+				//reg == 1
+				ofnode_for_each_subnode(ep2, port2)
+				{
+					if (ofnode_read_u32(ep2, "remote-endpoint", &phandle2))
+						continue;
+
+					_ep2 = ofnode_get_by_phandle(phandle2);
+					if (!ofnode_valid(_ep2))
+						continue;
+
+					_ports2 = ofnode_get_parent(_ep2);
+					if (!ofnode_valid(_ports2))
+						continue;
+
+					panel_node = ofnode_get_parent(_ports2);
+					if (!ofnode_valid(panel_node))
+						continue;
+
+					ret = uclass_get_device_by_ofnode(UCLASS_PANEL, panel_node, &panel_dev);
+					if (!ret) {
+						vo_debug("eswin_of_find_panel panel(%s)-----------.\n", panel_dev->name);
+					}
+
+					ret = uclass_get_device_by_ofnode(UCLASS_VIDEO_BRIDGE, bridge, &bridge_dev);
+					if (!ret) {
+						vo_debug("eswin_of_find_panel bridge(%s)-----------.\n", bridge_dev->name);
+						goto found;
+					}
+				}
+			}
 		}
 	}
 
 	return NULL;
-
 found:
 	return (struct eswin_panel *)dev_get_driver_data(panel_dev);
 }
@@ -1064,27 +1165,21 @@ static struct udevice *eswin_of_find_connector(ofnode endpoint)
 
 	if (ofnode_read_u32(endpoint, "remote-endpoint", &phandle))
 		return NULL;
-
 	ep = ofnode_get_by_phandle(phandle);
 	if (!ofnode_valid(ep) || !ofnode_is_enabled(ep))
 		return NULL;
-
 	port = ofnode_get_parent(ep);
 	if (!ofnode_valid(port))
 		return NULL;
-
 	ports = ofnode_get_parent(port);
 	if (!ofnode_valid(ports))
 		return NULL;
-
 	conn = ofnode_get_parent(ports);
 	if (!ofnode_valid(conn) || !ofnode_is_enabled(conn))
 		return NULL;
-
 	ret = uclass_get_device_by_ofnode(UCLASS_DISPLAY, conn, &dev);
 	if (ret)
 		return NULL;
-
 	return dev;
 }
 
@@ -1112,7 +1207,7 @@ static int eswin_display_probe(struct udevice *dev)
 		return ret;
 	}
 
-	vo_debug("node id:%d\n", node_id);
+	vo_debug("node id:%d plat->base:0x%llx\n", node_id, plat->base);
 	/* Before relocation we don't need to do anything */
 	if (!(gd->flags & GD_FLG_RELOC))
 		return 0;
@@ -1178,7 +1273,6 @@ static int eswin_display_probe(struct udevice *dev)
 		s = malloc(sizeof(*s));
 		if (!s)
 			continue;
-    
 		memset(s, 0, sizeof(*s));
 
 		INIT_LIST_HEAD(&s->head);
@@ -1267,11 +1361,12 @@ static int eswin_display_probe(struct udevice *dev)
 	s->logo.height = DRM_ESWIN_FB_HEIGHT;
 	s->logo.bpp = (1 << DRM_ESWIN_FB_BPP);
 	s->logo.ymirror = 0;
+
+	vo_debug("node id:%d plat->base:0x%llx logo.width:%d, logo.height:%d uc_priv->fb:0x%llx\n", node_id, plat->base, s->logo.width, s->logo.height, uc_priv->fb);
 	if (0 != display_logo(s))
 		return -ENODEV;
-	
-	video_set_flush_dcache(dev, true);
 
+	video_set_flush_dcache(dev, true);
 	return 0;
 }
 
@@ -1280,7 +1375,7 @@ int eswin_display_bind(struct udevice *dev)
 	struct video_uc_plat *plat = dev_get_uclass_plat(dev);
 
 	plat->size = MEMORY_POOL_SIZE;
-
+	// vo_debug("eswin_display_bind plat->size:0x%x\n", plat->size);
 	return 0;
 }
 
@@ -1288,9 +1383,9 @@ int eswin_display_bind(struct udevice *dev)
 static int eswin_display_sync(struct udevice *dev)
 {
 	struct video_uc_plat *plat = dev_get_uclass_plat(dev);
-
+	vo_debug("eswin_display_sync plat->base:0x%llx begin sifive_l3_flush64_range\n", plat->base);
 	sifive_l3_flush64_range(plat->base, DRM_ESWIN_FB_SIZE);
-
+	vo_debug("eswin_display_sync plat->base:0x%llx end sifive_l3_flush64_range\n", plat->base);
 	return 0;
 }
 

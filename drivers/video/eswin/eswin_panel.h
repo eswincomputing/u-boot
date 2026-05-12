@@ -29,6 +29,7 @@ struct eswin_panel_funcs {
 	void (*unprepare)(struct eswin_panel *panel);
 	void (*enable)(struct eswin_panel *panel);
 	void (*disable)(struct eswin_panel *panel);
+	int (*get_modes)(struct udevice *dev);
 };
 
 struct eswin_panel {
@@ -36,7 +37,7 @@ struct eswin_panel {
 	unsigned int bus_format;
 	unsigned int bpc;
 	const struct eswin_panel_funcs *funcs;
-	const void *data;
+	const void *data; //const struct panel_desc *desc;
 
 	struct display_state *state;
 };

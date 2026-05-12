@@ -21,8 +21,8 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/soc/eswin-pmp.h>
 #include "eic770x.dtsi"
-// #include "dt-bindings/media/eswin_mipi_dsi.h"
-// #include "linux/media-bus-format.h"
+#include "dt-bindings/media/eswin_mipi_dsi.h"
+#include "media_bus_format.h"
 / {
 	#address-cells = <2>;
 	#size-cells = <2>;
@@ -89,6 +89,35 @@
 			gpios = <&porta 24 GPIO_ACTIVE_HIGH>;
 			label = "gpio-84";
 			linux,default-trigger = "default-on";
+		};
+	};
+	panel_disp:panel_disp {
+		compatible = "raspberrypi,7inch-dsi";
+		status = "disabled";
+		backlight = <&reg_display>;
+		power-supply = <&reg_display>;
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&bridge_out>;
+			};
+		};
+		display-timings {
+			native-mode = <&timing0>;
+			timing0: timing0 {
+				/*The fpga platform does not need to set the clock*/
+				clock-frequency = <29700000>;
+				hactive = <800>;
+				vactive = <480>;
+				hsync-len = <10>;
+				hback-porch = <50>;
+				hfront-porch = <50>;
+				vsync-len = <5>;
+				vback-porch = <20>;
+				vfront-porch = <10>;
+				hsync-active = <0>;
+				vsync-active = <0>;
+				pixelclk-active = <1>;
+			};
 		};
 	};
 };
@@ -207,18 +236,76 @@
 &hdmi {
 	status = "okay";
 };
+
 &display_subsystem {
 	status = "okay";
 };
+
 &route_hdmi {
 	status = "okay";
 };
+
+&mipi_dsi {
+	status = "disabled";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_gpio28_default>;
+	dsi-mux-gpios = <&porta 28 GPIO_ACTIVE_HIGH>;
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port@1 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <1>;
+			mipi_dsi_out: endpoint {
+				remote-endpoint = <&bridge_in>;
+			};
+		};
+	};
+	toshiba_bridge: bridge@0 {
+		reg = <0>;
+		compatible = "toshiba,tc358762";
+		status = "disabled";
+		vddc-supply = <&reg_display>;
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				bridge_in: endpoint {
+					remote-endpoint = <&mipi_dsi_out>;
+				};
+			};
+			port@1 {
+				reg = <1>;
+				bridge_out: endpoint {
+					remote-endpoint = <&panel_in>;
+				};
+			};
+		};
+	};
+};
+
+&route_mipi {
+	status = "disabled";
+};
+
 &osd {
 	status = "okay";
 };
+
 &i2c2 {
 	status = "okay";
+	reg_display: regulator@45 {
+		status = "disabled";
+		compatible = "raspberrypi,7inch-touchscreen-panel-regulator";
+		reg = <0x45>;
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
 };
+
 /*
 GPIO USED ON CarrierBoard:
 	gpio0   : FP Audio Jack Sense(I), active low

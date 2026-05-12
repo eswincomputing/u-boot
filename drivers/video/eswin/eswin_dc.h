@@ -169,7 +169,6 @@ struct dc8000_dc {
 	gctUINT32 reg_len;
 	gctINT win_offset;
 	gctUINT32 is_scale;
-
 	dc_mmu *mmu;
 	bool mmu_constructed;
 };

@@ -1,0 +1,311 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Device Tree file for Eswin EIC7702 SoC only active die0.
+ *
+ * Copyright 2024, Beijing ESWIN Computing Technology Co., Ltd.. All rights reserved.
+ * SPDX-License-Identifier: GPL-2.0
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 2.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/soc/eswin-pmp.h>
+#include "eic770x.dtsi"
+#include "dt-bindings/media/eswin_mipi_dsi.h"
+#include "media_bus_format.h"
+/ {
+	#address-cells = <2>;
+	#size-cells = <2>;
+	model = "ESWIN EIC7702 EVB D0";
+
+
+	aliases {
+		serial0 = &uart0;
+		i2c0 = &i2c0;
+		i2c1 = &i2c1;
+		i2c2 = &i2c2;
+		i2c3 = &i2c3;
+		i2c4 = &i2c4;
+		i2c5 = &i2c5;
+		i2c6 = &i2c6;
+		i2c7 = &i2c7;
+		i2c8 = &i2c8;
+		i2c9 = &i2c9;
+		i2c11 = &i2c11;
+		i2c12 = &i2c12;
+		gpio0 = &gpio0;
+		spi0 = &bootspi;
+		spi1 = &dw_spi0;
+	};
+
+	chosen {
+		stdout-path = "serial0";
+	};
+
+	memory@80000000 {
+		device_type = "memory";
+		reg = <0x0 0x80000000 0x4 0x00000000>;
+	};
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		display_reserved: region@E0000000 {
+			reg = <0x0 0xE0000000 0x0 0x2000000>;
+			no-map;
+		};
+
+		lpcpu_reserved: lpcpures@DFFF0000 {
+			reg = <0x00 0xDFFF0000 0x00 0x00010000>;
+			no-map;
+		};
+	};
+	soc {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		compatible = "SiFive,FU800-soc", "fu800-soc", "sifive-soc", "simple-bus";
+		ranges;
+	};
+};
+&cpu0 {
+	status = "okay";
+};
+&cpu1 {
+	status = "okay";
+};
+&cpu2 {
+	status = "okay";
+};
+&cpu3 {
+	status = "okay";
+};
+&plic0{
+	status = "okay";
+};
+&d0_mbox {
+	status = "okay";
+};
+&d0_mbox_srvc {
+	status = "okay";
+};
+&d0_mbox1 {
+	status = "okay";
+};
+&d0_mbox_srvc1 {
+	status = "okay";
+};
+&d0_pmp {
+	status = "okay";
+};
+&uart0 {
+	status = "okay";
+};
+&uart1 {
+	status = "okay";
+};
+&bootspi {
+	status = "okay";
+	cs-gpios = <&portd 0 GPIO_ACTIVE_LOW>;
+	wp-gpios = <&portd 4 GPIO_ACTIVE_LOW>;
+	spi-flash@0 {
+		reg = <0>;
+		compatible = "winbond,w25q128fw",
+			"jedec,spi-nor";
+		spi-max-frequency = <4800000>;
+	};
+};
+&dw_spi0 {
+	status = "okay";
+	spi-flash@1 {
+		reg = <1>;
+		compatible = "winbond,w25q128fw",
+			"jedec,spi-nor";
+		spi-max-frequency = <4800000>;
+	};
+};
+&sd {
+	status = "okay";
+	delay_code = <0x34>;
+	drive-impedance-ohm = <33>;
+	enable-cmd-pullup;
+	enable-data-pullup;
+};
+
+&sdhci_emmc {
+	status = "okay";
+	delay_code = <0x3c>;
+	drive-impedance-ohm = <50>;
+	enable-cmd-pullup;
+	enable-data-pullup;
+	mmc-hs200-1_8v;
+	mmc-hs400-1_8v;
+};
+
+&eswin_sata {
+	status = "okay";
+};
+
+&eth0 {
+	status = "okay";
+	phy-mode = "rgmii-txid";
+	max-speed = <1000>;
+	phy-handle = <&phy0>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_gpio15_default>;
+	rst-gpios = <&porta 15 GPIO_ACTIVE_LOW>;
+	dly-param-1000m = <0x23232323 0x5a0c6423 0x0c0c0c0c>;
+	dly-param-100m = <0x50505050 0x803f8050 0x3f3f3f3f>;
+	dly-param-10m = <0 0 0>;
+	mdio0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		phy0: ethernet-phy@1 {
+			reg = <0>;
+		};
+	};
+};
+
+&eth1 {
+	status = "disabled";
+	phy-mode = "rgmii-txid";
+	max-speed = <1000>;
+	phy-handle = <&phy1>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_gpio14_default>;
+	rst-gpios = <&porta 14 GPIO_ACTIVE_LOW>;
+	dly-param-1000m = <0x25252525 0x5a266425 0x26262626>;
+	dly-param-100m = <0x48484848 0x80588048 0x58585858>;
+	dly-param-10m = <0 0 0>;
+	mdio1 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		phy1: ethernet-phy@1 {
+			reg = <0>;
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+&display_logo {
+	status = "disabled";
+};
+&mipi_dsi {
+	status = "disabled";
+	panel {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "simple-panel-dsi";
+		reg = <0>;
+		dsi,format = <MIPI_DSI_FMT_RGB888>;
+		bus-format = <MEDIA_BUS_FMT_RGB888_1X24>;
+		dsi,lanes = <4>;
+		status = "disabled";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_gpio27_default &pinctrl_gpio106_default>;
+		backlight-gpios = <&porta 27 GPIO_ACTIVE_LOW>;
+		rst-gpios = <&portd 10 GPIO_ACTIVE_LOW>;
+		display-timings {
+			native-mode = <&timing0>;
+			timing0: timing0 {
+				/*The fpga platform does not need to set the clock*/
+				clock-frequency = <148500000>;
+				hactive = <1080>;
+				vactive = <1920>;
+				hsync-len = <60>;
+				hback-porch = <60>;
+				hfront-porch = <60>;
+				vsync-len = <8>;
+				vback-porch = <8>;
+				vfront-porch = <8>;
+				hsync-active = <0>;
+				vsync-active = <0>;
+				pixelclk-active = <1>;
+			};
+		};
+	};
+};
+&dwc3_typec0 {
+		status = "okay";
+		dr_mode = "peripheral";
+		maximum-speed = "super-speed";
+};
+&usb0 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_gpio42_default>;
+	pwren-gpios = <&portb 10 GPIO_ACTIVE_LOW>;
+};
+&usb1 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_gpio43_default>;
+	pwren-gpios = <&portb 11 GPIO_ACTIVE_LOW>;
+};
+&hdmi {
+	status = "okay";
+};
+&display_subsystem {
+	status = "okay";
+};
+&route_hdmi {
+	status = "okay";
+};
+&route_mipi {
+	status = "disabled";
+};
+&osd {
+	status = "okay";
+};
+&i2c0 {
+	status = "disabled";
+};
+&i2c2 {
+	status = "disabled";
+};
+&i2c3 {
+	status = "disabled";
+};
+&i2c11 {
+	status = "disabled";
+};
+
+/* GPIO Function Description
+
+	gpio0   : pcie prstn(I)
+	gpio11  : tmp alert(I)
+	gpio13  : tf card detect(I)
+	gpio14  : gphy1 resetn(O)
+	gpio15  : gphy0 resetn(O)
+	gpio18  : ina226 alert(I)
+	gpio20  : lcd touch int(I)
+	gpio21  : head phone plug/unplug detection2(I)
+	gpio27  : black light pwr_en(O)
+	gpio28  : head phone plug/unplug detection1(I)
+	gpio68  : fan pwm(O)
+	gpio69  : fan touch(I)
+	gpio92  : frex gp0(O)
+	gpio93  : frex gp1(O)
+	gpio106 : mipi dsi resetn(O)
+	gpio111 : lcd touch resetn(O)
+*/
+
+&gpio0 {
+	status = "okay";
+};
+
+&pinctrl {
+	status = "okay";
+};

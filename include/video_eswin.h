@@ -25,9 +25,13 @@
 #include <dm/device.h>
 
 #ifndef CONFIG_ESWIN_LOGO_DISPLAY
-#ifdef CONFIG_DRM_ESWIN_DW_HDMI
+#if defined(CONFIG_DRM_ESWIN_DW_HDMI)
  #define DRM_ESWIN_FB_WIDTH             1920
  #define DRM_ESWIN_FB_HEIGHT            1080
+ #define DRM_ESWIN_FB_BPP               VIDEO_BPP32
+#elif defined(CONFIG_DRM_RASP_PANEL)
+ #define DRM_ESWIN_FB_WIDTH             256
+ #define DRM_ESWIN_FB_HEIGHT            144
  #define DRM_ESWIN_FB_BPP               VIDEO_BPP32
 #else
  #define DRM_ESWIN_FB_WIDTH             1080

@@ -120,7 +120,6 @@ static gctUINT32 verKernel[] =
 static gctUINT get_stretch_factor(gctUINT src_size, gctUINT dest_size)
 {
     gctUINT stretch_factor = 0;
-
     if ((src_size > 1) && (dest_size > 1)){
         stretch_factor = ((src_size - 1) << 16) / (dest_size - 1);
     }
@@ -189,7 +188,7 @@ static gctINT eswin_dc_init(struct display_state *state)
             scale_factorY = (3 << 16);
         }
 
-		if(layer == ESWIN_OVERLAY_LAYER) {
+		if (layer == ESWIN_OVERLAY_LAYER) {
 			dc->overlay_ctrl.dcOverlayScaleFactorX0 = scale_factorX;
 			dc->overlay_ctrl.dcOverlayScaleFactorY0 = scale_factorY;
 			memcpy(dc->overlay_ctrl.dcOverlayHorKernel0, horKernel, 128 * 4);
@@ -207,7 +206,7 @@ static gctINT eswin_dc_init(struct display_state *state)
 		scale_factorY = 0;
 	}
 
-	if(layer == ESWIN_OVERLAY_LAYER) {
+	if (layer == ESWIN_OVERLAY_LAYER) {
 		dc->overlay_ctrl.dcOverlaySize0 = (src_height << 15) | src_width;
 		dc->overlay_ctrl.dcOverlayStride0 = src_width * (state->logo.bpp / 8);
 		dc->overlay_ctrl.dcOverlayTL0 = 0x0;
@@ -266,8 +265,8 @@ static gctINT eswin_dc_set_plane(struct display_state *state)
 		return -EINVAL;
 	}
 
-	if(dc->is_scale) {
-		if(layer == ESWIN_OVERLAY_LAYER) {
+	if (dc->is_scale) {
+		if (layer == ESWIN_OVERLAY_LAYER) {
 			dc->overlay_ctrl.dcOverlayScaleConfig0 |= (1 << DCREG_OVERLAY_SCALE_CONFIG_SCALE_Start);
 			dc->overlay_ctrl.dcOverlayInitialOffset0 = 0x80008000;
 		} else {
@@ -275,7 +274,7 @@ static gctINT eswin_dc_set_plane(struct display_state *state)
 			dc->fb_ctrl.dcFBInitialOffset0 = 0x80008000;
 		}
 	}
-
+	vo_debug(" enter\n");
 	eswin_vo_clk_init(mode->clock, state->numa_id);
 	//host interface
 	eswin_dc_reset(dc);
@@ -293,7 +292,7 @@ static gctINT eswin_dc_set_plane(struct display_state *state)
 
 	flush_mmu_cache(dc->dev);
 
-	if(layer == ESWIN_OVERLAY_LAYER) {
+	if (layer == ESWIN_OVERLAY_LAYER) {
 		dc->overlay_ctrl.dcOverlayAddr0 = iova_addr;
 		dc->overlay_ctrl.dcOverlayConfig0 =
 			(crtc_state->format << DCREG_OVERLAY_CONFIG_FORMAT_Start) |
@@ -308,7 +307,7 @@ static gctINT eswin_dc_set_plane(struct display_state *state)
 	eswin_hw_set_framebuffer_config(dc, 0x10);		//dc8000 display control reset
 	eswin_hw_set_framebuffer_config(dc, 0x0);
 
-	if(layer == ESWIN_OVERLAY_LAYER) {
+	if (layer == ESWIN_OVERLAY_LAYER) {
 		//overlay control
 	    eswin_hw_set_overlay_address(dc, dc->overlay_ctrl.dcOverlayAddr0);
 		eswin_hw_set_overlay_stride(dc, dc->overlay_ctrl.dcOverlayStride0);
@@ -324,7 +323,7 @@ static gctINT eswin_dc_set_plane(struct display_state *state)
 		eswin_hw_overlay_water_mark(dc, dc->overlay_ctrl.dcOverlayWaterMark0);
 		eswin_hw_set_overlay_colortable_index(dc, dc->overlay_ctrl.dcOverlayColorTableIndex0);
 #ifdef CONFIG_DRM_ESWIN_DW_HDMI
-		for(i = 0; i < 256; i++)
+		for (i = 0; i < 256; i++)
 			eswin_hw_set_overlay_colortable_data(dc, dc->overlay_ctrl.dcOverlayColorTableData0[i]);
 #endif
 	}
@@ -340,20 +339,19 @@ static gctINT eswin_dc_set_plane(struct display_state *state)
 	eswin_hw_set_framebuffer_config_ex(dc, dc->fb_ctrl.dcFBConfigEx0);
 	eswin_hw_set_framebuffer_colortable_index(dc, dc->fb_ctrl.dcFBColorTableIndex0);
 #ifdef CONFIG_DRM_ESWIN_DW_HDMI
-	for(i = 0; i < 256; i++)
+	for (i = 0; i < 256; i++)
 		eswin_hw_set_framebuffer_colortable_data(dc, dc->fb_ctrl.dcFBColorTableData0[i]);
 #endif
-
-	if(dc->is_scale) {
+	if (dc->is_scale) {
 		if(layer == ESWIN_OVERLAY_LAYER) {
 			eswin_hw_set_overlay_scale_factorX(dc, dc->overlay_ctrl.dcOverlayScaleFactorX0);
 			eswin_hw_set_overlay_scale_factorY(dc, dc->overlay_ctrl.dcOverlayScaleFactorY0);
 
 			eswin_hw_set_overlay_hor_index(dc, dc->overlay_ctrl.dcOverlayHorKernelIndex0);
 			eswin_hw_set_overlay_ver_index(dc, dc->overlay_ctrl.dcOverlayVerKernelIndex0);
-			for(i = 0; i < 128; i++)
+			for (i = 0; i < 128; i++)
 				eswin_hw_set_overlay_hor_kernel(dc, dc->overlay_ctrl.dcOverlayHorKernel0[i]);
-			for(i = 0; i < 128; i++)
+			for (i = 0; i < 128; i++)
 				eswin_hw_set_overlay_ver_kernel(dc, dc->overlay_ctrl.dcOverlayVerKernel0[i]);
 			eswin_hw_set_overlay_initial_offset(dc, dc->overlay_ctrl.dcOverlayInitialOffset0);
 		} else {
@@ -362,9 +360,9 @@ static gctINT eswin_dc_set_plane(struct display_state *state)
 
 			eswin_hw_set_framebuffer_hor_index(dc, dc->fb_ctrl.dcFBHorKernelIndex0);
 			eswin_hw_set_framebuffer_ver_index(dc, dc->fb_ctrl.dcFBVerKernelIndex0);
-			for(i = 0; i < 128; i++)
+			for (i = 0; i < 128; i++)
 				eswin_hw_set_framebuffer_hor_kernel(dc, dc->fb_ctrl.dcFBHorKernel0[i]);
-			for(i = 0; i < 128; i++)
+			for (i = 0; i < 128; i++)
 				eswin_hw_set_framebuffer_ver_kernel(dc, dc->fb_ctrl.dcFBVerKernel0[i]);
 			eswin_hw_set_framebuffer_initial_offset(dc, dc->fb_ctrl.dcFBInitialOffset0);
 		}

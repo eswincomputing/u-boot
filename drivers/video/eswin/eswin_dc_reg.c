@@ -284,6 +284,18 @@ gctVOID eswin_hw_set_framebuffer_address(struct dc8000_dc *dc, gctUINT addr)
 	eswin_dc_write_reg(dc->regs, DCREG_FRAME_BUFFER_ADDRESS_Address, addr);
 }
 
+#if 0
+gctVOID eswin_hw_set_roi_origin_addr(struct dc8000_dc *dc, gctUINT addr)
+{
+	eswin_dc_write_reg(dc->regs, DCREG_FRAME_BUFFER_ROI_ORIGIN_Address, addr);
+}
+
+gctVOID eswin_hw_set_roi_size_addr(struct dc8000_dc *dc, gctUINT size)
+{
+	eswin_dc_write_reg(dc->regs, DCREG_FRAME_BUFFER_ROI_SIZE_Address, size);
+}
+#endif
+
 gctVOID eswin_hw_set_framebuffer_stride(struct dc8000_dc *dc, gctUINT stride)
 {
 	eswin_dc_write_reg(dc->regs, DCREG_FRAME_BUFFER_STRIDE_Address, stride);
@@ -422,6 +434,22 @@ gctVOID eswin_hw_framebuffer_degamma_enable(struct dc8000_dc *dc,
 	eswin_dc_write_reg(dc->regs, DCREG_FRAME_BUFFER_CONFIG_EX_Address,
 			   config);
 }
+
+#if 0
+gctVOID eswin_hw_framebuffer_ROI_enable(struct dc8000_dc *dc,
+	gctBOOL enable)
+{
+	gctUINT config = 0;
+
+	config = eswin_dc_read_reg(dc->regs, DCREG_FRAME_BUFFER_CONFIG_EX_Address);
+	if (enable) {
+		config |= DCREG_FRAME_BUFFER_CONFIG_EX_ENABLE_ROI_ENABLE;
+	} else {
+		config &= ~DCREG_FRAME_BUFFER_CONFIG_EX_ENABLE_ROI_ENABLE;
+	}
+	eswin_dc_write_reg(dc->regs, DCREG_FRAME_BUFFER_CONFIG_EX_Address, config);
+}
+#endif
 
 gctVOID eswin_hw_framebuffer_water_mark(struct dc8000_dc *dc, gctUINT mark)
 {

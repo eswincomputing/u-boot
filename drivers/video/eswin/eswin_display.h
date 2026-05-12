@@ -134,8 +134,7 @@ struct crtc_state {
 };
 
 struct panel_state {
-	struct eswin_panel *panel;
-
+	void *panel;
 	ofnode dsp_lut_node;
 };
 

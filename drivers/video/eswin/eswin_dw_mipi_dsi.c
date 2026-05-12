@@ -37,6 +37,7 @@
 #include <linux/iopoll.h>
 #include <dm/device_compat.h>
 #include <div64.h>
+ #include <asm-generic/gpio.h>
 
 #include "eswin_display.h"
 #include "eswin_crtc.h"
@@ -999,14 +1000,13 @@ static void eswin_dw_mipi_dsi_init(struct eswin_dw_mipi_dsi *dsi) {
 static int eswin_dw_mipi_dsi_connector_init(struct display_state *state) {
     struct connector_state *conn_state = &state->conn_state;
     struct eswin_dw_mipi_dsi *dsi = dev_get_priv(conn_state->dev);
-
-    printf("********[%s] enter*********\n", __func__);
+    vo_debug("[%s] enter \n", __func__);
     memcpy(&dsi->mode, &conn_state->mode, sizeof(struct drm_display_mode));
 
     conn_state->output_mode = ESWIN_OUT_MODE_P888;
     conn_state->color_space = V4L2_COLORSPACE_DEFAULT;
     conn_state->type = DRM_MODE_CONNECTOR_DSI;
-    printf("********[%s] leave*********\n", __func__);
+
     return 0;
 }
 
@@ -1126,7 +1126,7 @@ static void eswin_dw_mipi_dsi_set_mode(struct eswin_dw_mipi_dsi *dsi, unsigned l
 }
 
 int eswin_dw_mipi_dsi_connector_prepare(struct display_state *state) {
-    printf("********[%s] enter*********\n", __func__);
+    vo_debug("********[%s] enter*********\n", __func__);
     struct connector_state *conn_state = &state->conn_state;
     struct drm_display_mode *mode;
     int bpp;
@@ -1176,12 +1176,12 @@ int eswin_dw_mipi_dsi_connector_prepare(struct display_state *state) {
     dsi->prepared = true;
     value = eswin_dsi_read(dsi, 0x74);
     printf("0x74 = 0x%x\n", value);
-    printf("********[%s] leave*********\n", __func__);
+    vo_debug("********[%s] leave*********\n", __func__);
     return 0;
 }
 
 static void eswin_dw_mipi_dsi_connector_unprepare(struct display_state *state) {
-    printf("********%s********\n", __func__);
+    vo_debug("********%s********\n", __func__);
     struct connector_state *conn_state = &state->conn_state;
     struct eswin_dw_mipi_dsi *dsi = dev_get_priv(conn_state->dev);
 
@@ -1189,11 +1189,11 @@ static void eswin_dw_mipi_dsi_connector_unprepare(struct display_state *state) {
 }
 
 static int eswin_dw_mipi_dsi_connector_enable(struct display_state *state) {
-    printf("********[%s] enter*********\n", __func__);
+    vo_debug("********[%s] enter*********\n", __func__);
     struct connector_state *conn_state = &state->conn_state;
     struct eswin_dw_mipi_dsi *dsi = dev_get_priv(conn_state->dev);
     eswin_dw_mipi_dsi_set_mode(dsi, MIPI_DSI_MODE_VIDEO);
-    printf("********[%s] leave*********\n", __func__);
+    vo_debug("********[%s] leave*********\n", __func__);
     return 0;
 }
 
@@ -1218,6 +1218,7 @@ static int eswin_dw_mipi_dsi_probe(struct udevice *dev) {
     struct eswin_dw_mipi_dsi *dsi = dev_get_priv(dev);
     const struct eswin_connector *connector = (const struct eswin_connector *)dev_get_driver_data(dev);
     const struct eswin_dw_mipi_dsi_plat_data *pdata = connector->data;
+    struct gpio_desc *dsi_mux_gpio;
     int id, ret;
     u32 node_id;
 
@@ -1236,6 +1237,16 @@ static int eswin_dw_mipi_dsi_probe(struct udevice *dev) {
     dsi->pdata = pdata;
     dsi->id = id;
 
+    dsi_mux_gpio  = devm_gpiod_get_optional(dev, "dsi-mux", GPIOD_IS_OUT|GPIOD_IS_OUT_ACTIVE );
+    if(dsi_mux_gpio){
+        ret = dm_gpio_set_value(dsi_mux_gpio, 1);
+        dm_gpio_free(dev, dsi_mux_gpio);
+        if (ret) {
+            vo_debug("eswin_dw_mipi_dsi_probe dsi-mux gpio set failed\n");
+            return ret;
+        }
+    }
+    vo_debug(" node_id = %d dsi->base = 0x%x\n", node_id, dsi->base);
     eswin_vo_clk_init(DEFAULT_PIXEL_CLK, node_id);
     eswin_dw_mipi_dsi_bind(dev);
     return 0;
@@ -1308,11 +1319,11 @@ static int eswin_dw_mipi_dsi_child_post_bind(struct udevice *dev) {
     return 0;
 }
 
-static int eswin_dw_mipi_dsi_child_pre_probe(struct udevice *dev) {
+int eswin_dw_mipi_dsi_child_pre_probe(struct udevice *dev) {
     struct mipi_dsi_device *device = dev_get_parent_plat(dev);
     int ret;
 
-    printf("%s IN--\n", __FUNCTION__);
+    printf("%s IN--,udevice-> name = %s\n", __FUNCTION__,dev->name);
     ret = mipi_dsi_attach(device);
     if (ret) {
         dev_err(dev, "mipi_dsi_attach() failed: %d\n", ret);
@@ -1321,6 +1332,14 @@ static int eswin_dw_mipi_dsi_child_pre_probe(struct udevice *dev) {
 
     return 0;
 }
+EXPORT_SYMBOL(eswin_dw_mipi_dsi_child_pre_probe);
+
+struct mipi_dsi_device *eswin_dsi_host_get_dsi_dev(struct udevice *dev)
+{
+    return dev_get_parent_plat(dev);
+}
+
+EXPORT_SYMBOL(eswin_dsi_host_get_dsi_dev);
 
 U_BOOT_DRIVER(eswin_dw_mipi_dsi) = {
     .name = "eswin_dw_mipi_dsi",
@@ -1331,5 +1350,5 @@ U_BOOT_DRIVER(eswin_dw_mipi_dsi) = {
     .per_child_plat_auto = sizeof(struct mipi_dsi_device),
     .plat_auto = sizeof(struct mipi_dsi_host),
     .child_post_bind = eswin_dw_mipi_dsi_child_post_bind,
-    .child_pre_probe = eswin_dw_mipi_dsi_child_pre_probe,
+ //   .child_pre_probe = eswin_dw_mipi_dsi_child_pre_probe,
 };

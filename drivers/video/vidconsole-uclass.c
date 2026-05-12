@@ -753,8 +753,14 @@ static int vidconsole_post_probe(struct udevice *dev)
 	sdev->putc = vidconsole_putc;
 	sdev->puts = vidconsole_puts;
 	sdev->priv = dev;
-
+	printf("%s:  device:'%s', sdev:'%s'\n", __func__, dev->name, sdev->name);
+#if defined(CONFIG_DRM_RASP_PANEL)
+	printf("%s:  no stdio_register(%s)\n", __func__, sdev->name);
+	return 0;
+#else
+	printf("%s:  stdio_register(%s)\n", __func__, sdev->name);
 	return stdio_register(sdev);
+#endif
 }
 
 UCLASS_DRIVER(vidconsole) = {

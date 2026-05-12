@@ -301,6 +301,9 @@ else
 	endif
 endif
 
+ifeq ($(CONFIG_DRM_RASP_PANEL),y)
+LOGO_BMP= $(srctree)/$(src)/logos/$(VENDOR).bmp
+endif
 endif # !LOGO_BMP
 
 #

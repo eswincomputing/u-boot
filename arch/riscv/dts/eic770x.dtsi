@@ -869,7 +869,7 @@
 			ports {
 				#address-cells = <1>;
 				#size-cells = <0>;
-				mipi_in: port {
+				port@0 {
 					#address-cells = <1>;
 					#size-cells = <0>;
 					reg = <1>;

@@ -12,3 +12,4 @@ obj-y += eswin_display.o eswin_crtc.o \
 obj-$(CONFIG_DRM_ESWIN_DW_MIPI_DSI) += eswin_dw_mipi_dsi.o dw_mipi_dsi.o
 obj-$(CONFIG_DRM_ESWIN_DW_HDMI) += eswin_dw_hdmi.o dw_hdmi.o eswin_edid.o eswin_modes.o
 obj-$(CONFIG_DRM_ESWIN_PANEL) += eswin_panel.o
+obj-$(CONFIG_DRM_RASP_PANEL) += rasp_panel.o rpi-panel-attiny-regulator.o  tc358762.o
