@@ -77,7 +77,7 @@ static int dwc_usb_clk_init(void)
         writel(val, crg_regs + 0x41c);
 
         //enable scu_hsp_pclk
-        writel(0x80000020, crg_regs + 0x148);
+        // writel(0x80000020, crg_regs + 0x148);
         writel(0xc0000000, crg_regs + 0x14c);
 
         //usb0 clk init

@@ -189,7 +189,7 @@ static int dwc_usb_clk_init(fdt_addr_t hcd_base)
     writel(val, crg_regs + 0x41c);
 
     //enable scu_hsp_pclk
-    writel(0x80000020, crg_regs + 0x148);
+    // writel(0x80000020, crg_regs + 0x148);
     writel(0xc0000000, crg_regs + 0x14c);
     if (0x8 == ((hcd_base & 0xf0000)>>16))
     {
