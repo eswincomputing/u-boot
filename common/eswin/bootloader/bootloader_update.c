@@ -62,12 +62,14 @@ bool update_table_and_firmware(uint32_t target_partition) {
     uint32_t next_version;
     uint32_t slot_version;
     /* Determine target addresses */
-    if (target_partition == 0) {  /* Partition A */
+    if ((target_partition == 0) || ((get_flash_size() <= FLASH_SZ_8M) && (DIE_NUM == 0))) {  /* Partition A */
         table_addr = TABLE_A_ADDR;
         fw_addr = FW_A_ADDR;
+        printf("Update partition A\r\n");
     } else {  /* Partition B */
         table_addr = TABLE_B_ADDR;
         fw_addr = FW_B_ADDR;
+        printf("Update partition B\r\n");
     }
 
     /* Get next version number (simplified implementation) */

@@ -17,6 +17,7 @@ uint32_t FW_A_SIZE;
 uint32_t TABLE_B_ADDR;
 uint32_t FW_B_ADDR;
 uint32_t FW_B_SIZE;
+uint32_t DIE_NUM;
 
 const struct partitiontype partititon_ids[] = {
 	{ .name = "PART_STATUS_EMPTY", .id = PART_STATUS_EMPTY},
@@ -526,7 +527,7 @@ uint32_t get_boot_partition(void)
     return 0;
 }
 
-int hardware_init(void *flash_str) {
+int hardware_init(void *flash_str, int die_num) {
 
 	int ret;
     ret = flash_init(flash_str);
@@ -535,7 +536,7 @@ int hardware_init(void *flash_str) {
 	}
 
     uint32_t flash_size = get_flash_size();
-
+    DIE_NUM = die_num;
     if(flash_size <= FLASH_SZ_8M) {
         TABLE_A_ADDR = (TABLE_A_ADDR_8M);
         FW_A_ADDR    = (FW_A_ADDR_8M);
@@ -556,7 +557,7 @@ int hardware_init(void *flash_str) {
 
 /* Called by application after successful boot from PENDING_VERIFY partition */
 bool application_confirm_valid(void *flash_str) {
-    int ret = hardware_init(flash_str);
+    int ret = hardware_init(flash_str , 0);
     if(ret)
         return false;
 

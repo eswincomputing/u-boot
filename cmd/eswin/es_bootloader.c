@@ -652,7 +652,7 @@ int bootloader_flash_probe(u32 num)
 	else
 		node_name = node_name_d1;
 
-	ret = hardware_init(node_name);
+	ret = hardware_init(node_name, num);
 	if(ret)
 		return ret;
 

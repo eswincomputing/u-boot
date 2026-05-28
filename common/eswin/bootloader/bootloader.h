@@ -50,6 +50,7 @@ extern uint32_t FW_A_SIZE;
 extern uint32_t TABLE_B_ADDR;
 extern uint32_t FW_B_ADDR;
 extern uint32_t FW_B_SIZE;
+extern uint32_t DIE_NUM;
 
 typedef enum fw_offset {
 	/* Head */
