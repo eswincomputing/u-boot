@@ -49,6 +49,7 @@
 			i-tlb-sets = <1>;
 			i-tlb-size = <64>;
 			mmu-type = "riscv,sv48";
+			next-level-cache = <&l2_cache_0>;
 			reg = <0>;
 			riscv,isa = "rv64imafdc_zba_zbb";
 			status = "disabled";
@@ -75,6 +76,7 @@
 			i-tlb-sets = <1>;
 			i-tlb-size = <64>;
 			mmu-type = "riscv,sv48";
+			next-level-cache = <&l2_cache_1>;
 			reg = <0x1>;
 			riscv,isa = "rv64imafdc_zba_zbb";
 			status = "disabled";
@@ -101,6 +103,7 @@
 			i-tlb-sets = <1>;
 			i-tlb-size = <64>;
 			mmu-type = "riscv,sv48";
+			next-level-cache = <&l2_cache_2>;
 			reg = <0x2>;
 			riscv,isa = "rv64imafdc_zba_zbb";
 			status = "disabled";
@@ -127,6 +130,7 @@
 			i-tlb-sets = <1>;
 			i-tlb-size = <64>;
 			mmu-type = "riscv,sv48";
+			next-level-cache = <&l2_cache_3>;
 			reg = <0x3>;
 			riscv,isa = "rv64imafdc_zba_zbb";
 			status = "disabled";
@@ -153,6 +157,7 @@
 			i-tlb-sets = <1>;
 			i-tlb-size = <64>;
 			mmu-type = "riscv,sv48";
+			//next-level-cache = <&l2_cache_4>;
 			reg = <0x4>;
 			riscv,isa = "rv64imafdc_zba_zbb";
 			status = "disabled";
@@ -179,6 +184,7 @@
 			i-tlb-sets = <1>;
 			i-tlb-size = <64>;
 			mmu-type = "riscv,sv48";
+			//next-level-cache = <&l2_cache_5>;
 			reg = <0x5>;
 			riscv,isa = "rv64imafdc_zba_zbb";
 			status = "disabled";
@@ -205,6 +211,7 @@
 			i-tlb-sets = <1>;
 			i-tlb-size = <64>;
 			mmu-type = "riscv,sv48";
+			//next-level-cache = <&l2_cache_6>;
 			reg = <0x6>;
 			riscv,isa = "rv64imafdc_zba_zbb";
 			status = "disabled";
@@ -231,6 +238,7 @@
 			i-tlb-sets = <1>;
 			i-tlb-size = <64>;
 			mmu-type = "riscv,sv48";
+			//next-level-cache = <&l2_cache_7>;
 			reg = <0x7>;
 			riscv,isa = "rv64imafdc_zba_zbb";
 			status = "disabled";
@@ -305,6 +313,65 @@
 		#size-cells = <2>;
 		compatible = "ESWIN,EIC7700-soc", "eic7700-soc", "eswin-soc";
 		ranges;
+		l2_cache_0: pl2@104000 {
+			cache-block-size = <64>;
+			cache-level = <2>;
+			cache-sets = <512>;
+			cache-size = <262144>;
+			cache-unified;
+			compatible = "sifive,pl2cache1", "cache";
+			next-level-cache = <&ccache>;
+			reg = <0x0 0x104000 0x0 0x4000>;
+			sifive,perfmon-counters = <6>;
+		};
+
+		l2_cache_1: pl2@108000 {
+			cache-block-size = <64>;
+			cache-level = <2>;
+			cache-sets = <512>;
+			cache-size = <262144>;
+			cache-unified;
+			compatible = "sifive,pl2cache1", "cache";
+			next-level-cache = <&ccache>;
+			reg = <0x0 0x108000 0x0 0x4000>;
+			sifive,perfmon-counters = <6>;
+		};
+
+		l2_cache_2: pl2@10c000 {
+			cache-block-size = <64>;
+			cache-level = <2>;
+			cache-sets = <512>;
+			cache-size = <262144>;
+			cache-unified;
+			compatible = "sifive,pl2cache1", "cache";
+			next-level-cache = <&ccache>;
+			reg = <0x0 0x10c000 0x0 0x4000>;
+			sifive,perfmon-counters = <6>;
+		};
+
+		l2_cache_3: pl2@110000 {
+			cache-block-size = <64>;
+			cache-level = <2>;
+			cache-sets = <512>;
+			cache-size = <262144>;
+			cache-unified;
+			compatible = "sifive,pl2cache1", "cache";
+			next-level-cache = <&ccache>;
+			reg = <0x0 0x110000 0x0 0x4000>;
+			sifive,perfmon-counters = <6>;
+		};
+
+		ccache: cache-controller@2010000 {
+			compatible = "sifive,ccache2";
+			cache-block-size = <64>;
+			cache-level = <3>;
+			cache-sets = <4096>;
+			cache-size = <4194304>;
+			cache-unified;
+			interrupts = <1>, <3>, <4>, <2>;
+			reg = <0x0 0x2010000 0x0 0x4000>;
+		};
+
 		d0_mbox: mbox@0x50a00000 {
 			status = "disabled";
 			compatible = "eswin,mbox";
